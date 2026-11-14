@@ -74,28 +74,55 @@ jobs:
           fi
           echo "✓ versionCode 单调递增: $prev_vc -> $cur_vc"
 
-      - name: Restore release keystore
+      # [二开] 把「还原 keystore」与「生成签名配置」合成一步，并在构建前做一次预检。
+      # 原实现没有任何校验：secret 填错（空值 / 误把二进制粘进 secret / base64 被截断）会一路跑到
+      # package*Release 才抛 KeytoolException（Tag number over 30 is not supported），白烧 20 分钟。
+      # 现在 10 秒内失败，并直接指出是哪个 secret 有问题。
+      - name: Restore release keystore & generate signing config
         env:
           # keystore 文件以 base64 存入 Secret，避免二进制文件被破坏。
           # 还原到 app/aicode.jks，与 build.gradle.kts 期望的位置一致。
           KEYSTORE_BASE64: ${{ secrets.AICODE_KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > app/aicode.jks
-          echo "keystore restored ($(stat -c%s app/aicode.jks) bytes)"
-
-      - name: Generate keystore.properties
-        env:
           KEYSTORE_PASSWORD: ${{ secrets.AICODE_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.AICODE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.AICODE_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          # 1. 四个 secret 缺一不可，缺了直接点名，不等到打包阶段。
+          missing=0
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::secret $name 为空，请在 Settings → Secrets and variables → Actions 补上"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+
+          # 2. 还原：去掉换行/空格/制表符，兼容「整段 base64 被折行复制」。
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > app/aicode.jks
+          echo "keystore restored ($(stat -c%s app/aicode.jks) bytes)"
+
+          # 3. 生成签名配置（storeFile 相对 app/ 目录）。
           cat > app/keystore.properties <<EOF
           storeFile=aicode.jks
           storePassword=$KEYSTORE_PASSWORD
           keyAlias=$KEY_ALIAS
           keyPassword=$KEY_PASSWORD
           EOF
-          echo "app/keystore.properties generated"
+
+          # 4. 预检：能用密码列出条目、且别名存在，才算可用。
+          if ! keytool -list -keystore app/aicode.jks -storepass "$KEYSTORE_PASSWORD" > /tmp/ks.txt 2>/tmp/ks.err; then
+            echo "::error::keystore 打不开：$(cat /tmp/ks.err)"
+            echo "常见原因：AICODE_KEYSTORE_BASE64 不是 jks 的 base64（例如把二进制直接粘进了 secret）、密码不对、base64 被截断。"
+            exit 1
+          fi
+          if ! grep -q "^${KEY_ALIAS}," /tmp/ks.txt; then
+            echo "::error::keystore 里没有别名 $KEY_ALIAS，实际条目如下："
+            cat /tmp/ks.txt
+            exit 1
+          fi
+          echo "✓ keystore 校验通过（别名 $KEY_ALIAS）"
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew

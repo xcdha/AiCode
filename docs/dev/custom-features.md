@@ -107,3 +107,54 @@ git push --force-with-lease origin <branch>
 ```
 
 `--force-with-lease` 会在远端被别人改动过时拒绝推送，比 `--force` 安全。脚本不会自动强推。
+
+## 四、发版签名（GitHub Actions）
+
+`.github/workflows/android-release.yml` 用 4 个 Secret 现场组装签名，**仓库里不存任何密钥文件**
+（`*.jks` / `keystore.properties` 都已在 `.gitignore` 里）。
+
+| Secret | 内容 | 说明 |
+| --- | --- | --- |
+| `AICODE_KEYSTORE_BASE64` | `app/aicode.jks` 的 **单行** base64 | 约 5.8 KB |
+| `AICODE_KEYSTORE_PASSWORD` | keystore 口令 | PKCS12 |
+| `AICODE_KEY_ALIAS` | 证书别名 | 如 `aicode` |
+| `AICODE_KEY_PASSWORD` | 私钥口令 | PKCS12 下与 store 口令相同 |
+
+### 重新生成 keystore
+
+```bash
+keytool -genkeypair -keystore aicode.jks -alias aicode \
+  -keyalg RSA -keysize 4096 -validity 10950 -storetype PKCS12 \
+  -storepass '<口令>' -keypass '<口令>' \
+  -dname "CN=AiCode, OU=Personal, O=AiCode, L=Beijing, ST=Beijing, C=CN"
+
+# 必须单行（-w0），否则贴进 Secret 后解码可能出问题
+base64 -w0 aicode.jks > aicode.jks.b64
+```
+
+然后把 4 个值填进 `Settings → Secrets and variables → Actions`。
+
+### 踩过的坑：`Tag number over 30 is not supported`
+
+构建跑到 `packageXxxRelease` 才失败，报：
+
+```
+KeytoolException: Failed to read key  from store ".../app/aicode.jks": Tag number over 30 is not supported
+```
+
+两个信息点：
+
+1. `Failed to read key `（别名是**空的**）→ `AICODE_KEY_ALIAS` 没配；
+2. `Tag number over 30 is not supported` 是 ASN.1 解析报错，意思是**这个文件根本不是 keystore**——
+   最常见原因是把 `.jks` **二进制**直接粘进了 Secret（Secret 只能存文本，二进制会被破坏），
+   或者 base64 复制不全。
+
+现在 workflow 里加了一步预检（`Restore release keystore & generate signing config`）：
+Secret 缺失、base64 解码失败、口令不对、别名不存在，都会在 **10 秒内**明确报错，
+不会再等到打包阶段才炸。
+
+### 换签名的影响
+
+Android 要求升级包的签名与已安装版本一致。**换 keystore 后，老用户必须先卸载再装新包**。
+本仓库在换成当前这套密钥之前没有发布过任何 Release，所以不存在这个问题；
+以后如需再换，务必先在 Release 说明里写清楚。
