@@ -620,6 +620,22 @@ class SettingsViewModel @Inject constructor(
     private val _backgroundAlpha = MutableStateFlow(BackgroundSettingsRepository.DEFAULT_ALPHA)
     val backgroundAlpha: StateFlow<Float> = _backgroundAlpha.asStateFlow()
 
+    /** [二开] 外观选项（参考 Eta）：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放。 */
+    private val _accentColor = MutableStateFlow(com.bysqh.guru.core.theme.AccentColor.SYSTEM)
+    val accentColor: StateFlow<com.bysqh.guru.core.theme.AccentColor> = _accentColor.asStateFlow()
+
+    private val _paletteStyle = MutableStateFlow(com.bysqh.guru.core.theme.PaletteStyle.TONAL_SPOT)
+    val paletteStyle: StateFlow<com.bysqh.guru.core.theme.PaletteStyle> = _paletteStyle.asStateFlow()
+
+    private val _uiStyle = MutableStateFlow(com.bysqh.guru.core.theme.UiStyle.STANDARD)
+    val uiStyle: StateFlow<com.bysqh.guru.core.theme.UiStyle> = _uiStyle.asStateFlow()
+
+    private val _pureBlack = MutableStateFlow(false)
+    val pureBlack: StateFlow<Boolean> = _pureBlack.asStateFlow()
+
+    private val _interfaceScale = MutableStateFlow(com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE)
+    val interfaceScale: StateFlow<Float> = _interfaceScale.asStateFlow()
+
     /** [二开] 背景类型（静态图 / GIF / MP4），供设置弹窗展示与全局背景分发渲染。 */
     private val _backgroundKind = MutableStateFlow(BackgroundSettingsRepository.Kind.IMAGE)
     val backgroundKind: StateFlow<BackgroundSettingsRepository.Kind> = _backgroundKind.asStateFlow()
@@ -1066,6 +1082,13 @@ class SettingsViewModel @Inject constructor(
                     _backgroundAlpha.value = it
                 }
             }
+
+            // [二开] 外观选项
+            launch { themeSettingsRepository.accentColorFlow.collectLatest { _accentColor.value = it } }
+            launch { themeSettingsRepository.paletteStyleFlow.collectLatest { _paletteStyle.value = it } }
+            launch { themeSettingsRepository.uiStyleFlow.collectLatest { _uiStyle.value = it } }
+            launch { themeSettingsRepository.pureBlackFlow.collectLatest { _pureBlack.value = it } }
+            launch { themeSettingsRepository.interfaceScaleFlow.collectLatest { _interfaceScale.value = it } }
 
             // [二开] 背景类型随背景文件一起变化，用于全局背景层选择渲染方式。
             launch {
@@ -2218,6 +2241,26 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             themeSettingsRepository.setThemePresetId(id)
         }
+    }
+
+    fun setAccentColor(value: com.bysqh.guru.core.theme.AccentColor) {
+        viewModelScope.launch { themeSettingsRepository.setAccentColor(value) }
+    }
+
+    fun setPaletteStyle(value: com.bysqh.guru.core.theme.PaletteStyle) {
+        viewModelScope.launch { themeSettingsRepository.setPaletteStyle(value) }
+    }
+
+    fun setUiStyle(value: com.bysqh.guru.core.theme.UiStyle) {
+        viewModelScope.launch { themeSettingsRepository.setUiStyle(value) }
+    }
+
+    fun setPureBlack(enabled: Boolean) {
+        viewModelScope.launch { themeSettingsRepository.setPureBlack(enabled) }
+    }
+
+    fun setInterfaceScale(value: Float) {
+        viewModelScope.launch { themeSettingsRepository.setInterfaceScale(value) }
     }
 
     fun setDynamicColorEnabled(enabled: Boolean) {

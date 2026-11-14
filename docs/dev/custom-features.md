@@ -108,6 +108,7 @@ git push --force-with-lease origin <branch>
 
 `--force-with-lease` 会在远端被别人改动过时拒绝推送，比 `--force` 安全。脚本不会自动强推。
 
+
 ## 四、发版签名（GitHub Actions）
 
 `.github/workflows/android-release.yml` 用 4 个 Secret 现场组装签名，**仓库里不存任何密钥文件**
@@ -158,3 +159,21 @@ Secret 缺失、base64 解码失败、口令不对、别名不存在，都会在
 Android 要求升级包的签名与已安装版本一致。**换 keystore 后，老用户必须先卸载再装新包**。
 本仓库在换成当前这套密钥之前没有发布过任何 Release，所以不存在这个问题；
 以后如需再换，务必先在 Release 说明里写清楚。
+
+## 五、已落地的二开功能清单
+
+| 功能 | 入口 | 主要文件 |
+| --- | --- | --- |
+| 品牌 Guru / 包名 `com.bysqh.guru` | 全局 | `app/build.gradle.kts`、`app/src/main/res/values*/strings.xml` |
+| 容器内部路径 `.guru` | 全局 | `assets/guru/**`、`ContainerInstaller`、`LinuxContainerEngine` |
+| 动态背景（GIF / MP4） | 设置 → 背景图 | `AnimatedBackground.kt`、`BackgroundSettingsRepository` |
+| 背景亮度 | 设置 → 背景图 | 同上 |
+| 桌宠（表情随 Agent 状态） | 设置 → 桌宠 / 聊天页悬浮层 | `feature/pet/**` |
+| 记忆页 | 设置 → 记忆 | `MemorySection`、`MemoryViewModel` |
+| 角色 | 设置 → 角色 / 聊天侧边栏 | `feature/agent/domain/role/**`、`RolesSection` |
+| 系统规则片段开关 | 设置 → 系统规则 | `PromptFragmentToggleRepository`、`PromptFragmentCatalog` |
+| 外观与主题整页（含 Miuix / 强调色 / 色彩风格 / 缩放 / 纯黑） | 设置 → 外观主题 | `AppearanceSettingsSection.kt`、`AppearanceOptions.kt`、`AIEditorTheme.kt` |
+
+> 容器内部路径改名是唯一会波及 `provision.sh` 等 17 个脚本的改动；
+> 升级到本版本后，旧 `~/.aicode` 下的配置（技能、记忆、MCP、凭据）不会自动迁移，
+> 需要用户重新配置或手动把 `filesDir/aicode` 改名为 `filesDir/guru`。

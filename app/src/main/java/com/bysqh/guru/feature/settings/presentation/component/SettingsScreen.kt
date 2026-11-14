@@ -174,6 +174,8 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     AppPermissions(R.string.settings_app_permissions),
     BackgroundRun(R.string.settings_category_background),
     Pet(R.string.settings_pet_title),
+    // [二开] 外观与主题整页
+    Appearance(R.string.appearance_title),
     RemoteServers(R.string.settings_remote_servers),
     Storage(R.string.settings_storage),
     TokenStats(R.string.settings_token_stats_title),
@@ -1220,6 +1222,8 @@ fun SettingsScreen(
                     approvalNotificationEnabled = approvalNotificationEnabled,
                     onToggleApprovalNotification = { viewModel.setApprovalNotificationEnabled(it) }
                 )
+                // [二开] 外观与主题整页
+                SettingsSection.Appearance -> AppearanceSettingsSection(viewModel = viewModel)
                 // [二开] 桌宠设置分区
                 SettingsSection.Pet -> PetSettingsSection(
                     viewModel = androidx.hilt.navigation.compose.hiltViewModel()
@@ -1719,7 +1723,8 @@ internal fun SettingsMenu(
             SettingsRow(
                 icon = FeatherIcons.Moon,
                 title = stringResource(R.string.settings_theme_title),
-                onClick = onOpenThemeSheet,
+                // [二开] 升级为整页「外观与主题」
+                onClick = { onOpen(SettingsSection.Appearance) },
                 trailing = {
                     val colorLabel = if (dynamicColorEnabled && isDynamicColorSupported) {
                         stringResource(R.string.theme_dynamic_color)

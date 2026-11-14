@@ -239,6 +239,20 @@ class MainActivity : ComponentActivity() {
             val themeMode by themeSettings.themeModeFlow.collectAsStateWithLifecycle(initialValue = AppThemeMode.AUTO)
             val themePresetId by themeSettings.themePresetIdFlow.collectAsStateWithLifecycle(initialValue = null)
             val dynamicColor by themeSettings.dynamicColorFlow.collectAsStateWithLifecycle(initialValue = false)
+            // [二开] 外观选项（参考 Eta）
+            val accentColor by themeSettings.accentColorFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.AccentColor.SYSTEM
+            )
+            val paletteStyle by themeSettings.paletteStyleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.PaletteStyle.TONAL_SPOT
+            )
+            val uiStyle by themeSettings.uiStyleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.UiStyle.STANDARD
+            )
+            val pureBlack by themeSettings.pureBlackFlow.collectAsStateWithLifecycle(initialValue = false)
+            val interfaceScale by themeSettings.interfaceScaleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE
+            )
             val systemDarkTheme = isSystemInDarkTheme()
             val darkTheme = when (themeMode) {
                 AppThemeMode.AUTO -> systemDarkTheme
@@ -259,7 +273,14 @@ class MainActivity : ComponentActivity() {
             AIEditorTheme(
                 darkTheme = darkTheme,
                 preset = AppThemePreset.findById(themePresetId),
-                dynamicColor = dynamicColor
+                dynamicColor = dynamicColor,
+                appearance = com.bysqh.guru.core.theme.AppearanceOptions(
+                    accent = accentColor,
+                    paletteStyle = paletteStyle,
+                    uiStyle = uiStyle,
+                    pureBlack = pureBlack,
+                    interfaceScale = interfaceScale
+                )
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

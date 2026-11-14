@@ -8,6 +8,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
@@ -71,6 +75,18 @@ data class AppSemanticColors(
     val mutedSurface: Color,
     val capsuleSurface: Color,
     val buttonMutedBg: Color
+)
+
+/**
+ * [二开] Miuix 界面样式：更大的圆角，接近 Miui 的卡片观感。
+ * 只改形状不改色板，避免与「配色方案 / 色彩风格」互相打架。
+ */
+private val MiuixShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(18.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp)
 )
 
 val LightSemanticColors = AppSemanticColors(
@@ -281,6 +297,8 @@ fun AIEditorTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     preset: AppThemePreset = AppThemePreset.DEFAULT,
     dynamicColor: Boolean = false,
+    // [二开] 外观选项：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放
+    appearance: AppearanceOptions = AppearanceOptions(),
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -296,11 +314,41 @@ fun AIEditorTheme(
         }
     }
 
-    CompositionLocalProvider(LocalAppSemanticColors provides themeColors.semanticColors) {
-        MaterialTheme(
-            colorScheme = themeColors.colorScheme,
-            typography = AppTypography,
-            content = content
-        )
+    // [二开] 外观变换：强调色与色彩风格作用在基础配色之上，纯黑只影响深色模式。
+    val scheme = remember(themeColors, darkTheme, appearance) {
+        buildAppearanceColorScheme(themeColors.colorScheme, darkTheme, appearance)
+    }
+    // Miuix 风格：更大的圆角，层级更「卡片化」；标准模式沿用 Material3 默认形状。
+    val shapes = remember(appearance.uiStyle) {
+        if (appearance.uiStyle == UiStyle.MIUIX) MiuixShapes else Shapes()
+    }
+    val density = LocalDensity.current
+    val scaledDensity = remember(density, appearance.interfaceScale) {
+        Density(density.density, density.fontScale * appearance.interfaceScale)
+    }
+
+    // [二开] 纯黑：页面底色与卡片面用的是语义色（不是 colorScheme.background），
+    // 所以这里要同步压黑，否则「纯黑」只生效一半。
+    val semanticColors = remember(themeColors, darkTheme, appearance) {
+        if (appearance.pureBlack && darkTheme) {
+            themeColors.semanticColors.copy(
+                pageBackground = Color.Black,
+                cardSurface = Color(0xFF141414),
+                mutedSurface = Color(0xFF0A0A0A),
+                subtleBorder = Color(0xFF242424)
+            )
+        } else {
+            themeColors.semanticColors
+        }
+    }
+    CompositionLocalProvider(LocalAppSemanticColors provides semanticColors) {
+        CompositionLocalProvider(LocalDensity provides scaledDensity) {
+            MaterialTheme(
+                colorScheme = scheme,
+                typography = AppTypography,
+                shapes = shapes,
+                content = content
+            )
+        }
     }
 }
