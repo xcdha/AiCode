@@ -264,8 +264,12 @@
     <string name="settings_background_image">Background image</string>
     <string name="settings_background_image_none">None</string>
     <string name="settings_background_image_alpha">Opacity</string>
-    <string name="settings_background_image_pick">Pick image</string>
+    <string name="settings_background_image_pick">Pick image / video</string>
     <string name="settings_background_image_remove">Remove background</string>
+    <!-- [custom] animated background (GIF / MP4) -->
+    <string name="settings_background_image_hint">Supports images, GIF and MP4 video. Animated backgrounds loop silently.</string>
+    <string name="settings_background_kind_gif">GIF</string>
+    <string name="settings_background_kind_mp4">MP4</string>
     <string name="provider_cache_anthropic_title">Anthropic cache breakpoints</string>
     <string name="provider_cache_anthropic_subtitle">Mark system/tools/messages prefixes with explicit cache breakpoints to cut repeated input cost</string>
     <string name="provider_cache_openai_chat_title">OpenAI-compatible cache key</string>

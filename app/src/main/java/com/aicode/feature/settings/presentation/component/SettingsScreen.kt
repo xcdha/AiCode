@@ -247,6 +247,8 @@ fun SettingsScreen(
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
     val backgroundImagePath by viewModel.backgroundImagePath.collectAsStateWithLifecycle()
     val backgroundAlpha by viewModel.backgroundAlpha.collectAsStateWithLifecycle()
+    // [二开] 背景类型（静态图 / GIF / MP4）
+    val backgroundKind by viewModel.backgroundKind.collectAsStateWithLifecycle()
     val languageTag by viewModel.languageTag.collectAsStateWithLifecycle()
     val visionProviderId by viewModel.visionProviderId.collectAsStateWithLifecycle()
     val visionModel by viewModel.visionModel.collectAsStateWithLifecycle()
@@ -483,6 +485,7 @@ fun SettingsScreen(
             currentLanguageDisplayName = currentLanguageDisplayName,
             backgroundImagePath = backgroundImagePath,
             backgroundAlpha = backgroundAlpha,
+            backgroundKind = backgroundKind,
             onOpenThemeSheet = { showThemeSheet = true },
             onOpenTerminalSettingsSheet = { showTerminalSettingsSheet = true },
             onOpenBackgroundSheet = { showBackgroundSheet = true },
@@ -1364,8 +1367,9 @@ fun SettingsScreen(
     if (showBackgroundSheet) {
         BackgroundImageSheet(
             imagePath = backgroundImagePath,
+            kind = backgroundKind,
             alpha = backgroundAlpha,
-            onPickImage = { viewModel.setBackgroundImage(it) },
+            onPickImage = { uri, mime -> viewModel.setBackgroundImage(uri, mime) },
             onAlphaChange = { viewModel.setBackgroundAlpha(it) },
             onRemove = { viewModel.clearBackgroundImage() },
             onDismiss = { showBackgroundSheet = false }
@@ -1633,6 +1637,7 @@ internal fun SettingsMenu(
     currentLanguageDisplayName: String,
     backgroundImagePath: String?,
     backgroundAlpha: Float,
+    backgroundKind: BackgroundSettingsRepository.Kind,
     onOpenThemeSheet: () -> Unit,
     onOpenTerminalSettingsSheet: () -> Unit,
     onOpenBackgroundSheet: () -> Unit,
@@ -1695,8 +1700,18 @@ internal fun SettingsMenu(
                 onClick = onOpenBackgroundSheet,
                 trailing = {
                     Text(
-                        text = if (backgroundImagePath != null) "${BackgroundSettingsRepository.alphaToSlider(backgroundAlpha).toInt()}%"
-                        else stringResource(R.string.settings_background_image_none),
+                        text = if (backgroundImagePath != null) {
+                            // [二开] 非静态图时带上类型前缀，一眼能看出当前是动图/视频还是图片。
+                            val kindLabel = when (backgroundKind) {
+                                BackgroundSettingsRepository.Kind.GIF -> stringResource(R.string.settings_background_kind_gif)
+                                BackgroundSettingsRepository.Kind.MP4 -> stringResource(R.string.settings_background_kind_mp4)
+                                BackgroundSettingsRepository.Kind.IMAGE -> null
+                            }
+                            val percent = "${BackgroundSettingsRepository.alphaToSlider(backgroundAlpha).toInt()}%"
+                            if (kindLabel != null) "$kindLabel · $percent" else percent
+                        } else {
+                            stringResource(R.string.settings_background_image_none)
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.semanticColors.subtleText
                     )

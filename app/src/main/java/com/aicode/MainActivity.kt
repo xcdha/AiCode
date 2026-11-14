@@ -105,8 +105,10 @@ import com.aicode.feature.settings.presentation.SettingsViewModel
 import com.aicode.feature.settings.presentation.FetchState
 import com.aicode.feature.settings.presentation.UpdateCheckUiState
 import com.aicode.feature.settings.presentation.component.githubReleaseUrl
+import com.aicode.feature.settings.presentation.component.GifBackgroundView
 import com.aicode.feature.settings.presentation.component.SettingsScreen
 import com.aicode.feature.settings.presentation.component.UpdateCheckDialog
+import com.aicode.feature.settings.presentation.component.VideoBackgroundView
 import com.aicode.feature.settings.presentation.component.decodeBackgroundBitmap
 import com.aicode.feature.settings.presentation.component.openUrl
 import com.aicode.feature.settings.presentation.component.settingsPageBackground
@@ -265,6 +267,7 @@ class MainActivity : ComponentActivity() {
                     // 不拦截触摸事件；弹窗（Dialog 独立窗口）不受层级影响。
                     val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
                     val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
+                    val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
                     Box(modifier = Modifier.fillMaxSize()) {
                         AgreementGate(repository = agreementRepository) { agreementAccepted ->
                             AppNavigation(
@@ -278,26 +281,38 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        if (bgPath != null && bgAlpha > 0f) {
-                            val screen = LocalView.current
-                            val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPath) {
-                                value = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                                    decodeBackgroundBitmap(
-                                        bgPath!!,
-                                        screen.width.coerceAtLeast(1),
-                                        screen.height.coerceAtLeast(1)
-                                    )
+                        val bgPathSnapshot = bgPath
+                        if (bgPathSnapshot != null && bgAlpha > 0f) {
+                            // [二开] 按背景类型分发：GIF / MP4 走动态渲染，IMAGE 保持上游原有的位图水印逻辑。
+                            when (bgKind) {
+                                BackgroundSettingsRepository.Kind.GIF ->
+                                    GifBackgroundView(path = bgPathSnapshot, alpha = bgAlpha)
+
+                                BackgroundSettingsRepository.Kind.MP4 ->
+                                    VideoBackgroundView(path = bgPathSnapshot, alpha = bgAlpha)
+
+                                BackgroundSettingsRepository.Kind.IMAGE -> {
+                                    val screen = LocalView.current
+                                    val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
+                                        value = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                                            decodeBackgroundBitmap(
+                                                bgPathSnapshot,
+                                                screen.width.coerceAtLeast(1),
+                                                screen.height.coerceAtLeast(1)
+                                            )
+                                        }
+                                    }
+                                    bitmap?.let {
+                                        Image(
+                                            bitmap = it,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .alpha(bgAlpha)
+                                        )
+                                    }
                                 }
-                            }
-                            bitmap?.let {
-                                Image(
-                                    bitmap = it,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .alpha(bgAlpha)
-                                )
                             }
                         }
                         // beta 包全局水印，置于最上层，不拦截触摸。

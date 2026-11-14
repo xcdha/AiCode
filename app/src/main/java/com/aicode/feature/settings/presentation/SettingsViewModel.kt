@@ -620,6 +620,10 @@ class SettingsViewModel @Inject constructor(
     private val _backgroundAlpha = MutableStateFlow(BackgroundSettingsRepository.DEFAULT_ALPHA)
     val backgroundAlpha: StateFlow<Float> = _backgroundAlpha.asStateFlow()
 
+    /** [二开] 背景类型（静态图 / GIF / MP4），供设置弹窗展示与全局背景分发渲染。 */
+    private val _backgroundKind = MutableStateFlow(BackgroundSettingsRepository.Kind.IMAGE)
+    val backgroundKind: StateFlow<BackgroundSettingsRepository.Kind> = _backgroundKind.asStateFlow()
+
     /** 透明度落盘的节流 job，见 [setBackgroundAlpha]。 */
     private var backgroundAlphaWriteJob: Job? = null
 
@@ -1056,6 +1060,13 @@ class SettingsViewModel @Inject constructor(
             launch {
                 backgroundSettingsRepository.alphaFlow.collectLatest {
                     _backgroundAlpha.value = it
+                }
+            }
+
+            // [二开] 背景类型随背景文件一起变化，用于全局背景层选择渲染方式。
+            launch {
+                backgroundSettingsRepository.kindFlow.collectLatest {
+                    _backgroundKind.value = it
                 }
             }
 
@@ -2204,10 +2215,14 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** 选择新背景图（拷贝到私有目录后替换）。 */
-    fun setBackgroundImage(uri: Uri) {
+    /**
+     * 选择新背景（静态图片 / GIF / MP4 均由选择器统一返回）。
+     *
+     * @param mime 选择器给出的 MIME，用于判定背景类型；为空时由 Repository 兜底查 ContentResolver。
+     */
+    fun setBackgroundImage(uri: Uri, mime: String? = null) {
         viewModelScope.launch {
-            backgroundSettingsRepository.setBackgroundImage(uri)
+            backgroundSettingsRepository.setBackgroundImage(uri, mime)
         }
     }
 
