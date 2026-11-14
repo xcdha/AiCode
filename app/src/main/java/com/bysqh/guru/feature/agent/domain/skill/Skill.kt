@@ -6,7 +6,7 @@ package com.bysqh.guru.feature.agent.domain.skill
  * @param name 技能名称（供大模型调用的唯一标识）
  * @param description 技能描述（何时使用该技能）
  * @param requiredTools 该技能所需的专属工具列表（可选）
- * @param dirPath 技能所在目录的容器路径（本地/远程统一视角，如 `~/workspace/.aicode/skills/foo`）
+ * @param dirPath 技能所在目录的容器路径（本地/远程统一视角，如 `~/workspace/.guru/skills/foo`）
  * @param instructions 技能指令正文（剥离 Frontmatter 后的内容）
  */
 data class Skill(

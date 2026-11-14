@@ -29,8 +29,8 @@ import kotlinx.serialization.json.putJsonArray
 
 /**
  * 技能启停配置持久化，支持全局 + 项目级两级：
- * - 全局：当前执行环境的 `~/.aicode/skills.json`（跨项目保留）；
- * - 项目级：`workspacePath/.aicode/skills.json`（随工作区走，可 git 追踪）。
+ * - 全局：当前执行环境的 `~/.guru/skills.json`（跨项目保留）；
+ * - 项目级：`workspacePath/.guru/skills.json`（随工作区走，可 git 追踪）。
  *
  * 格式：`{"disabled": ["skill-a", "skill-b"]}`，仅存「禁用名单」这一个事实；
  * 生效禁用集合 = 全局 + 项目并集。每次读取都从磁盘加载，外部手工编辑即时生效；
@@ -44,9 +44,9 @@ class SkillConfigRepository @Inject constructor(
     private val fileAccess: FileAccessProvider
 ) {
     /** 本地全局配置文件，仅用于宿主文件变更监听。 */
-    private fun globalFile(): File = File(containerInstaller.aicodeDir, CONFIG_FILE)
+    private fun globalFile(): File = File(containerInstaller.guruDir, CONFIG_FILE)
 
-    /** 当前工作区的项目级配置文件：`workspacePath/.aicode/skills.json`。 */
+    /** 当前工作区的项目级配置文件：`workspacePath/.guru/skills.json`。 */
     private fun projectFile(): File = File(projectAicodeRoot.current(), CONFIG_FILE)
 
     /** 当前生效的禁用技能名集合（全局 + 项目并集，归一化为小写）。 */
@@ -87,8 +87,8 @@ class SkillConfigRepository @Inject constructor(
     val changes: SharedFlow<Unit> = merge(
         fileChangeHub.watchAicode(SKILLS_DIR, recursive = true),
         fileChangeHub.watchAicode(),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR/$SKILLS_DIR", recursive = true),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR/$SKILLS_DIR", recursive = true),
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR")
     ).mapNotNull { batch ->
         if (!batch.changes.any(::isSkillChange)) return@mapNotNull null
         FileLogger.i(TAG, "检测到技能目录或配置变化，已通知刷新")
@@ -100,7 +100,7 @@ class SkillConfigRepository @Inject constructor(
         val path = change.hostPath
         if (path == globalFile().absolutePath) return true
         if (path == projectFile().absolutePath) return true
-        val globalSkills = File(containerInstaller.aicodeDir, SKILLS_DIR).absolutePath
+        val globalSkills = File(containerInstaller.guruDir, SKILLS_DIR).absolutePath
         if (path == globalSkills || path.startsWith("$globalSkills/")) return true
         val projectSkills = File(projectAicodeRoot.current(), SKILLS_DIR).absolutePath
         return path == projectSkills || path.startsWith("$projectSkills/")
@@ -109,8 +109,8 @@ class SkillConfigRepository @Inject constructor(
     companion object {
         private const val TAG = "SkillConfigRepository"
         private const val CONFIG_FILE = "skills.json"
-        private const val GLOBAL_CONFIG_PATH = "~/.aicode/$CONFIG_FILE"
-        private const val AICODE_DIR = ".aicode"
+        private const val GLOBAL_CONFIG_PATH = "~/.guru/$CONFIG_FILE"
+        private const val GURU_DIR = ".guru"
         private const val SKILLS_DIR = "skills"
         private val JSON = Json { ignoreUnknownKeys = true; isLenient = true }
         private val PRETTY_JSON = Json { prettyPrint = true }

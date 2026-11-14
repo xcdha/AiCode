@@ -35,8 +35,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 工具授权规则的持久化。全局规则存 app 私有目录 (`filesDir/aicode/permissions.json`)，
- * 项目级规则存工作区目录 (`.aicode/permissions.json`)，方便团队通过 git 共享。
+ * 工具授权规则的持久化。全局规则存 app 私有目录 (`filesDir/guru/permissions.json`)，
+ * 项目级规则存工作区目录 (`.guru/permissions.json`)，方便团队通过 git 共享。
  *
  * 文件格式为紧凑的 `Tool(pattern)` 风格，示例：
  * ```json
@@ -65,16 +65,16 @@ class PermissionRulesRepository @Inject constructor(
     private companion object {
         const val TAG = "PermissionRules"
         const val PERMISSIONS_FILE = "permissions.json"
-        /** 项目级配置目录名，容器内即 `~/workspace/.aicode`。 */
-        const val AICODE_DIR_NAME = ".aicode"
+        /** 项目级配置目录名，容器内即 `~/workspace/.guru`。 */
+        const val GURU_DIR_NAME = ".guru"
         val JSON = Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = true }
     }
 
-    /** 全局权限文件：`filesDir/aicode/permissions.json`，与 mcp.json 同级。 */
+    /** 全局权限文件：`filesDir/guru/permissions.json`，与 mcp.json 同级。 */
     private val globalFile: File
-        get() = File(File(context.filesDir, "aicode"), PERMISSIONS_FILE)
+        get() = File(File(context.filesDir, "guru"), PERMISSIONS_FILE)
 
-    /** 当前工作区的项目级权限文件：`workspacePath/.aicode/permissions.json`。 */
+    /** 当前工作区的项目级权限文件：`workspacePath/.guru/permissions.json`。 */
     private fun projectFileForPath(workspacePath: String): File =
         File(projectAicodeRoot.forPath(workspacePath), PERMISSIONS_FILE)
 
@@ -97,7 +97,7 @@ class PermissionRulesRepository @Inject constructor(
         watchScope.launch {
             merge(
                 fileChangeHub.watchAicode(),
-                fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR_NAME")
+                fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR_NAME")
             ).collect { batch -> refreshFromDisk(batch) }
         }
     }

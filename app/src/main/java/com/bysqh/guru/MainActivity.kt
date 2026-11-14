@@ -495,6 +495,8 @@ fun AppNavigation(
     // 那样大屏远程模式下文件树只能靠手动刷新按钮。改取「侧栏可见」：窄窗看抽屉开没开，
     // 大屏看是否停在聊天页（侧栏只在聊天页展开）。
     val sidebarVisible = if (permanentDrawer) currentRoute == "chat" else drawerState.isOpen
+    // [二开] 设置页快捷入口：从侧边栏直达角色页 / 记忆页；null 回设置菜单
+    var settingsEntryKey by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(sidebarVisible) {
         if (sidebarVisible) agentViewModel.refreshBrowse()
     }
@@ -653,13 +655,21 @@ fun AppNavigation(
             onExport = { session ->
                 pendingExportSessionId = session.id
                 val safeTitle = session.title.replace(Regex("[^\\w\\u4e00-\\u9fa5\\-]"), "_")
-                sessionExportLauncher.launch("aicode-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
+                sessionExportLauncher.launch("guru-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
             },
             onNavigateToBrowser = {
                 openWorkbench(WorkbenchPaneKind.BROWSER)
                 if (!permanentDrawer) scope.launch { drawerState.close() }
             },
             onNavigateToSettings = {
+                // 普通入口：清掉快捷页标记，进设置菜单首页
+                settingsEntryKey = null
+                navController.navigate("settings")
+                if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
+            },
+            // [二开] 侧边栏角色入口：直达设置里的角色页
+            onNavigateToRoles = {
+                settingsEntryKey = "roles"
                 navController.navigate("settings")
                 if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
             },
@@ -782,6 +792,7 @@ fun AppNavigation(
                 // 这是侧边栏点设置「卡一下」的主因。
                 SettingsScreen(
                     viewModel = settingsViewModel,
+                    initialSectionKey = settingsEntryKey,
                     onNavigateBack = {
                         navController.popBackStack()
                         // 大屏返回聊天页后侧栏本就常驻，不再弹 modal 抽屉。

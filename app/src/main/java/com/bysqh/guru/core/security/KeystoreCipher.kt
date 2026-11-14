@@ -23,16 +23,16 @@ import javax.crypto.spec.GCMParameterSpec
 object KeystoreCipher {
     private const val TAG = "KeystoreCipher"
     private const val PROVIDER = "AndroidKeyStore"
-    private const val ALIAS = "aicode_secret_v1"
+    private const val ALIAS = "guru_secret_v1"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private const val GCM_TAG_BITS = 128
     private const val IV_LEN = 12
 
     /** 字符串密文前缀；不含此前缀的值按旧明文处理。 */
-    private const val STRING_PREFIX = "AICODEENC1:"
+    private const val STRING_PREFIX = "GURUENC1:"
 
     /** 字节密文文件头；用于区分加密文件与旧明文文件。 */
-    private val BYTE_MAGIC = "AICODEENC1\u0000".toByteArray(Charsets.US_ASCII)
+    private val BYTE_MAGIC = "GURUENC1\u0000".toByteArray(Charsets.US_ASCII)
 
     private val lock = Any()
 

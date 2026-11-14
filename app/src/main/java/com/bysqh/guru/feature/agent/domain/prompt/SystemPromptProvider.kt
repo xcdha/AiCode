@@ -4,6 +4,7 @@ import android.content.Context
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
 import com.bysqh.guru.feature.agent.domain.memory.MemoryRepository
+import com.bysqh.guru.feature.agent.domain.role.RoleRepository
 import com.bysqh.guru.feature.agent.domain.memory.MemoryScope
 import com.bysqh.guru.feature.agent.domain.model.AgentContext
 import com.bysqh.guru.feature.agent.domain.model.AgentMode
@@ -29,7 +30,7 @@ import javax.inject.Singleton
  * - 按需叶子：`prompts/agent/` 下的无数字片段（模式提醒、子代理基线、压缩/标题提示词），按精确同名覆盖。
  *
  * `prompts.custom/` 存在 [PromptFragmentResolver.DISABLE_BUILTIN_FILE] 时，主代理提示词只由自定义数字片段组成，
- * 不再注入任何内置来源；此时用 `{{AICODE_*}}` 变量按需取回动态内容。
+ * 不再注入任何内置来源；此时用 `{{GURU_*}}` 变量按需取回动态内容。
  */
 @Singleton
 class SystemPromptProvider @Inject constructor(
@@ -39,7 +40,9 @@ class SystemPromptProvider @Inject constructor(
     private val promptFragmentCatalog: PromptFragmentCatalog,
     private val containerInstaller: ContainerInstaller,
     private val agentDefinitionRepository: AgentDefinitionRepository,
-    private val executionModeHolder: ExecutionModeHolder
+    private val executionModeHolder: ExecutionModeHolder,
+    // [二开] 角色身份：当前角色优先于内置 00-identity 片段（移植自 Muse）
+    private val roleRepository: RoleRepository
 ) {
     // 抽象独立的 Source
     interface PromptSource {
@@ -48,8 +51,15 @@ class SystemPromptProvider @Inject constructor(
 
     private inner class StaticRuleSource : PromptSource {
         // 每次都重新读盘：未编辑时字符串一致，KV Cache 照常命中；编辑后立即生效，无需重启。
-        // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{AICODE_*}} 变量承载。
-        override fun build(ctx: AgentContext): String = promptFragmentCatalog.renderStatic(ctx.projectRoot)
+        // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{GURU_*}} 变量承载。
+        override fun build(ctx: AgentContext): String {
+            // [二开] 角色身份提示词放在规则最前：选中哪个角色，就用它的身份对话。
+            // 角色身份为空时保持上游行为（只用内置片段）。
+            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot)
+            val identity = runCatching { roleRepository.current().identity }.getOrDefault("").trim()
+            if (identity.isEmpty()) return rules
+            return "$identity\n\n$rules"
+        }
     }
 
     private inner class ActiveSkillsSource : PromptSource {
@@ -140,11 +150,11 @@ class SystemPromptProvider @Inject constructor(
         private var lastSignature: String = ""
 
         /**
-         * 同时读取全局规则（`~/.aicode`）与工作区规则（项目根目录）：各自 `AGENTS.md` 优先、`CLAUDE.md` 兜底。
+         * 同时读取全局规则（`~/.guru`）与工作区规则（项目根目录）：各自 `AGENTS.md` 优先、`CLAUDE.md` 兜底。
          * 任一来源为空则该项为 null；两处文件签名（路径 + mtime）未变时复用缓存。
          */
         fun build(ctx: AgentContext): ProjectRules? {
-            val global = resolveRuleFile(containerInstaller.aicodeDir)
+            val global = resolveRuleFile(containerInstaller.guruDir)
             val project = ctx.projectRoot.takeIf { it.isNotBlank() }?.let { resolveRuleFile(File(it)) }
             if (global == null && project == null) return null
 
@@ -196,10 +206,10 @@ class SystemPromptProvider @Inject constructor(
             }
     }
 
-    /** 记忆清单拆分为全局/项目两组纯列表，供 `{{AICODE_MEMORY_GLOBAL}}` / `{{AICODE_MEMORY_PROJECT}}` 变量使用。 */
+    /** 记忆清单拆分为全局/项目两组纯列表，供 `{{GURU_MEMORY_GLOBAL}}` / `{{GURU_MEMORY_PROJECT}}` 变量使用。 */
     private data class MemoryLists(val global: String?, val project: String?)
 
-    /** 项目规则正文拆分为全局（`~/.aicode`）与工作区两组，供 `{{AICODE_PROJECT_RULES_GLOBAL}}` / `{{AICODE_PROJECT_RULES_PROJECT}}` 变量使用。 */
+    /** 项目规则正文拆分为全局（`~/.guru`）与工作区两组，供 `{{GURU_PROJECT_RULES_GLOBAL}}` / `{{GURU_PROJECT_RULES_PROJECT}}` 变量使用。 */
     private data class ProjectRules(val global: String?, val project: String?)
 
     private inner class MemoryListSource {
@@ -254,7 +264,7 @@ class SystemPromptProvider @Inject constructor(
     private val environmentSource = EnvironmentSource()
 
     private val customDir: File
-        get() = File(containerInstaller.aicodeDir, "prompts.custom")
+        get() = File(containerInstaller.guruDir, "prompts.custom")
 
     /** 自定义目录顶层数字片段（数字身份 → 文件），进程内只扫一次（重启 App 才刷新）。 */
     private val customFragmentsByNumber: Map<Int, File> by lazy {
@@ -277,7 +287,7 @@ class SystemPromptProvider @Inject constructor(
         val workspaceContent = workspaceSource.build(agentContext)
         val environmentContent = environmentSource.build(agentContext)
 
-        // 2. 变量就地展开：`{{AICODE_*}}` 替换为纯数据；未写变量的片段原样保留。
+        // 2. 变量就地展开：`{{GURU_*}}` 替换为纯数据；未写变量的片段原样保留。
         val staticContent = renderVariables(
             rawStatic,
             skillsContent,
@@ -298,7 +308,7 @@ class SystemPromptProvider @Inject constructor(
 
     /**
      * [PromptFragmentResolver.DISABLE_BUILTIN_FILE] 生效时：只输出 `prompts.custom/` 顶层的数字片段，
-     * 不注入任何内置来源；动态内容仅通过 `{{AICODE_*}}` 变量按需取回。
+     * 不注入任何内置来源；动态内容仅通过 `{{GURU_*}}` 变量按需取回。
      */
     private fun buildCustomOnly(ctx: AgentContext): String {
         val content = promptFragmentCatalog.renderCustomOnly(ctx.projectRoot)
@@ -328,7 +338,7 @@ class SystemPromptProvider @Inject constructor(
 
     /**
      * 按子代理定义组装提示词：只注入 [AgentDefinition.inject] 列出的片段，再接 agent 自己的提示词。
-     * 不注入可用子代理清单（子代理不能嵌套派发）。定义正文里的 `{{AICODE_*}}` 变量同样会展开。
+     * 不注入可用子代理清单（子代理不能嵌套派发）。定义正文里的 `{{GURU_*}}` 变量同样会展开。
      */
     private fun buildForSubAgent(
         definition: AgentDefinition,
@@ -352,7 +362,7 @@ class SystemPromptProvider @Inject constructor(
                 memories.global,
                 memories.project,
                 // 可用子代理清单不注入子代理（无嵌套派发），此处恒为空，防止定义正文
-                // 里写 {{AICODE_SUBAGENTS}} 把清单漏给不该看到它的子代理
+                // 里写 {{GURU_SUBAGENTS}} 把清单漏给不该看到它的子代理
                 null,
                 projectRules?.global,
                 projectRules?.project,
@@ -400,7 +410,7 @@ class SystemPromptProvider @Inject constructor(
         )
     }
 
-    /** 把片段里的 `{{AICODE_*}}` 占位符替换为真实内容；未出现的占位符保持原样，不影响 `{{INSTRUCTION}}` 等其它占位符。 */
+    /** 把片段里的 `{{GURU_*}}` 占位符替换为真实内容；未出现的占位符保持原样，不影响 `{{INSTRUCTION}}` 等其它占位符。 */
     private fun renderVariables(
         text: String,
         skills: String?,
@@ -457,7 +467,7 @@ class SystemPromptProvider @Inject constructor(
         PromptFragmentResolver.parseNumber(name)
             ?.let { number -> readFileOrNull(customFragmentsByNumber[number])?.let { return it } }
         readFileOrNull(File(customDir, name))?.let { return it }
-        readFileOrNull(File(File(containerInstaller.aicodeDir, "prompts"), name))?.let { return it }
+        readFileOrNull(File(File(containerInstaller.guruDir, "prompts"), name))?.let { return it }
         return context.assets.open("prompts/$name").bufferedReader().use { it.readText() }
     }
 
@@ -484,20 +494,20 @@ class SystemPromptProvider @Inject constructor(
 
         /** 内置静态基线：数字身份 → 规范文件名，决定默认拼接顺序。 */
         // 片段里可用的运行期变量，渲染时替换为真实内容
-        const val SKILLS_VAR = "{{AICODE_SKILLS}}"
-        const val MEMORY_GLOBAL_VAR = "{{AICODE_MEMORY_GLOBAL}}"
-        const val MEMORY_PROJECT_VAR = "{{AICODE_MEMORY_PROJECT}}"
-        const val SUBAGENTS_VAR = "{{AICODE_SUBAGENTS}}"
-        const val PROJECT_RULES_VAR = "{{AICODE_PROJECT_RULES}}"
-        const val PROJECT_RULES_GLOBAL_VAR = "{{AICODE_PROJECT_RULES_GLOBAL}}"
-        const val PROJECT_RULES_PROJECT_VAR = "{{AICODE_PROJECT_RULES_PROJECT}}"
-        const val WORKSPACE_VAR = "{{AICODE_WORKSPACE}}"
-        const val ENVIRONMENT_VAR = "{{AICODE_ENVIRONMENT}}"
-        const val DATE_VAR = "{{AICODE_DATE}}"
-        const val GOAL_VAR = "{{AICODE_GOAL}}"
+        const val SKILLS_VAR = "{{GURU_SKILLS}}"
+        const val MEMORY_GLOBAL_VAR = "{{GURU_MEMORY_GLOBAL}}"
+        const val MEMORY_PROJECT_VAR = "{{GURU_MEMORY_PROJECT}}"
+        const val SUBAGENTS_VAR = "{{GURU_SUBAGENTS}}"
+        const val PROJECT_RULES_VAR = "{{GURU_PROJECT_RULES}}"
+        const val PROJECT_RULES_GLOBAL_VAR = "{{GURU_PROJECT_RULES_GLOBAL}}"
+        const val PROJECT_RULES_PROJECT_VAR = "{{GURU_PROJECT_RULES_PROJECT}}"
+        const val WORKSPACE_VAR = "{{GURU_WORKSPACE}}"
+        const val ENVIRONMENT_VAR = "{{GURU_ENVIRONMENT}}"
+        const val DATE_VAR = "{{GURU_DATE}}"
+        const val GOAL_VAR = "{{GURU_GOAL}}"
         /** goal 自主循环的注入块模板（prompts/agent/goal.md）；占位符换成目标文本。 */
         const val GOAL_FILE = "agent/goal.md"
         const val GOAL_TEXT_PLACEHOLDER = "{{GOAL_TEXT}}"
-        const val SUBAGENT_NAME_VAR = "{{AICODE_SUBAGENT_NAME}}"
+        const val SUBAGENT_NAME_VAR = "{{GURU_SUBAGENT_NAME}}"
     }
 }

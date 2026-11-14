@@ -23,10 +23,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 自定义 git credential helper（容器内 /root/.aicode/git-credential-aicode）与 app 之间的文件 IPC 桥。
+ * 自定义 git credential helper（容器内 /root/.guru/git-credential-guru）与 app 之间的文件 IPC 桥。
  *
- * 容器内 git 缺凭据时 helper 写 `cred-req-<id>` 到 /root/.aicode（经 PRoot -b 绑定即宿主 filesDir/aicode 同一
- * inode）。本桥订阅 [FileChangeHub] 的 aicode 目录事件捕获请求 → 暴露 [request] StateFlow 供全局 Compose 弹窗 →
+ * 容器内 git 缺凭据时 helper 写 `cred-req-<id>` 到 /root/.guru（经 PRoot -b 绑定即宿主 filesDir/guru 同一
+ * inode）。本桥订阅 [FileChangeHub] 的 guru 目录事件捕获请求 → 暴露 [request] StateFlow 供全局 Compose 弹窗 →
  * 用户回填后 [respond] 写 `cred-resp-<id>` 明文 KV，helper 轮询取走喂回 git，git 自动续跑。三端（UI / AI Bash /
  * 交互终端）git 缺凭据都走这条统一链，无需逐命令路径适配。
  *
@@ -77,17 +77,17 @@ class CredentialRequestBridge @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var started = false
-    private var aicodeDir: File? = null
+    private var guruDir: File? = null
 
     /**
-     * 启动监听：订阅中心服务的 aicode 目录事件捕获请求，并起兜底轮询协程。幂等可重复调。
+     * 启动监听：订阅中心服务的 guru 目录事件捕获请求，并起兜底轮询协程。幂等可重复调。
      */
     fun start() {
-        val dir = File(context.filesDir, "aicode").apply { mkdirs() }
-        aicodeDir = dir
+        val dir = File(context.filesDir, "guru").apply { mkdirs() }
+        guruDir = dir
         if (!started) {
             started = true
-            // 请求文件落在 ~/.aicode 根下，由中心服务统一监听；本桥只做业务侧过滤、去重与弹窗。
+            // 请求文件落在 ~/.guru 根下，由中心服务统一监听；本桥只做业务侧过滤、去重与弹窗。
             scope.launch {
                 fileChangeHub.watchAicode().collect { batch ->
                     for (change in batch.changes) {
@@ -97,7 +97,7 @@ class CredentialRequestBridge @Inject constructor(
                     }
                 }
             }
-            FileLogger.i(TAG, "已订阅 aicode 目录事件，监听 ${dir.absolutePath}")
+            FileLogger.i(TAG, "已订阅 guru 目录事件，监听 ${dir.absolutePath}")
         }
         // 兜底轮询：个别机型 -b 目录 inotify 失效时仍能取到请求；并清理上次会话残留。
         scope.launch { cleanupStale(dir); fallbackPollLoop(dir) }
@@ -147,7 +147,7 @@ class CredentialRequestBridge @Inject constructor(
      * [host] 取自 [CredentialRequest]（Git 进程在收到 resp 前不会删 req，但 host 已在请求里，直接传更稳）。
      */
     fun respond(requestId: String, host: String, username: String, token: String) {
-        val dir = aicodeDir ?: File(context.filesDir, "aicode")
+        val dir = guruDir ?: File(context.filesDir, "guru")
         scope.launch {
             writeRespAtomically(dir, requestId, "username=$username\npassword=$token\n")
             runCatching {
@@ -164,7 +164,7 @@ class CredentialRequestBridge @Inject constructor(
 
     /** 用户取消弹窗：写 cancel 响应（helper 退出非零让 git 报认证失败）+ dec 在途 + 清状态。 */
     fun cancel(requestId: String) {
-        val dir = aicodeDir ?: File(context.filesDir, "aicode")
+        val dir = guruDir ?: File(context.filesDir, "guru")
         scope.launch {
             writeRespAtomically(dir, requestId, "cancel=1\n")
             containerEngine.decPromptInFlight()

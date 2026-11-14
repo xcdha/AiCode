@@ -3065,7 +3065,7 @@ private fun ProviderHeadersSheet(
     }
 }
 
-/** 自定义面板 (DIY) 脚本参数编辑弹窗：Key-Value 列表，保存后注入为 AICODE_KEY_<KEY> 环境变量。 */
+/** 自定义面板 (DIY) 脚本参数编辑弹窗：Key-Value 列表，保存后注入为 GURU_KEY_<KEY> 环境变量。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProviderScriptParamsSheet(

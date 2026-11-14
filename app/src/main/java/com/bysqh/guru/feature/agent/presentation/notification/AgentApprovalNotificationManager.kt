@@ -136,7 +136,7 @@ class AgentApprovalNotificationManager @Inject constructor(
     private fun actionIntent(kind: ApprovalKind, choice: String, requestId: String, requestCode: Int): PendingIntent {
         val intent = Intent(context, AgentApprovalActionReceiver::class.java).apply {
             action = AgentApprovalActionReceiver.ACTION
-            data = Uri.Builder().scheme("aicode").authority("approval")
+            data = Uri.Builder().scheme("guru").authority("approval")
                 .appendPath(kind.name).appendPath(requestId).appendPath(choice).build()
             putExtra(AgentApprovalActionReceiver.EXTRA_REQUEST_ID, requestId)
             putExtra(AgentApprovalActionReceiver.EXTRA_KIND, kind.name)

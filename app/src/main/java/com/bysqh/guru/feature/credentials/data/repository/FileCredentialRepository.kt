@@ -17,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * git 凭据的文件实现（真源 = `filesDir/aicode/git-credentials`，容器内 `/root/.aicode/git-credentials`）。
+ * git 凭据的文件实现（真源 = `filesDir/guru/git-credentials`，容器内 `/root/.guru/git-credentials`）。
  *
  * 文件采用 git-credential-store 标准格式：每行 `https://user:token@host`，每主机一条（保存同主机覆盖旧值），
  * 由容器/远程服务器的 `credential.helper=store` 直接读取，UI 与 git 共用同一份。
@@ -30,11 +30,11 @@ class FileCredentialRepository @Inject constructor(
 
     private companion object {
         const val TAG = "FileCredentialRepo"
-        const val AICODE_DIR = "aicode"
+        const val GURU_DIR = "guru"
         const val CREDENTIALS_NAME = "git-credentials"
     }
 
-    private val credentialsFile: File get() = File(File(context.filesDir, AICODE_DIR), CREDENTIALS_NAME)
+    private val credentialsFile: File get() = File(File(context.filesDir, GURU_DIR), CREDENTIALS_NAME)
 
     private val mutex = Mutex()
 

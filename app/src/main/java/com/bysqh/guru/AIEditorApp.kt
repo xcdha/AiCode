@@ -148,6 +148,10 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var logSettings: LogSettingsRepository
 
+    /** [二开] 提示词片段开关：启动时把「被关闭的编号」刷进缓存，保证首轮对话就生效。 */
+    @Inject
+    lateinit var promptFragmentCatalog: com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentCatalog
+
     /** 后台保活开关持久化。 */
     @Inject
     lateinit var keepaliveSettings: KeepaliveSettingsRepository
@@ -250,6 +254,8 @@ class AIEditorApp : Application(), Configuration.Provider {
         logDeviceInfo()
         // 补记 Java 未捕获异常处理器覆盖不到的异常退出（native 崩溃 / ANR / 低内存被杀 / 被信号杀死）。
         appScope.launch { reportAbnormalExits() }
+        // [二开] 预载片段开关缓存（DataStore 读取是挂起的，不能等到渲染提示词时再读）。
+        appScope.launch { promptFragmentCatalog.refreshDisabledCache() }
         // 把提供商级代理注册表挂到 AppProxy（applyGlobal 已在 attachBaseContext 完成），
         // 此后按目标 host 分派 provider 专属代理；无 provider 配置时回退全局代理。
         AppProxy.registerProviderProxyRegistry(providerProxyRegistry)
@@ -265,16 +271,16 @@ class AIEditorApp : Application(), Configuration.Provider {
         appScope.launch {
             ContainerInstaller.extractDocs(this@AIEditorApp)
         }
-        // 启动即把内置提示词全量释放到 ~/.aicode/prompts/（覆盖式，随 App 升级更新）；
-        // 用户自定义覆盖放在 ~/.aicode/prompts.custom/，同名即覆盖，不被升级覆盖。
+        // 启动即把内置提示词全量释放到 ~/.guru/prompts/（覆盖式，随 App 升级更新）；
+        // 用户自定义覆盖放在 ~/.guru/prompts.custom/，同名即覆盖，不被升级覆盖。
         appScope.launch {
             ContainerInstaller.extractPrompts(this@AIEditorApp)
         }
-        // 启动即释放套餐余量示例脚本等内置脚本到 ~/.aicode/scripts/
+        // 启动即释放套餐余量示例脚本等内置脚本到 ~/.guru/scripts/
         appScope.launch {
             ContainerInstaller.extractScripts(this@AIEditorApp)
         }
-        // 启动即释放内置子代理定义（Explore）到 ~/.aicode/agents/；已存在不覆盖，用户改过或删掉都不会被升级拉回。
+        // 启动即释放内置子代理定义（Explore）到 ~/.guru/agents/；已存在不覆盖，用户改过或删掉都不会被升级拉回。
         appScope.launch {
             ContainerInstaller.extractAgents(this@AIEditorApp)
         }
@@ -343,7 +349,7 @@ class AIEditorApp : Application(), Configuration.Provider {
                 if (config == remoteSshConnection.config && remoteSshConnection.isConnected()) return@collect
                 runCatching {
                     remoteSshConnection.connect(config)
-                    // 连接成功后同步内置文档到远程 ~/.aicode/docs/，供 AI 查阅。
+                    // 连接成功后同步内置文档到远程 ~/.guru/docs/，供 AI 查阅。
                     syncDocsToRemote()
                     releaseBuiltinAssetsToRemote()
                 }.onFailure { FileLogger.e(TAG, "SSH 连接失败，将在首次命令时重试", it) }
@@ -433,8 +439,8 @@ class AIEditorApp : Application(), Configuration.Provider {
             .build()
 
     /**
-     * 读取 assets/docs 下所有内置文档（含 guide/ advanced/ 等分类子目录），通过 SSH exec 同步到远程 ~/.aicode/docs/。
-     * 远程模式下 AI 查阅 ~/.aicode/docs/ 的设置说明文档时，需要这些文件存在于远程服务器。
+     * 读取 assets/docs 下所有内置文档（含 guide/ advanced/ 等分类子目录），通过 SSH exec 同步到远程 ~/.guru/docs/。
+     * 远程模式下 AI 查阅 ~/.guru/docs/ 的设置说明文档时，需要这些文件存在于远程服务器。
      * 连接成功与重连成功后调用，保证远程文档随 App 升级更新。失败仅记日志，不阻断流程。
      */
     private suspend fun syncDocsToRemote() {
@@ -446,12 +452,12 @@ class AIEditorApp : Application(), Configuration.Provider {
     }
 
     /**
-     * 释放内置子代理定义（Explore）与面板示例脚本到远程 `~/.aicode/agents`、`~/.aicode/scripts`。
+     * 释放内置子代理定义（Explore）与面板示例脚本到远程 `~/.guru/agents`、`~/.guru/scripts`。
      * 远程模式下全局 agents/scripts 以远端为准，内置默认需在远端存在才能开箱即用；仅补齐缺失、不覆盖用户修改。
      */
     private suspend fun releaseBuiltinAssetsToRemote() {
         remoteSshConnection.uploadBuiltinFiles("agents", collectAssetBytes("agents"))
-        remoteSshConnection.uploadBuiltinFiles("scripts", collectAssetBytes("aicode/scripts"), executable = true)
+        remoteSshConnection.uploadBuiltinFiles("scripts", collectAssetBytes("guru/scripts"), executable = true)
     }
 
     /** 收集 assets 目录下的扁平文件（name → 字节）。目录项会被跳过。 */

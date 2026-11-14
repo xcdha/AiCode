@@ -34,10 +34,10 @@ install_scenario_flutter() {
     "$FLUTTER_DIR/bin/flutter" --version || echo "${C_YELLOW}Flutter 初始化未完成，可在新终端重试 flutter --version。${C_RESET}"
     mkdir -p /etc/profile.d
     {
-        echo "# AiCode: Flutter 开发环境（由环境安装工具写入）"
+        echo "# Guru: Flutter 开发环境（由环境安装工具写入）"
         echo "export FLUTTER_STORAGE_BASE_URL=\"$FLUTTER_STORAGE\""
         echo "export PATH=\"$FLUTTER_DIR/bin:\$PATH\""
-    } > /etc/profile.d/aicode-flutter.sh
+    } > /etc/profile.d/guru-flutter.sh
     echo ""
     echo "${C_GREEN}Flutter 环境就绪：$FLUTTER_DIR${C_RESET}"
     echo "  注意：ARM64 容器只能构建 debug APK；新开终端会自动带上 Flutter / Android 环境变量。"

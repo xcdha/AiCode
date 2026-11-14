@@ -251,7 +251,7 @@ internal fun BackupScreen(
                 pendingExportOptions = exportOptions
                 password = ""
                 pendingAction = null
-                exportLauncher.launch("aicode-backup-${System.currentTimeMillis()}.tar.gz")
+                exportLauncher.launch("guru-backup-${System.currentTimeMillis()}.tar.gz")
             },
             onDismiss = {
                 password = ""

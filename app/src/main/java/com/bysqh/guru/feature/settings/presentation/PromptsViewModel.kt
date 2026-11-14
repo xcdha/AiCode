@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragment
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentCatalog
+import com.bysqh.guru.feature.settings.data.repository.PromptFragmentToggleRepository
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentSource
 import com.bysqh.guru.feature.workspace.data.repository.WorkspaceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,11 +34,17 @@ data class PromptsUiState(
 @HiltViewModel
 class PromptsViewModel @Inject constructor(
     private val catalog: PromptFragmentCatalog,
-    private val workspaceRepository: WorkspaceRepository
+    private val workspaceRepository: WorkspaceRepository,
+    // [二开] 片段开关（移植自 Muse）
+    private val toggleRepository: PromptFragmentToggleRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PromptsUiState())
     val state: StateFlow<PromptsUiState> = _state.asStateFlow()
+
+    /** [二开] 被关闭的片段编号；列表里据此渲染开关状态。 */
+    private val _disabledNumbers = MutableStateFlow<Set<Int>>(emptySet())
+    val disabledNumbers: StateFlow<Set<Int>> = _disabledNumbers.asStateFlow()
 
     init {
         refresh()
@@ -47,6 +54,7 @@ class PromptsViewModel @Inject constructor(
         viewModelScope.launch {
             val projectRoot = workspaceRepository.currentPath()
             val loaded = withContext(Dispatchers.IO) {
+                _disabledNumbers.value = toggleRepository.disabledNumbers()
                 PromptsUiState(
                     fragments = catalog.list(projectRoot),
                     builtinDisabled = catalog.isBuiltinDisabled(),
@@ -55,6 +63,17 @@ class PromptsViewModel @Inject constructor(
                 )
             }
             _state.value = loaded
+        }
+    }
+
+    /** [二开] 开关某个片段：关闭后不参与系统提示词渲染（列表里仍可见，便于再打开）。 */
+    fun setFragmentEnabled(number: Int, enabled: Boolean) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                toggleRepository.setEnabled(number, enabled)
+                catalog.refreshDisabledCache()
+            }
+            _disabledNumbers.value = toggleRepository.disabledNumbers()
         }
     }
 

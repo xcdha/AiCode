@@ -10,7 +10,7 @@ import javax.inject.Singleton
  * 启停状态由 [AgentDefinitionConfigRepository] 持有：被禁用的定义仍出现在设置页列表里，
  * 但不进主代理的可派发清单、也不能被 [find] 派发出去。
  *
- * 全局定义 `~/.aicode/agents`、项目级定义 `<workspace>/.aicode/agents`，两者都经 [FileAccessProvider]
+ * 全局定义 `~/.guru/agents`、项目级定义 `<workspace>/.guru/agents`，两者都经 [FileAccessProvider]
  * 以容器路径读写，跟随当前执行环境（本地宿主目录或远程 SSH 工作区）。
  */
 @Singleton

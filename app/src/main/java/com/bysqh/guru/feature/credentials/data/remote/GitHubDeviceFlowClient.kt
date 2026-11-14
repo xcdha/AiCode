@@ -39,7 +39,7 @@ sealed interface GitHubTokenPollResult {
 }
 
 /** GitHub App 的 slug（安装页 URL 用），与 App 名称对应。 */
-const val GITHUB_APP_SLUG = "aicode-app"
+const val GITHUB_APP_SLUG = "guru-app"
 
 /** GitHub App 安装页：用户在此选择要授权的仓库。 */
 const val GITHUB_APP_INSTALL_URL = "https://github.com/apps/$GITHUB_APP_SLUG/installations/new"

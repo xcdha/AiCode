@@ -302,13 +302,13 @@
     <string name="provider_test_resp_body">响应体</string>
     <string name="provider_test_error_detail">错误堆栈</string>
     <string name="provider_dashboard_test_failed">执行失败</string>
-    <string name="provider_dashboard_no_scripts">~/.aicode/scripts 目录下暂无脚本</string>
+    <string name="provider_dashboard_no_scripts">~/.guru/scripts 目录下暂无脚本</string>
     <string name="provider_dashboard_select_title">选择面板脚本</string>
     <string name="provider_dashboard_clear_script">不使用面板脚本 (清空)</string>
     <string name="provider_dashboard_loading">正在加载面板…</string>
     <string name="provider_dashboard_raw_output">原始输出</string>
     <string name="provider_script_params_title">脚本参数</string>
-    <string name="provider_script_params_desc">以 AICODE_KEY_&lt;KEY&gt; 注入面板脚本环境变量</string>
+    <string name="provider_script_params_desc">以 GURU_KEY_&lt;KEY&gt; 注入面板脚本环境变量</string>
     <string name="provider_script_params_empty">暂无参数，点击下方添加</string>
     <string name="provider_script_param_key">参数名 (KEY)</string>
     <string name="provider_script_param_key_hint">例如 ACCOUNT_ID</string>
@@ -1320,7 +1320,7 @@
     <string name="mcp_details">详情</string>
 
     <!-- Custom Prompts -->
-    <string name="prompts_title">提示词</string>
+    <string name="prompts_title">系统规则</string>
     <string name="prompts_sort_long_press">长按可调整顺序</string>
     <string name="prompts_empty">暂无可用片段</string>
     <string name="prompts_source_project">项目</string>
@@ -1394,7 +1394,7 @@
     <!-- Subagent Settings -->
     <string name="settings_subagents">子代理</string>
     <string name="subagents_empty">还没有自定义子代理</string>
-    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.aicode/agents/</string>
+    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.guru/agents/</string>
     <string name="subagents_no_project">当前项目暂无子代理</string>
     <string name="subagents_no_global">暂无全局子代理</string>
     <string name="subagents_delete_confirm_title">删除子代理</string>
@@ -2021,4 +2021,53 @@
     <string name="browser_ua_custom_dialog_title">自定义 User-Agent</string>
     <string name="browser_ua_custom_input_hint">输入完整的 User-Agent 字符串</string>
     <string name="browser_ua_applied_toast">已切换浏览器标识并刷新页面</string>
+    <!-- [二开] 记忆页与角色页（移植自 Muse） -->
+    <string name="settings_memory">记忆</string>
+    <string name="settings_roles">角色</string>
+    <string name="memory_global_title">全局记忆</string>
+    <string name="memory_project_title">项目记忆</string>
+    <string name="memory_project_title_named">项目记忆 · %1$s</string>
+    <string name="memory_add">新建记忆</string>
+    <string name="memory_empty_global">还没有全局记忆</string>
+    <string name="memory_empty_project">这个项目还没有记忆</string>
+    <string name="memory_no_workspace">未选择工作区，项目记忆暂不可用</string>
+    <string name="memory_editor_new">新建记忆</string>
+    <string name="memory_editor_edit">编辑记忆</string>
+    <string name="memory_name">名称</string>
+    <string name="memory_name_hint">字母、数字、连字符，作为记忆标识</string>
+    <string name="memory_description">描述</string>
+    <string name="memory_description_hint">一句话说明这条记忆的内容</string>
+    <string name="memory_content">内容</string>
+    <string name="memory_content_hint">写给 AI 的长期记忆正文，支持 Markdown</string>
+    <string name="memory_scope">作用域</string>
+    <string name="memory_scope_global">全局</string>
+    <string name="memory_scope_project">项目</string>
+    <string name="memory_saved">已保存</string>
+    <string name="memory_save_failed">保存失败</string>
+    <string name="memory_deleted">已删除</string>
+    <string name="memory_delete_failed">删除失败</string>
+    <string name="memory_delete_confirm_title">删除记忆</string>
+    <string name="memory_delete_confirm_message">确定删除「%1$s」吗？此操作不可撤销。</string>
+    <!-- [二开] 角色页 -->
+    <string name="role_intro">选中哪个角色，就用它的身份提示词对话。身份已从系统规则中独立出来，这里修改后对新会话立即生效。</string>
+    <string name="role_group_title">角色</string>
+    <string name="role_new">新建角色</string>
+    <string name="role_new_blank">从空白身份开始</string>
+    <string name="role_name_label">角色名</string>
+    <string name="role_default_name">新角色</string>
+    <string name="role_cannot_delete_title">无法删除</string>
+    <string name="role_cannot_delete_message">至少要保留一个角色。</string>
+    <string name="role_identity_empty">未设置身份提示词</string>
+    <string name="role_identity_length">身份提示词 %1$d 字</string>
+    <string name="role_current">当前角色</string>
+    <string name="role_edit_title">编辑角色</string>
+    <string name="role_change_avatar">更换头像</string>
+    <string name="role_remove_avatar">移除头像</string>
+    <string name="role_identity">身份提示词</string>
+    <string name="role_import_prompt">导入提示词</string>
+    <string name="role_delete">删除角色</string>
+    <string name="crop_decode_failed_title">无法读取图片</string>
+    <string name="crop_decode_failed_message">这张图片无法解码，换一张试试。</string>
+    <string name="crop_title">调整头像</string>
+    <string name="crop_hint">拖动与缩放，圆框内就是最终头像</string>
 </resources>

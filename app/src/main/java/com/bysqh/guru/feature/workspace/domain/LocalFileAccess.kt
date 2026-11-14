@@ -326,10 +326,10 @@ class LocalFileAccess @Inject constructor(
         const val TAG = "LocalFileAccess"
 
         /**
-         * 原子写临时文件前缀。带 `.aicode-` 前缀便于在异常残留时被用户与清理逻辑识别；
+         * 原子写临时文件前缀。带 `.guru-` 前缀便于在异常残留时被用户与清理逻辑识别；
          * `File.createTempFile` 要求前缀至少 3 字符。
          */
-        const val TMP_FILE_PREFIX = ".aicode-tmp-"
+        const val TMP_FILE_PREFIX = ".guru-tmp-"
 
         /** 临时文件后缀。与 [TMP_FILE_PREFIX] 一起把临时文件与正常文件区分开。 */
         const val TMP_FILE_SUFFIX = ".part"

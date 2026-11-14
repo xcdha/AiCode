@@ -42,8 +42,8 @@ class WorkspacePathMapper @Inject constructor(
     companion object {
         /** AI 看到的工作区根路径。用 `~` 形式让提示词/工具描述更自然，内部用 [resolvedContainerRoot] 展开后匹配。 */
         const val CONTAINER_ROOT = "~/workspace"
-        /** AI 配置目录在容器内的路径，绑定到宿主 [ContainerInstaller.aicodeDir]（独立于 rootfs）。 */
-        const val AICODE_ROOT = "/root/.aicode"
+        /** AI 配置目录在容器内的路径，绑定到宿主 [ContainerInstaller.guruDir]（独立于 rootfs）。 */
+        const val GURU_ROOT = "/root/.guru"
     }
 
     /**
@@ -79,17 +79,17 @@ class WorkspacePathMapper @Inject constructor(
     /** 容器 rootfs 在宿主上的根目录（容器内 `/` 即此目录，随当前 profile 变化）。 */
     private fun rootfsRoot(): File = containerInstaller.rootfsDirFor(currentProfile)
 
-    /** AI 配置目录在宿主上的根（容器内 `/root/.aicode` 即此目录，独立于 rootfs）。 */
-    private fun aicodeRoot(): File = containerInstaller.aicodeDir
+    /** AI 配置目录在宿主上的根（容器内 `/root/.guru` 即此目录，独立于 rootfs）。 */
+    private fun guruRoot(): File = containerInstaller.guruDir
 
     /**
      * 把 AI 提供的路径解析为宿主真实文件。兼容以下写法：
      * - 容器绝对路径 `~/workspace[/…]`（或展开后的 `$HOME/workspace[/…]`）→ 映射到宿主工作区；
-     * - 容器绝对路径 `/root/.aicode[/…]` → 映射到宿主 AI 配置目录（skill / mcp.json，独立于 rootfs）；
+     * - 容器绝对路径 `/root/.guru[/…]` → 映射到宿主 AI 配置目录（skill / mcp.json，独立于 rootfs）；
      * - 其它容器绝对路径 `/etc/…`、`/root/…` → 映射到 rootfs 内对应文件（容器系统文件）；
      * - 相对路径 `src/Main.kt` → 挂到宿主工作区根下；
      *
-     * `/root/.aicode` 必须先于通用 `/`→rootfs 规则匹配，否则会落到 rootfs 内的临时副本（升级即丢）。
+     * `/root/.guru` 必须先于通用 `/`→rootfs 规则匹配，否则会落到 rootfs 内的临时副本（升级即丢）。
      */
     fun toHostFile(path: String): File {
         val root = hostRoot()
@@ -98,8 +98,8 @@ class WorkspacePathMapper @Inject constructor(
         val file = when {
             p == wsRoot || p == "$wsRoot/" || p == CONTAINER_ROOT || p == "$CONTAINER_ROOT/" -> root
             p.startsWith("$wsRoot/") -> File(root, p.removePrefix("$wsRoot/"))
-            p == AICODE_ROOT || p == "$AICODE_ROOT/" -> aicodeRoot()
-            p.startsWith("$AICODE_ROOT/") -> File(aicodeRoot(), p.removePrefix("$AICODE_ROOT/"))
+            p == GURU_ROOT || p == "$GURU_ROOT/" -> guruRoot()
+            p.startsWith("$GURU_ROOT/") -> File(guruRoot(), p.removePrefix("$GURU_ROOT/"))
             else -> mountedHostFile(p)
                 ?: if (p.startsWith("/")) File(rootfsRoot(), p.removePrefix("/")) else File(root, p)
         }
@@ -145,16 +145,16 @@ class WorkspacePathMapper @Inject constructor(
     /**
      * 把宿主路径还原为容器路径：
      * - 位于工作区内 → `~/workspace/…`；
-     * - 位于 AI 配置目录内 → `/root/.aicode/…`；
+     * - 位于 AI 配置目录内 → `/root/.guru/…`；
      * - 位于 rootfs 内 → 去掉 rootfs 前缀的容器绝对路径（如 `/etc/apk/repositories`）；
      * - 其余原样返回（极少出现）。
      *
-     * 工作区在 `filesDir/projects`、AI 配置在 `filesDir/aicode`、rootfs 在 `filesDir/rootfs`，三者互不重叠，
+     * 工作区在 `filesDir/projects`、AI 配置在 `filesDir/guru`、rootfs 在 `filesDir/rootfs`，三者互不重叠，
      * 判断顺序无歧义。
      */
     fun toContainerPath(hostPath: String): String {
         val rootPath = hostRoot().absolutePath.replace('\\', '/')
-        val aicodePath = aicodeRoot().absolutePath.replace('\\', '/')
+        val guruPath = guruRoot().absolutePath.replace('\\', '/')
         val rootfsPath = rootfsRoot().absolutePath.replace('\\', '/')
         val abs = File(hostPath).absolutePath.replace('\\', '/')
         val raw = hostPath.trim().replace('\\', '/')
@@ -166,8 +166,8 @@ class WorkspacePathMapper @Inject constructor(
             raw == resolvedWs || abs == resolvedWs -> CONTAINER_ROOT
             raw.startsWith("$resolvedWs/") -> CONTAINER_ROOT + "/" + raw.removePrefix("$resolvedWs/")
             abs.startsWith("$resolvedWs/") -> CONTAINER_ROOT + "/" + abs.removePrefix("$resolvedWs/")
-            abs == aicodePath -> AICODE_ROOT
-            abs.startsWith("$aicodePath/") -> AICODE_ROOT + "/" + abs.removePrefix("$aicodePath/")
+            abs == guruPath -> GURU_ROOT
+            abs.startsWith("$guruPath/") -> GURU_ROOT + "/" + abs.removePrefix("$guruPath/")
             abs == rootfsPath -> "/"
             abs.startsWith("$rootfsPath/") -> "/" + abs.removePrefix("$rootfsPath/")
             else -> mountedContainerPath(abs) ?: hostPath

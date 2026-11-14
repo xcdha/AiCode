@@ -157,7 +157,7 @@ class LinuxContainerEngine @Inject constructor(
         private const val TIMEOUT_KILL_GRACE_MS = 200L
 
         /**
-         * 基础包配置版本。对应 assets/aicode/provision.sh 的版本：改脚本（包清单/安装逻辑/镜像源）时同步 +1，
+         * 基础包配置版本。对应 assets/guru/provision.sh 的版本：改脚本（包清单/安装逻辑/镜像源）时同步 +1，
          * 触发在设备上重新执行该脚本（apk add 幂等，已装包跳过）。
          * 独立于 [ContainerInstaller] 的 rootfs INSTALL_VERSION：rootfs 版本升级会删 rootfs
          * （连带清掉本标记），故新 rootfs 必然重跑配置；同 rootfs 下改脚本则靠本版本号触发。
@@ -473,7 +473,7 @@ class LinuxContainerEngine @Inject constructor(
 
     /**
      * 基础包是否已配置完成（按当前 profile 的标记）。首次进入终端时由初始化菜单
-     * （assets/aicode/provision.sh）引导安装，完成后脚本写标记；未完成时不影响进入 shell。
+     * （assets/guru/provision.sh）引导安装，完成后脚本写标记；未完成时不影响进入 shell。
      */
     override fun isProvisioned(): Boolean = isProvisionedFor(currentProfile)
 
@@ -507,7 +507,7 @@ class LinuxContainerEngine @Inject constructor(
 
     /**
      * 幂等地确保容器可用：解压 rootfs/proot（首次耗时）。所有容器（内置/自定义）一致——
-     * 基础工具安装不在此阶段自动执行，由进入终端时的初始化菜单（assets/aicode/provision.sh）
+     * 基础工具安装不在此阶段自动执行，由进入终端时的初始化菜单（assets/guru/provision.sh）
      * 引导用户选择，装包失败也不阻塞进入 shell。
      * 仅由终端页（[TerminalSessionManager]）作为唯一初始化入口调用；命令执行入口不再自动触发。
      *
@@ -574,14 +574,14 @@ class LinuxContainerEngine @Inject constructor(
      *
      * 这些状态平时不打印，一旦用户报“容器起不来/终端一片空白”就只能靠猜。在初始化前后与终端
      * 会话静默时主动各 dump 一次，日志里就有了可定位的证据。同时带上 provision.sh 自己的执行日志
-     * 尾部（由脚本写入 /root/.aicode/provision.log），用于判断初始化菜单到底有没有跑起来。
+     * 尾部（由脚本写入 /root/.guru/provision.log），用于判断初始化菜单到底有没有跑起来。
      */
     fun logContainerDiagnostics(reason: String) {
         runCatching {
             val profile = currentProfile
             val rootfs = containerInstaller.rootfsDirFor(profile)
             val marker = provisionMarker(profile)
-            val provision = java.io.File(containerInstaller.aicodeDir, "provision.sh")
+            val provision = java.io.File(containerInstaller.guruDir, "provision.sh")
             fun desc(f: java.io.File?): String = when {
                 f == null -> "null"
                 !f.exists() -> "缺失(${f.absolutePath})"
@@ -599,7 +599,7 @@ class LinuxContainerEngine @Inject constructor(
                     "nativeLibDir=${containerInstaller.prootBin.parentFile?.absolutePath} 可用空间=${space}MB " +
                     "/dev/ptmx(可读=${ptmx.canRead()},可写=${ptmx.canWrite()})"
             )
-            val provisionLog = java.io.File(containerInstaller.aicodeDir, "provision.log")
+            val provisionLog = java.io.File(containerInstaller.guruDir, "provision.log")
             if (provisionLog.isFile) {
                 val tail = runCatching { provisionLog.readLines().takeLast(20).joinToString(" | ") }.getOrDefault("")
                 FileLogger.i(TAG, "provision 日志尾部（$reason）：$tail")
@@ -744,14 +744,14 @@ class LinuxContainerEngine @Inject constructor(
             argv.add("/root/workspace")
         }
 
-        // 把 AI 配置目录绑定到容器内 /root/.aicode（读写）：内含 skills/（load_skill 读到的指令常引用
-        // skill 目录里的脚本，AI 用 execute_command 执行 `python /root/.aicode/skills/<name>/x.py` 等）与
+        // 把 AI 配置目录绑定到容器内 /root/.guru（读写）：内含 skills/（load_skill 读到的指令常引用
+        // skill 目录里的脚本，AI 用 execute_command 执行 `python /root/.guru/skills/<name>/x.py` 等）与
         // mcp.json（MCP 配置）。宿主物理目录独立于 rootfs，容器升级重装不丢用户数据。
         // 基础解释器 python3(3.12) 与 git 由进入终端时的初始化菜单（provision.sh）安装；
         // node 等其他运行时仍由 skill / 用户自行保证。proot 的 -b 要求源路径存在，故先确保目录已建。
-        val aicodeDir = containerInstaller.aicodeDir.apply { mkdirs() }
+        val guruDir = containerInstaller.guruDir.apply { mkdirs() }
         argv.add("-b")
-        argv.add("${aicodeDir.absolutePath}:/root/.aicode")
+        argv.add("${guruDir.absolutePath}:/root/.guru")
 
         // profile 的额外绑定与参数：内置与导入容器默认也在此注入（见 ContainerProfile.DEFAULT_PROOT_ARGS），
         // 与用户手动添加同一条路径，保证参数落在 argv 末尾。
@@ -783,18 +783,18 @@ class LinuxContainerEngine @Inject constructor(
             // (5.1.107.x) 的 seccomp 过滤表已包含 statx，默认 seccomp 模式即可正确翻译，故此处
             // **刻意不设 PROOT_NO_SECCOMP**——这正是 Termux 自己用 proot 的方式；强制全量 ptrace
             // (PROOT_NO_SECCOMP=1) 反而在本设备触发过 ptrace(PEEKDATA) I/O error。
-            // 前缀 /root/.aicode/bin：容器内 aicode 环境工具（见 ContainerInstaller.extractEnvTool）。
+            // 前缀 /root/.guru/bin：容器内 guru 环境工具（见 ContainerInstaller.extractEnvTool）。
             // /usr/local/bin 供 skills.sh CLI 等自装工具使用：容器内 shell 以非登录方式启动（bash -c），
             // 不加载 /etc/profile，不在此处列出则这些命令名不可达。
-            "PATH" to "/root/.aicode/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+            "PATH" to "/root/.guru/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
             "HOME" to "/root",
             // 宿主进程环境的 TMPDIR 指向 App 缓存目录（/data/user/0/<pkg>/cache），容器内 /data 未挂载、
             // 该路径不存在——mktemp/dpkg 等会因找不到临时目录失败，故显式覆盖为容器内 /tmp。
             "TMPDIR" to "/tmp",
-            // git 全局配置指向持久挂载里的 .gitconfig（/root/.aicode 绑定到宿主 filesDir/aicode，
+            // git 全局配置指向持久挂载里的 .gitconfig（/root/.guru 绑定到宿主 filesDir/guru，
             // 跨 rootfs 升级不丢）。git-credentials 同放该目录，credential.helper=store 经此读；
             // credential.helper 由 provision.sh 经 includeIf 限定 /root/workspace/ 加载（最小化注入）。
-            "GIT_CONFIG_GLOBAL" to "/root/.aicode/.gitconfig",
+            "GIT_CONFIG_GLOBAL" to "/root/.guru/.gitconfig",
             // safe.directory=* 关掉 git 的 dubious ownership 检查。用户自选的外部工作区落在
             // sdcardfs/FUSE 存储，其合成的文件属主 uid 与 proot 内 euid(0) 不一致，git 判为可疑属主
             // 后 fatal 拒绝操作——表现为 `git init` 成功（init 不查属主）但随后 `git rev-parse` 全部失败，

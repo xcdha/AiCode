@@ -298,8 +298,8 @@ class RemoteSshConnection @Inject constructor(
     }
 
     /**
-     * 把内置文档同步到远程 ~/.aicode/docs/，让远程模式下 AI 也能像本地模式一样
-     * 查阅 ~/.aicode/docs/ 下的设置说明文档。每次连接/重连后全量覆盖，使 App 升级后
+     * 把内置文档同步到远程 ~/.guru/docs/，让远程模式下 AI 也能像本地模式一样
+     * 查阅 ~/.guru/docs/ 下的设置说明文档。每次连接/重连后全量覆盖，使 App 升级后
      * 远程文档随之更新。正文通过 SFTP 写入并替换。
      *
      * @param docs 相对 docs/ 的路径（可含子目录，如 guide/terminal.md）→ 文件内容。
@@ -308,7 +308,7 @@ class RemoteSshConnection @Inject constructor(
         if (docs.isEmpty()) return
         val client = sshClient ?: return
         val home = remoteHome ?: return
-        val destDir = home.trimEnd('/') + "/.aicode/docs"
+        val destDir = home.trimEnd('/') + "/.guru/docs"
         withContext(Dispatchers.IO) {
             runCatching {
                 // 先建全部子目录并清掉旧 .md：版本间调整文档分类会改变路径，只覆盖不清理会让旧文件残留
@@ -329,7 +329,7 @@ class RemoteSshConnection @Inject constructor(
     }
 
     /**
-     * 释放 App 内置资源（子代理定义、面板示例脚本等）到远程 `~/.aicode/<subdir>/`。
+     * 释放 App 内置资源（子代理定义、面板示例脚本等）到远程 `~/.guru/<subdir>/`。
      * 仅补齐服务器上缺失的文件、**不覆盖已存在**（保留用户修改），脚本赋可执行位。
      * 与 [uploadDocs] 一样在连接/重连后调用——远程模式下全局 agents/scripts 以远端为准，
      * 内置默认需在远端存在才能「开箱即用」。二进制安全（base64 传输）。
@@ -342,7 +342,7 @@ class RemoteSshConnection @Inject constructor(
         if (files.isEmpty()) return
         val client = sshClient ?: return
         val home = remoteHome ?: return
-        val destDir = home.trimEnd('/') + "/.aicode/" + destSubdir.trim('/')
+        val destDir = home.trimEnd('/') + "/.guru/" + destSubdir.trim('/')
         withContext(Dispatchers.IO) {
             runCatching {
                 sftpOperationMutex.withLock { sftp().mkdirs(destDir) }
@@ -358,9 +358,9 @@ class RemoteSshConnection @Inject constructor(
 
     /**
      * 把 App 的 git 凭据注入远程服务器（仅当用户开启「自动注入」时调用）：
-     * 写 `~/.aicode/git-credentials`（store 格式）+ `~/.aicode/gitconfig` + `~/.aicode/gitconfig.credential`。
+     * 写 `~/.guru/git-credentials`（store 格式）+ `~/.guru/gitconfig` + `~/.guru/gitconfig.credential`。
      *
-     * 生效机制：[RemoteSshEngine] 执行命令时注入 `GIT_CONFIG_GLOBAL=$HOME/.aicode/gitconfig`，其中
+     * 生效机制：[RemoteSshEngine] 执行命令时注入 `GIT_CONFIG_GLOBAL=$HOME/.guru/gitconfig`，其中
      * `[include] path=~/.gitconfig` 保留服务器用户自己的全局配置（署名等），`[includeIf "gitdir:<工作区根>/"]`
      * 限定只有工作区根目录下的仓库才加载 store helper——不影响用户在服务器上手动 git，也不影响其它目录的仓库。
      *
@@ -370,11 +370,11 @@ class RemoteSshConnection @Inject constructor(
     suspend fun uploadGitCredentialConfig(credentials: List<GitCredential>, workspaceRoot: String) = credentialSyncMutex.withLock {
         val client = sshClient ?: return@withLock
         val home = remoteHome ?: return@withLock
-        val aicodeDir = home.trimEnd('/') + "/.aicode"
+        val guruDir = home.trimEnd('/') + "/.guru"
         val wsRoot = workspaceRoot.trimEnd('/').ifEmpty { return@withLock }
         withContext(Dispatchers.IO) {
             runCatching {
-                sftpOperationMutex.withLock { sftp().mkdirs(aicodeDir) }
+                sftpOperationMutex.withLock { sftp().mkdirs(guruDir) }
 
                 val creds = credentials.joinToString("\n") { c ->
                     "https://${enc(c.username)}:${enc(c.token)}@${c.host}"
@@ -382,32 +382,32 @@ class RemoteSshConnection @Inject constructor(
 
 
                 // 上传 credential helper 脚本（本地由 ContainerInstaller 提取），配置为唯一 helper；
-                // 服务器上没有 App，用 AICODE_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
+                // 服务器上没有 App，用 GURU_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
                 containerInstaller.extractCredentialHelper()
-                val helperScript = java.io.File(containerInstaller.aicodeDir, "git-credential-aicode").readText()
+                val helperScript = java.io.File(containerInstaller.guruDir, "git-credential-guru").readText()
                 check(helperScript.isNotBlank()) { "Git credential helper is empty" }
                 val remoteHelperScript = helperScript.replaceFirst(
                     "#!/bin/sh\n",
-                    "#!/bin/sh\nexport AICODE_CRED_NO_PROMPT=1\n"
+                    "#!/bin/sh\nexport GURU_CRED_NO_PROMPT=1\n"
                 )
-                writeRemoteFile("$aicodeDir/git-credential-aicode", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
-                writeRemoteFile("$aicodeDir/git-credentials", encodeCreds(creds).toByteArray(Charsets.UTF_8))
+                writeRemoteFile("$guruDir/git-credential-guru", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
+                writeRemoteFile("$guruDir/git-credentials", encodeCreds(creds).toByteArray(Charsets.UTF_8))
 
 
                 val gitconfig = buildString {
                     append("[include]\n")
                     append("    path = ~/.gitconfig\n")
                     append("[includeIf \"gitdir:${gitConfigValue(wsRoot)}/\"]\n")
-                    append("    path = ~/.aicode/gitconfig.credential\n")
+                    append("    path = ~/.guru/gitconfig.credential\n")
                 }
-                writeRemoteFile("$aicodeDir/gitconfig", gitconfig.toByteArray(Charsets.UTF_8))
+                writeRemoteFile("$guruDir/gitconfig", gitconfig.toByteArray(Charsets.UTF_8))
 
                 val credentialConfig = buildString {
                     append("[credential]\n")
-                    append("    helper = !AICODE_CRED_NO_PROMPT=1 $aicodeDir/git-credential-aicode\n")
+                    append("    helper = !GURU_CRED_NO_PROMPT=1 $guruDir/git-credential-guru\n")
                 }
-                writeRemoteFile("$aicodeDir/gitconfig.credential", credentialConfig.toByteArray(Charsets.UTF_8))
-                FileLogger.i(TAG, "已注入 git 凭据到远程 $aicodeDir（限定 $wsRoot/）")
+                writeRemoteFile("$guruDir/gitconfig.credential", credentialConfig.toByteArray(Charsets.UTF_8))
+                FileLogger.i(TAG, "已注入 git 凭据到远程 $guruDir（限定 $wsRoot/）")
             }.onFailure { FileLogger.w(TAG, "注入 git 凭据到远程失败", it) }
         }
     }
@@ -419,13 +419,13 @@ class RemoteSshConnection @Inject constructor(
     suspend fun removeGitCredentialConfig() = credentialSyncMutex.withLock {
         val client = sshClient ?: return@withLock
         val home = remoteHome ?: return@withLock
-        val aicodeDir = home.trimEnd('/') + "/.aicode"
+        val guruDir = home.trimEnd('/') + "/.guru"
         withContext(Dispatchers.IO) {
             runCatching {
                 sftpOperationMutex.withLock {
                     val sftp = sftp()
-                    listOf("gitconfig", "gitconfig.credential", "git-credentials", "git-credential-aicode").forEach { name ->
-                        val path = "$aicodeDir/$name"
+                    listOf("gitconfig", "gitconfig.credential", "git-credentials", "git-credential-guru").forEach { name ->
+                        val path = "$guruDir/$name"
                         if (sftp.statExistence(path) != null) sftp.rm(path)
                     }
                 }

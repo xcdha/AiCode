@@ -125,6 +125,7 @@ import compose.icons.feathericons.HardDrive
 import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Server
 import compose.icons.feathericons.Settings
+import compose.icons.feathericons.User
 import compose.icons.feathericons.Trash2
 import compose.icons.feathericons.X
 import androidx.compose.ui.res.stringResource
@@ -175,6 +176,8 @@ fun ChatDrawerContent(
     onCancelPasteOverwrite: () -> Unit,
     onClearClipboard: () -> Unit,
     onNavigateToBrowser: (() -> Unit)? = null,
+    // [二开] 侧边栏角色入口（移植自 Muse）
+    onNavigateToRoles: (() -> Unit)? = null,
     onNavigateToSettings: () -> Unit,
     searchQuery: String,
     searchState: ChatSearchState,
@@ -369,6 +372,15 @@ fun ChatDrawerContent(
         }
 
         SettingsGroup {
+            // [二开] 角色入口：直达设置里的角色页
+            if (onNavigateToRoles != null) {
+                SettingsRow(
+                    icon = FeatherIcons.User,
+                    title = stringResource(R.string.settings_roles),
+                    onClick = onNavigateToRoles
+                )
+                SettingsDivider()
+            }
             if (onNavigateToBrowser != null) {
                 SettingsRow(
                     icon = FeatherIcons.Globe,

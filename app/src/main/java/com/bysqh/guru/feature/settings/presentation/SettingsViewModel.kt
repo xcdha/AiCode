@@ -1836,7 +1836,7 @@ class SettingsViewModel @Inject constructor(
                     if (manual) UpdateCheckUiState.Error(result.message) else UpdateCheckUiState.Idle
                 }
             }
-            // 无论结果如何，都刷新 ~/.aicode/update-info.json 供 AI 读取
+            // 无论结果如何，都刷新 ~/.guru/update-info.json 供 AI 读取
             updateCheckSettingsRepository.writeUpdateInfo(
                 currentVersion = currentVersionName(),
                 channel = updateCheckSettingsRepository.channel,
@@ -1895,7 +1895,7 @@ class SettingsViewModel @Inject constructor(
             val result = apkDownloader.download(
                 url = asset.url,
                 mirror = updateCheckSettingsRepository.downloadMirror,
-                fileName = "aicode-${target.latestTag}.apk",
+                fileName = "guru-${target.latestTag}.apk",
                 expectedSize = asset.size,
                 expectedSha256 = asset.sha256
             ) { downloaded, total ->
@@ -2891,7 +2891,7 @@ class SettingsViewModel @Inject constructor(
 
     /**
      * 加载可用面板脚本列表（打开脚本选择器时调用）。经引擎在 IO 线程枚举，
-     * 远程模式下即远端 `~/.aicode/scripts`，避免在主线程上做 SFTP 枚举。
+     * 远程模式下即远端 `~/.guru/scripts`，避免在主线程上做 SFTP 枚举。
      */
     fun loadDashboardScripts() {
         viewModelScope.launch {

@@ -71,7 +71,7 @@ fun gitCommitCount(): Int = try {
     1
 }
 
-// AI 内置文档（~/.aicode/docs）的源在仓库根的 docs-site/docs：同一份 Markdown 既构建 VitePress
+// AI 内置文档（~/.guru/docs）的源在仓库根的 docs-site/docs：同一份 Markdown 既构建 VitePress
 // 文档站，也在这里复制进 assets/docs 打进 APK，保证「站上看到的」与「AI 读到的」永远一致。
 // 用纯 Gradle Copy 实现，APK 构建不依赖 Node —— CI 与 F-Droid 只装 JDK+Gradle 即可。
 val aiDocsGeneratedDir = layout.buildDirectory.dir("generated/aiDocs")

@@ -95,6 +95,8 @@ import com.bysqh.guru.feature.agent.domain.skill.SkillScope
 import com.bysqh.guru.feature.settings.presentation.SubAgentUiEntry
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Smile
+import compose.icons.feathericons.User
+import compose.icons.feathericons.Database
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.BarChart2
 import compose.icons.feathericons.Book
@@ -153,9 +155,12 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     DefaultModels(R.string.settings_default_models),
     Mcp(R.string.settings_mcp),
     Skills(R.string.settings_skills),
+    // [二开] 记忆与角色（移植自 Muse）
+    Memory(R.string.settings_memory),
     Prompts(R.string.prompts_title),
     PromptDetail(R.string.prompts_title),
     PromptEditor(R.string.prompts_title),
+    Roles(R.string.settings_roles),
     SkillDetail(R.string.settings_skills),
     SkillEditor(R.string.settings_skills),
     SubAgents(R.string.settings_subagents),
@@ -207,7 +212,9 @@ fun SettingsScreen(
     onRerunOnboarding: () -> Unit = {},
     onboardingStep: OnboardingStep? = null,
     onOnboardingModelAdded: (() -> Unit)? = null,
-    onOnboardingDismissFetchDialog: (() -> Unit)? = null
+    onOnboardingDismissFetchDialog: (() -> Unit)? = null,
+    /** [二开] 从外部（如聊天侧边栏）直接跳到某个二级页；null 回菜单首页。 */
+    initialSectionKey: String? = null
 ) {
     val providers by viewModel.providers.collectAsStateWithLifecycle()
     val logLevel by viewModel.logLevel.collectAsStateWithLifecycle()
@@ -298,7 +305,17 @@ fun SettingsScreen(
     }
 
 
-    var section by remember { mutableStateOf(SettingsSection.Menu) }
+    // [二开] 侧边栏快捷入口：直接落到角色页，返回时回设置菜单。
+    val shortcutEntrySection = remember(initialSectionKey) {
+        when (initialSectionKey) {
+            "roles" -> SettingsSection.Roles
+            "memory" -> SettingsSection.Memory
+            else -> null
+        }
+    }
+    var section by remember(initialSectionKey) {
+        mutableStateOf(shortcutEntrySection ?: SettingsSection.Menu)
+    }
     var logReturnSection by remember { mutableStateOf(SettingsSection.Menu) }
     // 各列表页的多选状态：顶栏「多选」开关在本页 Scaffold 里，所以状态必须提到这里统一持有。
     // 用普通 map（非 snapshot）新建容器，避免在组合期写快照状态；Compose 状态在 ListSelectionState 内部。
@@ -1022,6 +1039,8 @@ fun SettingsScreen(
                     val promptsViewModel: com.bysqh.guru.feature.settings.presentation.PromptsViewModel =
                         androidx.hilt.navigation.compose.hiltViewModel()
                     val promptsState by promptsViewModel.state.collectAsStateWithLifecycle()
+                    // [二开] 片段开关状态
+                    val promptsDisabled by promptsViewModel.disabledNumbers.collectAsStateWithLifecycle()
                     LaunchedEffect(Unit) { promptsViewModel.refresh() }
                     PromptsSection(
                         state = promptsState,
@@ -1034,7 +1053,9 @@ fun SettingsScreen(
                         onDeleteFragment = promptsViewModel::deleteFragment,
                         onReorder = promptsViewModel::reorderFragments,
                         onToggleBuiltinDisabled = promptsViewModel::setBuiltinDisabled,
-                        onBatchDeleteFragments = promptsViewModel::deleteFragments
+                        onBatchDeleteFragments = promptsViewModel::deleteFragments,
+                        disabledNumbers = promptsDisabled,
+                        onToggleEnabled = promptsViewModel::setFragmentEnabled
                     )
                     if (showResetPrompts) {
                         AlertDialog(
@@ -1203,6 +1224,29 @@ fun SettingsScreen(
                 SettingsSection.Pet -> PetSettingsSection(
                     viewModel = androidx.hilt.navigation.compose.hiltViewModel()
                 )
+                // [二开] 记忆页（移植自 Muse）
+                SettingsSection.Memory -> MemorySection(
+                    viewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                )
+                // [二开] 角色页（移植自 Muse）
+                SettingsSection.Roles -> {
+                    val rolesViewModel: com.bysqh.guru.feature.settings.presentation.RolesViewModel =
+                        androidx.hilt.navigation.compose.hiltViewModel()
+                    val rolesState by rolesViewModel.state.collectAsStateWithLifecycle()
+                    val pendingCrop by rolesViewModel.pendingCrop.collectAsStateWithLifecycle()
+                    RolesSection(
+                        state = rolesState,
+                        pendingCrop = pendingCrop,
+                        onSelect = rolesViewModel::select,
+                        onCreate = rolesViewModel::create,
+                        onSave = rolesViewModel::save,
+                        onDelete = rolesViewModel::delete,
+                        onPickAvatar = rolesViewModel::pickAvatar,
+                        onCancelCrop = rolesViewModel::cancelCrop,
+                        onCommitCrop = rolesViewModel::commitAvatar,
+                        onRemoveAvatar = rolesViewModel::removeAvatar
+                    )
+                }
                 SettingsSection.TokenStats -> TokenStatsSection(
                     state = tokenStats,
                     onSelectPeriod = { viewModel.setTokenStatsPeriod(it) },
@@ -1773,6 +1817,20 @@ internal fun SettingsMenu(
                 icon = FeatherIcons.Book,
                 title = stringResource(SettingsSection.Skills.titleRes),
                 onClick = { onOpen(SettingsSection.Skills) }
+            )
+            SettingsDivider()
+            // [二开] 记忆页
+            SettingsRow(
+                icon = FeatherIcons.Database,
+                title = stringResource(SettingsSection.Memory.titleRes),
+                onClick = { onOpen(SettingsSection.Memory) }
+            )
+            SettingsDivider()
+            // [二开] 角色页
+            SettingsRow(
+                icon = FeatherIcons.User,
+                title = stringResource(SettingsSection.Roles.titleRes),
+                onClick = { onOpen(SettingsSection.Roles) }
             )
             SettingsDivider()
             SettingsRow(

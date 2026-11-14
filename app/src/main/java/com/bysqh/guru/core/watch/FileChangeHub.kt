@@ -34,7 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * App 级文件变更监听中心：监听当前活动工作区与 `~/.aicode` 两个根（也可订阅任意宿主目录），
+ * App 级文件变更监听中心：监听当前活动工作区与 `~/.guru` 两个根（也可订阅任意宿主目录），
  * 变更合并成批后广播；订阅方按需声明范围与过滤规则，没人订阅的目录不持有 inotify 句柄、不轮询。
  *
  * 事件来源两层：
@@ -84,7 +84,7 @@ class FileChangeHub @Inject constructor(
         const val CONTAINER_ROOT = WorkspacePathMapper.CONTAINER_ROOT
 
         /** AI 配置目录在容器内的根路径。 */
-        const val AICODE_ROOT = WorkspacePathMapper.AICODE_ROOT
+        const val GURU_ROOT = WorkspacePathMapper.GURU_ROOT
 
         private const val IN_IGNORED = 0x00008000
 
@@ -159,7 +159,7 @@ class FileChangeHub @Inject constructor(
             }
         }
 
-    /** 订阅 AI 配置目录（`~/.aicode`）下的子路径，[containerSubPath] 为空表示该目录本身。 */
+    /** 订阅 AI 配置目录（`~/.guru`）下的子路径，[containerSubPath] 为空表示该目录本身。 */
     fun watchAicode(
         containerSubPath: String = "",
         recursive: Boolean = false,
@@ -169,9 +169,9 @@ class FileChangeHub @Inject constructor(
     ): Flow<FileChangeBatch> {
         val sub = containerSubPath.trim('/')
         return watchHostDir(
-            hostDir = if (sub.isEmpty()) containerInstaller.aicodeDir else File(containerInstaller.aicodeDir, sub),
-            containerRootPath = if (sub.isEmpty()) AICODE_ROOT else "$AICODE_ROOT/$sub",
-            root = ChangeRoot.AICODE,
+            hostDir = if (sub.isEmpty()) containerInstaller.guruDir else File(containerInstaller.guruDir, sub),
+            containerRootPath = if (sub.isEmpty()) GURU_ROOT else "$GURU_ROOT/$sub",
+            root = ChangeRoot.GURU,
             recursive = recursive,
             filter = filter,
             fallbackPoll = fallbackPoll,
@@ -182,7 +182,7 @@ class FileChangeHub @Inject constructor(
     /**
      * 订阅任意宿主目录（如同步引擎的本地镜像目录）。[containerRootPath] 为 null 时容器路径由
      * [WorkspacePathMapper.toContainerPath] 反推。目录尚不存在时不放弃订阅——等它出现后再挂 watch，
-     * 并把「目录出现」当作一次变更上报（项目级 `.aicode/skills` 这类目录经常是后建的）。
+     * 并把「目录出现」当作一次变更上报（项目级 `.guru/skills` 这类目录经常是后建的）。
      */
     fun watchHostDir(
         hostDir: File,
