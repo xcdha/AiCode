@@ -388,8 +388,19 @@ fun AIEditorTheme(
         // 而不是只有用 colorScheme 的组件变、用语义色的组件不变。
         val derived = run {
             themeColors.semanticColors.copy(
-                pageBackground = layeredScheme.background,
-                cardSurface = layeredScheme.surface,
+                // 没有自定义背景时保留预设的「页面灰底 + 白色卡片」。
+                // 默认浅色的 scheme.background 和 scheme.surface 都是纯白，直接覆盖会让分组卡片融进页面，
+                // 边界只有设了背景、页面变透明之后才看得见。
+                pageBackground = if (backgroundActive) {
+                    layeredScheme.background
+                } else {
+                    themeColors.semanticColors.pageBackground
+                },
+                cardSurface = if (backgroundActive) {
+                    layeredScheme.surface
+                } else {
+                    themeColors.semanticColors.cardSurface
+                },
                 mutedSurface = layeredScheme.surfaceVariant,
                 // 胶囊标签/次级按钮给一点底，否则整块变透明看不出可点区域
                 capsuleSurface = scheme.surfaceVariant.copy(alpha = if (backgroundActive) 0.42f else 1f),
@@ -402,7 +413,7 @@ fun AIEditorTheme(
                 onInfoContainer = layeredScheme.onPrimaryContainer
             )
         }
-        if (appearance.pureBlack && darkTheme) {
+        if (appearance.pureBlack && darkTheme && !backgroundActive) {
             derived.copy(
                 pageBackground = Color.Black,
                 cardSurface = Color(0xFF141414),

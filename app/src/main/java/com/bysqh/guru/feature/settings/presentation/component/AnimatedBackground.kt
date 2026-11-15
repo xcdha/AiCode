@@ -19,6 +19,11 @@ import android.media.MediaPlayer
 import android.os.SystemClock
 import android.view.Surface
 import android.view.TextureView
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -130,6 +135,9 @@ internal fun VideoBackgroundView(
 ) {
     // Surface 由 TextureView 的回调产出，MediaPlayer 依赖它才能出画面。
     var surface by remember(path) { mutableStateOf<Surface?>(null) }
+    // [二开] 纹理重建期间（如抽屉弹出导致重新布局）TextureView 会短暂空白，
+    // 用销毁前抓到的最后一帧兜底，避免整屏闪白。
+    var lastFrame by remember(path) { mutableStateOf<ImageBitmap?>(null) }
 
     DisposableEffect(path, surface) {
         val target = surface
@@ -164,40 +172,62 @@ internal fun VideoBackgroundView(
         }
     }
 
-    AndroidView(
-        factory = { context ->
-            TextureView(context).apply {
-                // 背景层只负责显示，不抢焦点、不拦截触摸，正文区域依旧可正常滚动点击。
-                isFocusable = false
-                isFocusableInTouchMode = false
-                surfaceTextureListener = object : TextureView.SurfaceTextureListener {
-                    override fun onSurfaceTextureAvailable(
-                        surfaceTexture: SurfaceTexture,
-                        width: Int,
-                        height: Int
-                    ) {
-                        surface = Surface(surfaceTexture)
+    // alpha 会给父节点加硬件层，TextureView 画进硬件层会闪白。
+    // 背景视频始终按原亮度画，可见度只由上面的遮罩控制。
+    if (alpha <= 0f) return
+    Box(modifier = modifier.fillMaxSize()) {
+        lastFrame?.let { frame ->
+            Image(
+                bitmap = frame,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        AndroidView(
+            factory = { context ->
+                val view = TextureView(context)
+                view.apply {
+                    // 背景层只负责显示，不抢焦点、不拦截触摸，正文区域依旧可正常滚动点击。
+                    isFocusable = false
+                    isFocusableInTouchMode = false
+                    // 纹理空白时让下方的最后一帧透出来
+                    isOpaque = false
+                    var lastCaptureMs = 0L
+                    surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                        override fun onSurfaceTextureAvailable(
+                            surfaceTexture: SurfaceTexture,
+                            width: Int,
+                            height: Int
+                        ) {
+                            surface = Surface(surfaceTexture)
+                        }
+
+                        override fun onSurfaceTextureSizeChanged(
+                            surfaceTexture: SurfaceTexture,
+                            width: Int,
+                            height: Int
+                        ) = Unit
+
+                        override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean {
+                            surface?.release()
+                            surface = null
+                            // true 表示由系统回收 SurfaceTexture，这里已先释放自建的 Surface。
+                            return true
+                        }
+
+                        override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) {
+                            // 销毁回调里 bitmap 常常已经是空的，播放中间隔抓一帧才能兜住闪白。
+                            val now = SystemClock.uptimeMillis()
+                            if (lastFrame != null && now - lastCaptureMs < 1500L) return
+                            lastCaptureMs = now
+                            lastFrame = runCatching { view.bitmap?.asImageBitmap() }.getOrNull() ?: lastFrame
+                        }
                     }
-
-                    override fun onSurfaceTextureSizeChanged(
-                        surfaceTexture: SurfaceTexture,
-                        width: Int,
-                        height: Int
-                    ) = Unit
-
-                    override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean {
-                        surface?.release()
-                        surface = null
-                        // true 表示由系统回收 SurfaceTexture，这里已先释放自建的 Surface。
-                        return true
-                    }
-
-                    override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
                 }
-            }
-        },
-        modifier = modifier
-            .fillMaxSize()
-            .alpha(alpha)
-    )
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 }

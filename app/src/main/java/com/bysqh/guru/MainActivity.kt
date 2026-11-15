@@ -17,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
@@ -981,13 +982,23 @@ fun AppNavigation(
     } else {
         ModalNavigationDrawer(
             drawerState = drawerState,
+            // [二开] 有背景时不再铺黑遮罩：32% 黑会把右侧聊天页盖成灰/白块，视频也被盖没。
+            // 没背景时仍用默认遮罩，白底抽屉才分得开白底内容。
+            scrimColor = if (LocalBackgroundVisible.current) {
+                Color.Transparent
+            } else {
+                Color.Black.copy(alpha = 0.32f)
+            },
             // 仅在聊天页启用手势滑出；其他页面禁止（但已打开时始终可关闭）。
             gesturesEnabled = currentRoute == "chat" || drawerState.isOpen,
             drawerContent = {
                 ModalDrawerSheet(
                     drawerShape = RectangleShape,
-                    drawerContainerColor = settingsPageBackground(),
+                    // [二开] 与侧栏内容同一层磨砂/实底，并铺到状态栏：
+                    // 默认 insets 会把状态栏那一截留给透明容器色，看起来像缺了一块。
+                    drawerContainerColor = MaterialTheme.colorScheme.surface,
                     drawerTonalElevation = 0.dp,
+                    windowInsets = WindowInsets(0, 0, 0, 0),
                     modifier = Modifier.width(drawerWidth())
                 ) {
                     drawerBody()
