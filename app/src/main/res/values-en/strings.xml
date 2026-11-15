@@ -263,7 +263,7 @@
     <string name="theme_dynamic_color_unsupported">Requires Android 12 or newer</string>
     <string name="settings_background_image">Background image</string>
     <string name="settings_background_image_none">None</string>
-    <string name="settings_background_image_alpha">Opacity</string>
+    <string name="settings_background_image_alpha">Background visibility</string>
     <!-- [custom] background brightness -->
     <string name="settings_background_image_pick">Pick image / video</string>
     <string name="settings_background_image_remove">Remove background</string>

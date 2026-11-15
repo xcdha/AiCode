@@ -71,6 +71,12 @@ enum class UiStyle(val id: String, val labelRes: Int) {
  */
 val LocalUiStyle = staticCompositionLocalOf { UiStyle.STANDARD }
 
+/**
+ * [二开] 是否正在显示自定义背景。
+ * 页面据此让出底色（透明），背景层才能从内容下方透出来。
+ */
+val LocalBackgroundVisible = staticCompositionLocalOf { false }
+
 /** 当前外观的全部可调项，由 ThemeSettingsRepository 组装后传给主题。 */
 data class AppearanceOptions(
     val accent: AccentColor = AccentColor.SYSTEM,
@@ -102,6 +108,10 @@ private fun Color.adjustSaturation(satScale: Float, hueShiftDeg: Float = 0f): Co
     hsv[0] = (hsv[0] + hueShiftDeg + 360f) % 360f
     return Color(AndroidColor.HSVToColor(hsv))
 }
+
+/** 用 [tint] 以 [amount] 的比例给 [this] 上色（用于让配色风格影响页面底色）。 */
+private fun Color.tintWith(tint: Color, amount: Float): Color =
+    if (amount <= 0f) this else tint.copy(alpha = amount).compositeOver(this)
 
 /** 主色与底色的混合，用于生成 container 色。 */
 private fun tintedContainer(primary: Color, surface: Color, dark: Boolean): Color =
@@ -147,10 +157,31 @@ fun buildAppearanceColorScheme(
     }
     val tertiary = primary.adjustSaturation(satScale, hueShift + 48f)
 
-    val surface = if (options.pureBlack && dark) Color.Black else base.surface
-    val background = if (options.pureBlack && dark) Color.Black else base.background
-    val surfaceVariant =
-        if (options.pureBlack && dark) Color(0xFF121212) else base.surfaceVariant
+    // [二开] 配色风格不只影响主色：页面底色/卡片也按比例蘸一点主色，
+    // 否则「色彩风格」看起来只有按钮变色，整屏观感几乎不变。
+    val tintStrength = when (options.paletteStyle) {
+        PaletteStyle.TONAL_SPOT -> 0.02f
+        PaletteStyle.NEUTRAL -> 0f
+        PaletteStyle.VIBRANT -> 0.09f
+        PaletteStyle.EXPRESSIVE -> 0.07f
+        PaletteStyle.RAINBOW -> 0.06f
+        PaletteStyle.FRUIT_SALAD -> 0.06f
+        PaletteStyle.MONOCHROME -> 0f
+        PaletteStyle.FIDELITY -> 0.03f
+        PaletteStyle.CONTENT -> 0.03f
+    }
+    val surface = when {
+        options.pureBlack && dark -> Color.Black
+        else -> base.surface.tintWith(adjustedPrimary, tintStrength)
+    }
+    val background = when {
+        options.pureBlack && dark -> Color.Black
+        else -> base.background.tintWith(adjustedPrimary, tintStrength * 1.3f)
+    }
+    val surfaceVariant = when {
+        options.pureBlack && dark -> Color(0xFF121212)
+        else -> base.surfaceVariant.tintWith(adjustedPrimary, tintStrength * 1.6f)
+    }
 
     return base.copy(
         primary = adjustedPrimary,

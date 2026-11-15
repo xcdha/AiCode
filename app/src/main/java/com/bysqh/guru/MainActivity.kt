@@ -27,6 +27,8 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.ui.graphics.Color
+import com.bysqh.guru.core.theme.LocalBackgroundVisible
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -281,70 +283,75 @@ class MainActivity : ComponentActivity() {
                     interfaceScale = interfaceScale
                 )
             ) {
+                val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
+                val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
+                val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
+                val bgPathSnapshot = bgPath
+                val bgActive = bgPathSnapshot != null && bgAlpha > 0f
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    // [二开] 有自定义背景时让出底色，背景层才能从内容下方透出来。
+                    color = if (bgActive) Color.Transparent else MaterialTheme.colorScheme.background
                 ) {
-                    // 全局自定义背景图：叠加在所有页面内容之上（水印效果），透明度可调。
-                    // 不拦截触摸事件；弹窗（Dialog 独立窗口）不受层级影响。
-                    val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
-                    val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
-                    val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        AgreementGate(repository = agreementRepository) { agreementAccepted ->
-                            AppNavigation(
-                                onboardingRepository = onboardingRepository,
-                                agreementAccepted = agreementAccepted
-                            )
-                            if (agreementAccepted) {
-                                // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
-                                com.bysqh.guru.feature.credentials.presentation.component.GlobalCredentialDialogHost(
-                                    bridge = credentialRequestBridge
-                                )
-                            }
-                        }
-                        val bgPathSnapshot = bgPath
-                        if (bgPathSnapshot != null && bgAlpha > 0f) {
-                            // [二开] 按背景类型分发：GIF / MP4 走动态渲染，IMAGE 保持上游原有的位图水印逻辑。
-                            when (bgKind) {
-                                BackgroundSettingsRepository.Kind.GIF ->
-                                    GifBackgroundView(
-                                        path = bgPathSnapshot,
-                                        alpha = bgAlpha
-                                    )
+                    CompositionLocalProvider(LocalBackgroundVisible provides bgActive) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (bgActive) {
+                                // ── 1) 背景媒体：铺满整屏、按原始亮度绘制（不再乘透明度）──
+                                when (bgKind) {
+                                    BackgroundSettingsRepository.Kind.GIF ->
+                                        GifBackgroundView(path = bgPathSnapshot!!, alpha = 1f)
 
-                                BackgroundSettingsRepository.Kind.MP4 ->
-                                    VideoBackgroundView(
-                                        path = bgPathSnapshot,
-                                        alpha = bgAlpha
-                                    )
+                                    BackgroundSettingsRepository.Kind.MP4 ->
+                                        VideoBackgroundView(path = bgPathSnapshot!!, alpha = 1f)
 
-                                BackgroundSettingsRepository.Kind.IMAGE -> {
-                                    val screen = LocalView.current
-                                    val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
-                                        value = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                                            decodeBackgroundBitmap(
-                                                bgPathSnapshot,
-                                                screen.width.coerceAtLeast(1),
-                                                screen.height.coerceAtLeast(1)
+                                    BackgroundSettingsRepository.Kind.IMAGE -> {
+                                        val screen = LocalView.current
+                                        val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
+                                            value = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                                                decodeBackgroundBitmap(
+                                                    bgPathSnapshot!!,
+                                                    screen.width.coerceAtLeast(1),
+                                                    screen.height.coerceAtLeast(1)
+                                                )
+                                            }
+                                        }
+                                        bitmap?.let {
+                                            Image(
+                                                bitmap = it,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
                                             )
                                         }
                                     }
-                                    bitmap?.let {
-                                        Image(
-                                            bitmap = it,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .alpha(bgAlpha)
+                                }
+                                // ── 2) 遮罩：可见度越低遮罩越厚；文字永远压在遮罩之上，不会被视频糊住 ──
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            MaterialTheme.colorScheme.background.copy(alpha = 1f - bgAlpha)
                                         )
-                                    }
+                                )
+                            }
+
+                            AgreementGate(repository = agreementRepository) { agreementAccepted ->
+                                AppNavigation(
+                                    onboardingRepository = onboardingRepository,
+                                    agreementAccepted = agreementAccepted
+                                )
+                                if (agreementAccepted) {
+                                    // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
+                                    com.bysqh.guru.feature.credentials.presentation.component.GlobalCredentialDialogHost(
+                                        bridge = credentialRequestBridge
+                                    )
                                 }
                             }
+
+                            // beta 包全局水印，置于最上层，不拦截触摸。
+                            BetaWatermark()
                         }
-                        // beta 包全局水印，置于最上层，不拦截触摸。
-                        BetaWatermark()
                     }
                 }
             }
@@ -726,7 +733,14 @@ fun AppNavigation(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        // [二开] 有自定义背景时聊天页让出底色，背景才能从下方透出来
+                        .background(
+                            if (LocalBackgroundVisible.current) {
+                                Color.Transparent
+                            } else {
+                                MaterialTheme.colorScheme.background
+                            }
+                        )
                         .onSizeChanged { rowWidthPx = it.width }
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
