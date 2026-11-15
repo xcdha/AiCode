@@ -112,7 +112,7 @@ android {
         //      保活需换 specialUse。
         // 代价：不能上 Google Play。
         targetSdk = 28
-        versionCode = gitCommitCount()
+        versionCode = gitCommitCount() + 1
         versionName = gitVersionName()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

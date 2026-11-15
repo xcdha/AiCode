@@ -152,6 +152,10 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var promptFragmentCatalog: com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentCatalog
 
+    /** [二开] 导航手势偏好：用于开启/关闭系统级预测性返回。 */
+    @Inject
+    lateinit var gestureSettings: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository
+
     /** 后台保活开关持久化。 */
     @Inject
     lateinit var keepaliveSettings: KeepaliveSettingsRepository
@@ -256,6 +260,14 @@ class AIEditorApp : Application(), Configuration.Provider {
         appScope.launch { reportAbnormalExits() }
         // [二开] 预载片段开关缓存（DataStore 读取是挂起的，不能等到渲染提示词时再读）。
         appScope.launch { promptFragmentCatalog.refreshDisabledCache() }
+        // [二开] 同步系统级预测性返回开关（Android 14+）。App 锁 targetSdk 28，
+        // 默认拿不到系统手势预测动画，这里用反射打开；失败静默降级。
+        // 持续跟随设置，用户切换后立即生效。
+        appScope.launch {
+            gestureSettings.predictiveBackFlow.collectLatest { enabled ->
+                com.bysqh.guru.core.ui.PredictiveBackController.apply(applicationInfo, enabled)
+            }
+        }
         // 把提供商级代理注册表挂到 AppProxy（applyGlobal 已在 attachBaseContext 完成），
         // 此后按目标 host 分派 provider 专属代理；无 provider 配置时回退全局代理。
         AppProxy.registerProviderProxyRegistry(providerProxyRegistry)

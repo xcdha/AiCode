@@ -1,7 +1,11 @@
 package com.bysqh.guru
 
+import android.graphics.SurfaceTexture
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.view.Surface
+import android.view.TextureView
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +21,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
@@ -28,9 +31,6 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.ui.graphics.Color
-import com.bysqh.guru.core.theme.LocalBackgroundScrimColor
-import com.bysqh.guru.core.theme.LocalBackgroundVisible
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
@@ -113,7 +114,6 @@ import com.bysqh.guru.feature.pet.presentation.PetOverlay
 import com.bysqh.guru.feature.settings.presentation.component.GifBackgroundView
 import com.bysqh.guru.feature.settings.presentation.component.SettingsScreen
 import com.bysqh.guru.feature.settings.presentation.component.UpdateCheckDialog
-import com.bysqh.guru.feature.settings.presentation.component.VideoBackgroundView
 import com.bysqh.guru.feature.settings.presentation.component.decodeBackgroundBitmap
 import com.bysqh.guru.feature.settings.presentation.component.openUrl
 import com.bysqh.guru.feature.settings.presentation.component.settingsPageBackground
@@ -171,6 +171,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var browserManager: com.bysqh.guru.feature.agent.domain.tool.browser.BrowserManager
+
+    /** [二开] MP4 壁纸画在 Compose 窗口后面，不进 Compose 的硬件层，抽屉动画才不会把视频闪成白屏。 */
+    private var wallpaperView: TextureView? = null
+    private var wallpaperPlayer: MediaPlayer? = null
+    private var wallpaperSurface: Surface? = null
+    private var wallpaperPath: String? = null
 
     override fun attachBaseContext(newBase: android.content.Context) {
         // 在 Activity 创建前同步应用用户选择的语言，确保冷启动也生效。
@@ -273,12 +279,21 @@ class MainActivity : ComponentActivity() {
                 browserManager.setAppDarkTheme(darkTheme)
             }
 
-            // [二开] 背景状态提到主题之前：主题需要据此决定页面底色是否让出
+            // [二开] 壁纸画在实底界面之上，透明度沿用上游水印上限。不把 backgroundActive 传进主题，配色保持原样。
             val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
             val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
             val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
             val bgPathSnapshot = bgPath
             val bgActive = bgPathSnapshot != null && bgAlpha > 0f
+
+            LaunchedEffect(bgActive, bgKind, bgPathSnapshot, bgAlpha) {
+                val videoPath = if (bgActive && bgKind == BackgroundSettingsRepository.Kind.MP4) {
+                    bgPathSnapshot
+                } else {
+                    null
+                }
+                setWallpaperVideo(videoPath, bgAlpha)
+            }
 
             AIEditorTheme(
                 darkTheme = darkTheme,
@@ -290,58 +305,15 @@ class MainActivity : ComponentActivity() {
                     uiStyle = uiStyle,
                     pureBlack = pureBlack,
                     interfaceScale = interfaceScale
-                ),
-                backgroundActive = bgActive
+                )
             ) {
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    // [二开] 底色由主题统一让给背景，这里不再铺色
-                    color = Color.Transparent
+                    color = MaterialTheme.colorScheme.background
                 ) {
-                    CompositionLocalProvider(LocalBackgroundVisible provides bgActive) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            if (bgActive) {
-                                // ── 1) 背景媒体：铺满整屏、按原始亮度绘制（不再乘透明度）──
-                                when (bgKind) {
-                                    BackgroundSettingsRepository.Kind.GIF ->
-                                        GifBackgroundView(path = bgPathSnapshot!!, alpha = 1f)
-
-                                    BackgroundSettingsRepository.Kind.MP4 ->
-                                        VideoBackgroundView(path = bgPathSnapshot!!, alpha = 1f)
-
-                                    BackgroundSettingsRepository.Kind.IMAGE -> {
-                                        val screen = LocalView.current
-                                        val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
-                                            value = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                                                decodeBackgroundBitmap(
-                                                    bgPathSnapshot!!,
-                                                    screen.width.coerceAtLeast(1),
-                                                    screen.height.coerceAtLeast(1)
-                                                )
-                                            }
-                                        }
-                                        bitmap?.let {
-                                            Image(
-                                                bitmap = it,
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
-                                    }
-                                }
-                                // ── 2) 遮罩：可见度越低遮罩越厚；文字永远压在遮罩之上，不会被视频糊住 ──
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(
-                                            LocalBackgroundScrimColor.current.copy(alpha = 1f - bgAlpha)
-                                        )
-                                )
-                            }
-
-                            AgreementGate(repository = agreementRepository) { agreementAccepted ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AgreementGate(repository = agreementRepository) { agreementAccepted ->
                                 AppNavigation(
                                     onboardingRepository = onboardingRepository,
                                     agreementAccepted = agreementAccepted
@@ -354,9 +326,39 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            // beta 包全局水印，置于最上层，不拦截触摸。
-                            BetaWatermark()
+                        if (bgActive) {
+                            when (bgKind) {
+                                BackgroundSettingsRepository.Kind.GIF ->
+                                    GifBackgroundView(path = bgPathSnapshot!!, alpha = bgAlpha)
+
+                                BackgroundSettingsRepository.Kind.MP4 -> Unit
+
+                                BackgroundSettingsRepository.Kind.IMAGE -> {
+                                    val screen = LocalView.current
+                                    val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
+                                        value = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                                            decodeBackgroundBitmap(
+                                                bgPathSnapshot!!,
+                                                screen.width.coerceAtLeast(1),
+                                                screen.height.coerceAtLeast(1)
+                                            )
+                                        }
+                                    }
+                                    bitmap?.let {
+                                        Image(
+                                            bitmap = it,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .alpha(bgAlpha)
+                                        )
+                                    }
+                                }
+                            }
                         }
+
+                        BetaWatermark()
                     }
                 }
             }
@@ -381,8 +383,106 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        releaseWallpaper()
         browserManager.detachHiddenHost()
         super.onDestroy()
+    }
+
+    /**
+     * [二开] 把 MP4 壁纸挂到 Compose 背景层内部（window 层）。
+     * 之前挂到 window 最上层会盖住抽屉的遮罩，抽屉打开时右侧一片空白、视频裸露；
+     * 放回 Compose 背景层后，遮罩、桌宠、卡片都在视频之上，层次正确。
+     * 纹理销毁时返回 false，自己持有 SurfaceTexture：抽屉开关不会拆掉画面。
+     */
+    private fun setWallpaperVideo(path: String?, alpha: Float) {
+        if (path == null) {
+            if (wallpaperPath != null || wallpaperView != null) releaseWallpaper()
+            return
+        }
+        wallpaperView?.alpha = alpha
+        if (path == wallpaperPath && wallpaperView != null) return
+        wallpaperPath = path
+        val content = findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+        val view = wallpaperView ?: TextureView(this).also { tv ->
+            tv.isOpaque = false
+            tv.isClickable = false
+            tv.isFocusable = false
+            tv.isFocusableInTouchMode = false
+            tv.setOnTouchListener { _, _ -> false }
+            tv.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                override fun onSurfaceTextureAvailable(
+                    surfaceTexture: SurfaceTexture,
+                    width: Int,
+                    height: Int
+                ) {
+                    wallpaperSurface?.release()
+                    wallpaperSurface = Surface(surfaceTexture)
+                    startWallpaperPlayer()
+                }
+
+                override fun onSurfaceTextureSizeChanged(
+                    surfaceTexture: SurfaceTexture,
+                    width: Int,
+                    height: Int
+                ) = Unit
+
+                override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean = false
+
+                override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
+            }
+            wallpaperView = tv
+            // index 0：插到 content 最底层，界面内容盖在它上面
+            content.addView(
+                tv,
+                0,
+                android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        view.alpha = alpha
+        if (view.isAvailable) startWallpaperPlayer()
+    }
+
+    private fun startWallpaperPlayer() {
+        val path = wallpaperPath ?: return
+        val surface = wallpaperSurface ?: return
+        wallpaperPlayer?.let { player ->
+            runCatching {
+                player.stop()
+                player.release()
+            }
+        }
+        val player = MediaPlayer()
+        wallpaperPlayer = player
+        runCatching {
+            player.setDataSource(path)
+            player.setSurface(surface)
+            player.isLooping = true
+            player.setVolume(0f, 0f)
+            player.setOnPreparedListener { it.start() }
+            player.setOnErrorListener { _, _, _ -> true }
+            player.prepareAsync()
+        }
+    }
+
+    private fun releaseWallpaper() {
+        wallpaperPlayer?.let { player ->
+            runCatching {
+                player.stop()
+                player.release()
+            }
+        }
+        wallpaperPlayer = null
+        wallpaperSurface?.release()
+        wallpaperSurface = null
+        wallpaperView?.let { view ->
+            view.surfaceTexture?.release()
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+        }
+        wallpaperView = null
+        wallpaperPath = null
     }
 
 }
@@ -748,14 +848,7 @@ fun AppNavigation(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        // [二开] 有自定义背景时聊天页让出底色，背景才能从下方透出来
-                        .background(
-                            if (LocalBackgroundVisible.current) {
-                                Color.Transparent
-                            } else {
-                                MaterialTheme.colorScheme.background
-                            }
-                        )
+                        .background(MaterialTheme.colorScheme.background)
                         .onSizeChanged { rowWidthPx = it.width }
                 ) {
                     Row(modifier = Modifier.fillMaxSize()) {
@@ -819,14 +912,6 @@ fun AppNavigation(
                             }
                         )
                     }
-
-                    // [二开] 桌宠悬浮层：置于聊天区最上层，侧栏展开时淡出。
-                    // 表情跟随当前会话的 Agent 状态（Idle/Loading/Streaming/Result/Error）。
-                    PetOverlay(
-                        agentState = agentViewModel.agentState.collectAsStateWithLifecycle().value,
-                        viewModel = androidx.hilt.navigation.compose.hiltViewModel(),
-                        hiddenByDrawer = sidebarVisible
-                    )
                 }
             }
             composable("settings") {
@@ -982,23 +1067,16 @@ fun AppNavigation(
     } else {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            // [二开] 有背景时不再铺黑遮罩：32% 黑会把右侧聊天页盖成灰/白块，视频也被盖没。
-            // 没背景时仍用默认遮罩，白底抽屉才分得开白底内容。
-            scrimColor = if (LocalBackgroundVisible.current) {
-                Color.Transparent
-            } else {
-                Color.Black.copy(alpha = 0.32f)
-            },
+            // [二开] 有背景时也要遮罩：右侧内容与抽屉同为浅色时，没有遮罩就分不出层次。
+            scrimColor = Color.Black.copy(alpha = 0.32f),
             // 仅在聊天页启用手势滑出；其他页面禁止（但已打开时始终可关闭）。
             gesturesEnabled = currentRoute == "chat" || drawerState.isOpen,
             drawerContent = {
                 ModalDrawerSheet(
                     drawerShape = RectangleShape,
-                    // [二开] 与侧栏内容同一层磨砂/实底，并铺到状态栏：
-                    // 默认 insets 会把状态栏那一截留给透明容器色，看起来像缺了一块。
+                    // [二开] 抽屉用实底（卡片色）：页面底色在有背景时是透明的，沿用会让抽屉变全透。
                     drawerContainerColor = MaterialTheme.colorScheme.surface,
                     drawerTonalElevation = 0.dp,
-                    windowInsets = WindowInsets(0, 0, 0, 0),
                     modifier = Modifier.width(drawerWidth())
                 ) {
                     drawerBody()
@@ -1007,6 +1085,17 @@ fun AppNavigation(
         ) {
             navBody()
         }
+    }
+
+    // [二开] 桌宠悬浮层：放在导航层与抽屉之外，层级最上。
+    // 之前放在聊天页内部，抽屉一展开就被抽屉与遮罩盖住，看起来像「闪一下就消失」。
+    // 表情跟随当前会话的 Agent 状态（Idle/Loading/Streaming/Result/Error）。
+    if (currentRoute == "chat") {
+        PetOverlay(
+            agentState = agentViewModel.agentState.collectAsStateWithLifecycle().value,
+            viewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+            hiddenByDrawer = false
+        )
     }
 
     // 检查更新弹窗（全局宿主：自动检测与关于页手动检查共用，覆盖所有页面）
