@@ -73,6 +73,13 @@ internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
     val interfaceScale by viewModel.interfaceScale.collectAsStateWithLifecycle()
 
     val dynamicColorSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    // 纯黑只对深色模式有意义：浅色模式下开关置灰并说明原因，避免「点了没反应」。
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val effectiveDark = when (themeMode) {
+        AppThemeMode.AUTO -> systemDark
+        AppThemeMode.DARK -> true
+        AppThemeMode.LIGHT -> false
+    }
 
     // 缩放滑块用 85~115 的百分比，避免浮点抖动
     var scalePercent by remember(interfaceScale) {
@@ -202,11 +209,17 @@ internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
         SettingsGroup {
             SettingsRow(
                 title = stringResource(R.string.appearance_pure_black),
-                subtitle = stringResource(R.string.appearance_pure_black_desc),
+                subtitle = if (effectiveDark) {
+                    stringResource(R.string.appearance_pure_black_desc)
+                } else {
+                    stringResource(R.string.appearance_pure_black_dark_only)
+                },
+                enabled = effectiveDark,
                 trailing = {
                     AppSwitch(
-                        checked = pureBlack,
-                        onCheckedChange = { viewModel.setPureBlack(it) }
+                        checked = pureBlack && effectiveDark,
+                        onCheckedChange = { viewModel.setPureBlack(it) },
+                        enabled = effectiveDark
                     )
                 }
             )

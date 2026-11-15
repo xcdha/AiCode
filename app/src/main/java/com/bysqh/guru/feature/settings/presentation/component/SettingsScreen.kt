@@ -1831,13 +1831,6 @@ internal fun SettingsMenu(
                 onClick = { onOpen(SettingsSection.Memory) }
             )
             SettingsDivider()
-            // [二开] 角色页
-            SettingsRow(
-                icon = FeatherIcons.User,
-                title = stringResource(SettingsSection.Roles.titleRes),
-                onClick = { onOpen(SettingsSection.Roles) }
-            )
-            SettingsDivider()
             SettingsRow(
                 icon = FeatherIcons.Users,
                 title = stringResource(SettingsSection.SubAgents.titleRes),

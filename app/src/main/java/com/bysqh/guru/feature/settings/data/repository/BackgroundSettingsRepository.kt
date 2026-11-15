@@ -60,9 +60,13 @@ class BackgroundSettingsRepository @Inject constructor(
         private val BRIGHTNESS_KEY = floatPreferencesKey("background_brightness")
         /** 亮度下限：太暗看不见，给用户留一点下限保护。 */
         const val MIN_BRIGHTNESS = 0.2f
-        /** 亮度上限：允许提亮，但太高会让背景盖过正文可读性。 */
-        const val MAX_BRIGHTNESS = 1.8f
-        /** 亮度默认值：1.0 = 原图亮度（配合透明度滑块使用）。 */
+        /**
+         * 亮度上限：1.0 = 原图亮度。
+         * 刻意不提供 >1 的提亮：乘性提亮会把中高亮区域推到纯白，背景反而糊成一片。
+         * 需要「更明显」应该调透明度，而不是继续加亮。
+         */
+        const val MAX_BRIGHTNESS = 1.0f
+        /** 亮度默认值：1.0 = 原图亮度（滑块 100%）。 */
         const val DEFAULT_BRIGHTNESS = 1.0f
 
         /** 把 UI 百分比（0~100）线性映射为实际透明度（0~MAX_ALPHA）。 */

@@ -1320,7 +1320,7 @@
     <string name="mcp_details">详情</string>
 
     <!-- Custom Prompts -->
-    <string name="prompts_title">系统规则</string>
+    <string name="prompts_title">提示词</string>
     <string name="prompts_sort_long_press">长按可调整顺序</string>
     <string name="prompts_empty">暂无可用片段</string>
     <string name="prompts_source_project">项目</string>
@@ -2106,4 +2106,5 @@
     <string name="appearance_interface_scale_desc">调整全局字号大小（85% ~ 115%）</string>
     <string name="appearance_pure_black">纯黑背景</string>
     <string name="appearance_pure_black_desc">深色模式下把页面底色压到纯黑，省电且对比更高</string>
+    <string name="appearance_pure_black_dark_only">仅深色模式生效（当前为浅色模式）</string>
 </resources>

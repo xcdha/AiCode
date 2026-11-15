@@ -1320,7 +1320,7 @@
     <string name="mcp_details">Details</string>
 
     <!-- Custom Prompts -->
-    <string name="prompts_title">System rules</string>
+    <string name="prompts_title">Prompts</string>
     <string name="prompts_sort_long_press">Long-press to reorder</string>
     <string name="prompts_empty">No fragments available</string>
     <string name="prompts_source_project">Project</string>
@@ -2107,4 +2107,5 @@
     <string name="appearance_interface_scale_desc">Scale global text size (85%–115%)</string>
     <string name="appearance_pure_black">Pure black</string>
     <string name="appearance_pure_black_desc">Use a pure black background in dark mode for higher contrast and less power use</string>
+    <string name="appearance_pure_black_dark_only">Only applies in dark mode (currently light)</string>
 </resources>

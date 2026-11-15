@@ -78,6 +78,22 @@ data class AppSemanticColors(
 )
 
 /**
+ * [二开] Miuix 版式：标题更粗、正文更大、行高更松，配合大圆角形成与标准样式明显的观感差异。
+ * 只调字重与字号，不换字体族，避免设备字体缺失导致回退不一致。
+ */
+private fun miuixTypography(base: Typography): Typography = base.run {
+    copy(
+        headlineSmall = headlineSmall.copy(fontWeight = FontWeight.Bold),
+        titleLarge = titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 23.sp),
+        titleMedium = titleMedium.copy(fontWeight = FontWeight.Bold),
+        titleSmall = titleSmall.copy(fontWeight = FontWeight.SemiBold),
+        bodyLarge = bodyLarge.copy(fontSize = 17.sp, lineHeight = 25.sp),
+        bodyMedium = bodyMedium.copy(fontSize = 15.sp, lineHeight = 22.sp),
+        labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold)
+    )
+}
+
+/**
  * [二开] Miuix 界面样式：更大的圆角，接近 Miui 的卡片观感。
  * 只改形状不改色板，避免与「配色方案 / 色彩风格」互相打架。
  */
@@ -345,7 +361,11 @@ fun AIEditorTheme(
         CompositionLocalProvider(LocalDensity provides scaledDensity) {
             MaterialTheme(
                 colorScheme = scheme,
-                typography = AppTypography,
+                typography = if (appearance.uiStyle == UiStyle.MIUIX) {
+                    miuixTypography(AppTypography)
+                } else {
+                    AppTypography
+                },
                 shapes = shapes,
                 content = content
             )
