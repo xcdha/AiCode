@@ -394,13 +394,9 @@ fun AIEditorTheme(
     // [二开] 纯黑：页面底色与卡片面用的是语义色（不是 colorScheme.background），
     // 所以这里要同步压黑，否则「纯黑」只生效一半。
     val semanticColors = remember(themeColors, darkTheme, appearance, scheme) {
-        // [二开] 用户改过外观（强调色/色彩风格/Miuix）时，把中性色与信息色也改为从最终配色派生，
-        // 否则页面底色、卡片、分隔线仍是预设写死的值，看起来「只有部分组件变色」。
-        // 全默认时保持预设原样，避免影响既有观感。
-        val customized = appearance.accent != AccentColor.SYSTEM ||
-            appearance.paletteStyle != PaletteStyle.TONAL_SPOT ||
-            appearance.uiStyle == UiStyle.MIUIX
-        val derived = if (customized) {
+        // 始终从最终配色派生：配色方案、强调色、色彩风格、Miuix 任一变化都要能带动整屏，
+        // 而不是只有用 colorScheme 的组件变、用语义色的组件不变。
+        val derived = run {
             themeColors.semanticColors.copy(
                 pageBackground = scheme.background,
                 cardSurface = scheme.surface,
@@ -414,8 +410,6 @@ fun AIEditorTheme(
                 onInfo = scheme.onPrimary,
                 onInfoContainer = scheme.onPrimaryContainer
             )
-        } else {
-            themeColors.semanticColors
         }
         if (appearance.pureBlack && darkTheme) {
             derived.copy(

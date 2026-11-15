@@ -1562,7 +1562,12 @@ fun AIChatPanel(
         )
     ) {
         Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        // [二开] 有自定义背景时让出底色，背景才能从下方透出来
+        containerColor = if (com.bysqh.guru.core.theme.LocalBackgroundVisible.current) {
+            androidx.compose.ui.graphics.Color.Transparent
+        } else {
+            MaterialTheme.colorScheme.background
+        },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             ChatHeader(
