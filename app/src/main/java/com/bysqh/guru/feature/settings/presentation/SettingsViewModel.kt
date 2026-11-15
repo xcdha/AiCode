@@ -361,6 +361,8 @@ class SettingsViewModel @Inject constructor(
     private val logSettingsRepository: LogSettingsRepository,
     private val themeSettingsRepository: ThemeSettingsRepository,
     private val backgroundSettingsRepository: BackgroundSettingsRepository,
+    // [二开] 导航手势偏好
+    private val gestureSettingsRepository: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository,
     private val keepaliveSettingsRepository: KeepaliveSettingsRepository,
     private val screenOnSettingsRepository: ScreenOnSettingsRepository,
     private val agentSoundSettingsRepository: AgentSoundSettingsRepository,
@@ -619,6 +621,14 @@ class SettingsViewModel @Inject constructor(
     /** 背景图不透明度（0~0.2，实际范围由 BackgroundSettingsRepository 的 MIN/MAX 决定），实时写 DataStore，全局背景同步变化。 */
     private val _backgroundAlpha = MutableStateFlow(BackgroundSettingsRepository.DEFAULT_ALPHA)
     val backgroundAlpha: StateFlow<Float> = _backgroundAlpha.asStateFlow()
+
+    /** [二开] 横移返回手势（默认开启）。 */
+    private val _swipeBackEnabled = MutableStateFlow(true)
+    val swipeBackEnabled: StateFlow<Boolean> = _swipeBackEnabled.asStateFlow()
+
+    /** [二开] 预测性返回动画（默认开启）。 */
+    private val _predictiveBackEnabled = MutableStateFlow(true)
+    val predictiveBackEnabled: StateFlow<Boolean> = _predictiveBackEnabled.asStateFlow()
 
     /** [二开] 外观选项（参考 Eta）：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放。 */
     private val _accentColor = MutableStateFlow(com.bysqh.guru.core.theme.AccentColor.SYSTEM)
@@ -1078,6 +1088,10 @@ class SettingsViewModel @Inject constructor(
                     _backgroundAlpha.value = it
                 }
             }
+
+            // [二开] 导航手势
+            launch { gestureSettingsRepository.swipeBackFlow.collectLatest { _swipeBackEnabled.value = it } }
+            launch { gestureSettingsRepository.predictiveBackFlow.collectLatest { _predictiveBackEnabled.value = it } }
 
             // [二开] 外观选项
             launch { themeSettingsRepository.accentColorFlow.collectLatest { _accentColor.value = it } }
@@ -2230,6 +2244,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             themeSettingsRepository.setThemePresetId(id)
         }
+    }
+
+    fun setSwipeBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setSwipeBack(enabled) }
+    }
+
+    fun setPredictiveBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setPredictiveBack(enabled) }
     }
 
     fun setAccentColor(value: com.bysqh.guru.core.theme.AccentColor) {

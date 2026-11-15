@@ -2106,4 +2106,9 @@
     <string name="appearance_pure_black">纯黑背景</string>
     <string name="appearance_pure_black_desc">深色模式下把页面底色压到纯黑，省电且对比更高</string>
     <string name="appearance_pure_black_dark_only">仅深色模式生效（当前为浅色模式）</string>
+    <!-- [二开] 导航手势 -->
+    <string name="appearance_swipe_back">横移返回手势</string>
+    <string name="appearance_swipe_back_desc">从屏幕左/右边缘向内滑动返回上一页（聊天页留给侧栏手势）</string>
+    <string name="appearance_predictive_back">预测性返回动画</string>
+    <string name="appearance_predictive_back_desc">拖动时页面跟手位移并预览，松手超过阈值完成返回，否则回弹</string>
 </resources>

@@ -522,6 +522,10 @@ fun AppNavigation(
     val sidebarVisible = if (permanentDrawer) currentRoute == "chat" else drawerState.isOpen
     // [二开] 设置页快捷入口：从侧边栏直达角色页 / 记忆页；null 回设置菜单
     var settingsEntryKey by remember { mutableStateOf<String?>(null) }
+
+    // [二开] 导航手势开关
+    val swipeBackEnabled by settingsViewModel.swipeBackEnabled.collectAsStateWithLifecycle()
+    val predictiveBackEnabled by settingsViewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
     LaunchedEffect(sidebarVisible) {
         if (sidebarVisible) agentViewModel.refreshBrowse()
     }
@@ -711,6 +715,12 @@ fun AppNavigation(
 
     // 页面主体（NavHost）：大屏放进 Row 的右侧，窄窗放进 modal 抽屉容器里。
     val navBody: @Composable () -> Unit = {
+        // [二开] 横移返回：聊天页的左右边缘留给抽屉手势，其余页面启用
+        com.bysqh.guru.core.ui.SwipeBackContainer(
+            enabled = swipeBackEnabled && currentRoute != "chat" && !drawerState.isOpen,
+            predictive = predictiveBackEnabled,
+            onBack = { navController.popBackStack() }
+        ) {
         NavHost(
             navController = navController,
             startDestination = "chat",
@@ -919,6 +929,7 @@ fun AppNavigation(
                     }
                 )
             }
+        }
         }
     }
 

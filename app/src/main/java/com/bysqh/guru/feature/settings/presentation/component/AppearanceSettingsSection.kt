@@ -71,6 +71,8 @@ internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
     val uiStyle by viewModel.uiStyle.collectAsStateWithLifecycle()
     val pureBlack by viewModel.pureBlack.collectAsStateWithLifecycle()
     val interfaceScale by viewModel.interfaceScale.collectAsStateWithLifecycle()
+    val swipeBackEnabled by viewModel.swipeBackEnabled.collectAsStateWithLifecycle()
+    val predictiveBackEnabled by viewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
 
     val dynamicColorSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     // 纯黑只对深色模式有意义：浅色模式下开关置灰并说明原因，避免「点了没反应」。
@@ -207,6 +209,31 @@ internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
         // ── 界面与效果 ──
         SettingsGroupHeader(text = stringResource(R.string.appearance_group_effects))
         SettingsGroup {
+            // [二开] 导航手势
+            SettingsRow(
+                title = stringResource(R.string.appearance_swipe_back),
+                subtitle = stringResource(R.string.appearance_swipe_back_desc),
+                trailing = {
+                    AppSwitch(
+                        checked = swipeBackEnabled,
+                        onCheckedChange = { viewModel.setSwipeBackEnabled(it) }
+                    )
+                }
+            )
+            SettingsDivider()
+            SettingsRow(
+                title = stringResource(R.string.appearance_predictive_back),
+                subtitle = stringResource(R.string.appearance_predictive_back_desc),
+                enabled = swipeBackEnabled,
+                trailing = {
+                    AppSwitch(
+                        checked = predictiveBackEnabled && swipeBackEnabled,
+                        onCheckedChange = { viewModel.setPredictiveBackEnabled(it) },
+                        enabled = swipeBackEnabled
+                    )
+                }
+            )
+            SettingsDivider()
             SettingsRow(
                 title = stringResource(R.string.appearance_pure_black),
                 subtitle = if (effectiveDark) {

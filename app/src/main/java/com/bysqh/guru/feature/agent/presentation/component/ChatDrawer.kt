@@ -218,7 +218,9 @@ fun ChatDrawerContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(settingsPageBackground())
+            // [二开] 侧边栏要有自己的磨砂底：页面底色已让给背景，
+            // 若沿用 settingsPageBackground() 会整块透明，文字直接压在视频上。
+            .background(MaterialTheme.colorScheme.surface)
             .windowInsetsPadding(
                 WindowInsets.systemBars.only(
                     WindowInsetsSides.Horizontal + WindowInsetsSides.Top

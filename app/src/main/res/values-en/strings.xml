@@ -2107,4 +2107,9 @@
     <string name="appearance_pure_black">Pure black</string>
     <string name="appearance_pure_black_desc">Use a pure black background in dark mode for higher contrast and less power use</string>
     <string name="appearance_pure_black_dark_only">Only applies in dark mode (currently light)</string>
+    <!-- [custom] navigation gestures -->
+    <string name="appearance_swipe_back">Swipe back gesture</string>
+    <string name="appearance_swipe_back_desc">Swipe inward from the left or right edge to go back (the chat page keeps it for the sidebar)</string>
+    <string name="appearance_predictive_back">Predictive back animation</string>
+    <string name="appearance_predictive_back_desc">The page follows your finger; release past the threshold to go back, otherwise it springs back</string>
 </resources>

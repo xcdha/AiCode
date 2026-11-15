@@ -357,14 +357,14 @@ fun AIEditorTheme(
             scheme
         } else {
             scheme.copy(
-                // 整屏统一交给遮罩控制：页面底色与卡片面全部透明，
-                // 否则顶栏/输入区/卡片这些「实心块」会把背景切成一截一截。
-                background = Color.Transparent,
-                surface = Color.Transparent,
-                surfaceVariant = Color.Transparent,
-                surfaceContainer = Color.Transparent,
-                surfaceContainerLow = Color.Transparent,
-                surfaceContainerLowest = Color.Transparent,
+                // 页面底色让给背景（alpha=0 但保留 RGB，避免下游 copy(alpha=…) 变成纯黑）
+                background = scheme.background.copy(alpha = 0f),
+                // 卡片/顶栏/输入区做成磨砂面：边界清晰，同时还能看见背景
+                surface = scheme.surface.copy(alpha = 0.62f),
+                surfaceVariant = scheme.surfaceVariant.copy(alpha = 0.52f),
+                surfaceContainer = scheme.surfaceContainer.copy(alpha = 0.62f),
+                surfaceContainerLow = scheme.surfaceContainerLow.copy(alpha = 0.56f),
+                surfaceContainerLowest = scheme.surfaceContainerLowest.copy(alpha = 0.50f),
                 // 弹窗 / 底部面板 / 菜单保留较高不透明度，否则弹窗文字压在视频上不可读
                 surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = 0.92f),
                 surfaceContainerHighest = scheme.surfaceContainerHighest.copy(alpha = 0.94f)
