@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.ui.graphics.Color
+import com.bysqh.guru.core.theme.LocalBackgroundScrimColor
 import com.bysqh.guru.core.theme.LocalBackgroundVisible
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -271,6 +272,13 @@ class MainActivity : ComponentActivity() {
                 browserManager.setAppDarkTheme(darkTheme)
             }
 
+            // [二开] 背景状态提到主题之前：主题需要据此决定页面底色是否让出
+            val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
+            val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
+            val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
+            val bgPathSnapshot = bgPath
+            val bgActive = bgPathSnapshot != null && bgAlpha > 0f
+
             AIEditorTheme(
                 darkTheme = darkTheme,
                 preset = AppThemePreset.findById(themePresetId),
@@ -281,18 +289,14 @@ class MainActivity : ComponentActivity() {
                     uiStyle = uiStyle,
                     pureBlack = pureBlack,
                     interfaceScale = interfaceScale
-                )
+                ),
+                backgroundActive = bgActive
             ) {
-                val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
-                val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
-                val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
-                val bgPathSnapshot = bgPath
-                val bgActive = bgPathSnapshot != null && bgAlpha > 0f
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    // [二开] 有自定义背景时让出底色，背景层才能从内容下方透出来。
-                    color = if (bgActive) Color.Transparent else MaterialTheme.colorScheme.background
+                    // [二开] 底色由主题统一让给背景，这里不再铺色
+                    color = Color.Transparent
                 ) {
                     CompositionLocalProvider(LocalBackgroundVisible provides bgActive) {
                         Box(modifier = Modifier.fillMaxSize()) {
@@ -331,7 +335,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .background(
-                                            MaterialTheme.colorScheme.background.copy(alpha = 1f - bgAlpha)
+                                            LocalBackgroundScrimColor.current.copy(alpha = 1f - bgAlpha)
                                         )
                                 )
                             }

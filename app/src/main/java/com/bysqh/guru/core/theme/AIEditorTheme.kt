@@ -79,47 +79,6 @@ data class AppSemanticColors(
 )
 
 /**
- * [二开] Miuix 调色板：Miui 语言的核心是「浅灰底 + 纯白卡片 + 亮蓝主色 + 胶囊按钮」。
- * 深色下则是纯黑底 + #1C1C1E 卡片，避免与 Material 的深灰底混同。
- */
-private fun miuixColorScheme(base: ColorScheme, dark: Boolean): ColorScheme =
-    if (dark) {
-        base.copy(
-            primary = Color(0xFF4E9BFF),
-            onPrimary = Color(0xFF001A33),
-            primaryContainer = Color(0xFF103A66),
-            onPrimaryContainer = Color(0xFFD6E7FF),
-            secondary = Color(0xFF8FA8C7),
-            tertiary = Color(0xFF7FB2FF),
-            background = Color(0xFF000000),
-            onBackground = Color(0xFFEDEDED),
-            surface = Color(0xFF1C1C1E),
-            onSurface = Color(0xFFEDEDED),
-            surfaceVariant = Color(0xFF2C2C2E),
-            onSurfaceVariant = Color(0xFFB0B0B4),
-            outline = Color(0xFF3A3A3C),
-            outlineVariant = Color(0xFF2C2C2E)
-        )
-    } else {
-        base.copy(
-            primary = Color(0xFF3482FF),
-            onPrimary = Color(0xFFFFFFFF),
-            primaryContainer = Color(0xFFE6F0FF),
-            onPrimaryContainer = Color(0xFF00305F),
-            secondary = Color(0xFF5B7A9D),
-            tertiary = Color(0xFF2F6BD8),
-            background = Color(0xFFF2F3F5),
-            onBackground = Color(0xFF111111),
-            surface = Color(0xFFFFFFFF),
-            onSurface = Color(0xFF111111),
-            surfaceVariant = Color(0xFFF7F7F8),
-            onSurfaceVariant = Color(0xFF6B6B6F),
-            outline = Color(0xFFD9D9DE),
-            outlineVariant = Color(0xFFE9E9EC)
-        )
-    }
-
-/**
  * [二开] Miuix 版式：标题更粗、正文更大、行高更松，配合大圆角形成与标准样式明显的观感差异。
  * 只调字重与字号，不换字体族，避免设备字体缺失导致回退不一致。
  */
@@ -201,6 +160,12 @@ val DarkSemanticColors = AppSemanticColors(
 )
 
 val LocalAppSemanticColors = staticCompositionLocalOf { LightSemanticColors }
+
+/**
+ * [二开] 背景遮罩色：始终是「不透明的页面底色」。
+ * 有自定义背景时 colorScheme.background 会被让成透明，这里保留原始底色给遮罩用。
+ */
+val LocalBackgroundScrimColor = staticCompositionLocalOf { Color(0xFFF8F8F8) }
 
 val MaterialTheme.semanticColors: AppSemanticColors
     @Composable
@@ -358,6 +323,12 @@ fun AIEditorTheme(
     dynamicColor: Boolean = false,
     // [二开] 外观选项：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放
     appearance: AppearanceOptions = AppearanceOptions(),
+    /**
+     * [二开] 是否正在显示自定义背景。
+     * 为 true 时页面底色让成透明、卡片面半透明，背景才能从内容下方真正透出来；
+     * 否则设置页 / 顶栏这些「自带不透明底色」的组件会把背景整块挡住。
+     */
+    backgroundActive: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -374,14 +345,33 @@ fun AIEditorTheme(
     }
 
     // [二开] 外观变换：强调色与色彩风格作用在基础配色之上，纯黑只影响深色模式。
+    // [二开] Miuix 只改「结构与版式」，颜色一律跟随配色方案 / 强调色 / Monet，
+    // 否则在 Miuix 下切换配色方案时底色与卡片完全不变（之前就踩了这个坑）。
     val scheme = remember(themeColors, darkTheme, appearance) {
-        val withAppearance = buildAppearanceColorScheme(themeColors.colorScheme, darkTheme, appearance)
-        if (appearance.uiStyle == UiStyle.MIUIX) {
-            miuixColorScheme(withAppearance, darkTheme)
+        buildAppearanceColorScheme(themeColors.colorScheme, darkTheme, appearance)
+    }
+    // [二开] 有背景时把「页面底色」让成透明、「卡片面」改成半透明，
+    // 这样所有用 colorScheme / 语义色的组件都会一起透出背景，而不是只透聊天页。
+    val layeredScheme = remember(scheme, backgroundActive) {
+        if (!backgroundActive) {
+            scheme
         } else {
-            withAppearance
+            scheme.copy(
+                // 整屏统一交给遮罩控制：页面底色与卡片面全部透明，
+                // 否则顶栏/输入区/卡片这些「实心块」会把背景切成一截一截。
+                background = Color.Transparent,
+                surface = Color.Transparent,
+                surfaceVariant = Color.Transparent,
+                surfaceContainer = Color.Transparent,
+                surfaceContainerLow = Color.Transparent,
+                surfaceContainerLowest = Color.Transparent,
+                // 弹窗 / 底部面板 / 菜单保留较高不透明度，否则弹窗文字压在视频上不可读
+                surfaceContainerHigh = scheme.surfaceContainerHigh.copy(alpha = 0.92f),
+                surfaceContainerHighest = scheme.surfaceContainerHighest.copy(alpha = 0.94f)
+            )
         }
     }
+
     // Miuix 风格：更大的圆角，层级更「卡片化」；标准模式沿用 Material3 默认形状。
     val shapes = remember(appearance.uiStyle) {
         if (appearance.uiStyle == UiStyle.MIUIX) MiuixShapes else Shapes()
@@ -393,22 +383,23 @@ fun AIEditorTheme(
 
     // [二开] 纯黑：页面底色与卡片面用的是语义色（不是 colorScheme.background），
     // 所以这里要同步压黑，否则「纯黑」只生效一半。
-    val semanticColors = remember(themeColors, darkTheme, appearance, scheme) {
+    val semanticColors = remember(themeColors, darkTheme, appearance, layeredScheme) {
         // 始终从最终配色派生：配色方案、强调色、色彩风格、Miuix 任一变化都要能带动整屏，
         // 而不是只有用 colorScheme 的组件变、用语义色的组件不变。
         val derived = run {
             themeColors.semanticColors.copy(
-                pageBackground = scheme.background,
-                cardSurface = scheme.surface,
-                mutedSurface = scheme.surfaceVariant,
-                capsuleSurface = scheme.surfaceVariant,
-                buttonMutedBg = scheme.surfaceVariant,
-                subtleBorder = scheme.outlineVariant,
-                subtleText = scheme.onSurfaceVariant,
-                info = scheme.primary,
-                infoContainer = scheme.primaryContainer,
-                onInfo = scheme.onPrimary,
-                onInfoContainer = scheme.onPrimaryContainer
+                pageBackground = layeredScheme.background,
+                cardSurface = layeredScheme.surface,
+                mutedSurface = layeredScheme.surfaceVariant,
+                // 胶囊标签/次级按钮给一点底，否则整块变透明看不出可点区域
+                capsuleSurface = scheme.surfaceVariant.copy(alpha = if (backgroundActive) 0.42f else 1f),
+                buttonMutedBg = scheme.surfaceVariant.copy(alpha = if (backgroundActive) 0.42f else 1f),
+                subtleBorder = layeredScheme.outlineVariant,
+                subtleText = layeredScheme.onSurfaceVariant,
+                info = layeredScheme.primary,
+                infoContainer = layeredScheme.primaryContainer,
+                onInfo = layeredScheme.onPrimary,
+                onInfoContainer = layeredScheme.onPrimaryContainer
             )
         }
         if (appearance.pureBlack && darkTheme) {
@@ -424,11 +415,12 @@ fun AIEditorTheme(
     }
     CompositionLocalProvider(
         LocalAppSemanticColors provides semanticColors,
-        LocalUiStyle provides appearance.uiStyle
+        LocalUiStyle provides appearance.uiStyle,
+        LocalBackgroundScrimColor provides themeColors.colorScheme.background
     ) {
         CompositionLocalProvider(LocalDensity provides scaledDensity) {
             MaterialTheme(
-                colorScheme = scheme,
+                colorScheme = layeredScheme,
                 typography = if (appearance.uiStyle == UiStyle.MIUIX) {
                     miuixTypography(AppTypography)
                 } else {
