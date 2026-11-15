@@ -110,7 +110,6 @@ import com.bysqh.guru.feature.settings.presentation.component.GifBackgroundView
 import com.bysqh.guru.feature.settings.presentation.component.SettingsScreen
 import com.bysqh.guru.feature.settings.presentation.component.UpdateCheckDialog
 import com.bysqh.guru.feature.settings.presentation.component.VideoBackgroundView
-import com.bysqh.guru.feature.settings.presentation.component.backgroundBrightnessFilter
 import com.bysqh.guru.feature.settings.presentation.component.decodeBackgroundBitmap
 import com.bysqh.guru.feature.settings.presentation.component.openUrl
 import com.bysqh.guru.feature.settings.presentation.component.settingsPageBackground
@@ -291,8 +290,6 @@ class MainActivity : ComponentActivity() {
                     val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
                     val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
                     val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
-                    // [二开] 亮度：单独控制背景明暗，与透明度相乘（默认 1.0=原亮度）。
-                    val bgBrightness by backgroundSettings.brightnessFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_BRIGHTNESS)
                     Box(modifier = Modifier.fillMaxSize()) {
                         AgreementGate(repository = agreementRepository) { agreementAccepted ->
                             AppNavigation(
@@ -313,15 +310,13 @@ class MainActivity : ComponentActivity() {
                                 BackgroundSettingsRepository.Kind.GIF ->
                                     GifBackgroundView(
                                         path = bgPathSnapshot,
-                                        alpha = bgAlpha,
-                                        brightness = bgBrightness
+                                        alpha = bgAlpha
                                     )
 
                                 BackgroundSettingsRepository.Kind.MP4 ->
                                     VideoBackgroundView(
                                         path = bgPathSnapshot,
-                                        alpha = bgAlpha,
-                                        brightness = bgBrightness
+                                        alpha = bgAlpha
                                     )
 
                                 BackgroundSettingsRepository.Kind.IMAGE -> {
@@ -340,8 +335,6 @@ class MainActivity : ComponentActivity() {
                                             bitmap = it,
                                             contentDescription = null,
                                             contentScale = ContentScale.Crop,
-                                            // [二开] 静态图用 colorFilter 提亮，与 GIF/MP4 的亮度语义保持一致。
-                                            colorFilter = backgroundBrightnessFilter(bgBrightness),
                                             modifier = Modifier
                                                 .fillMaxSize()
                                                 .alpha(bgAlpha)

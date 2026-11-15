@@ -640,10 +640,6 @@ class SettingsViewModel @Inject constructor(
     private val _backgroundKind = MutableStateFlow(BackgroundSettingsRepository.Kind.IMAGE)
     val backgroundKind: StateFlow<BackgroundSettingsRepository.Kind> = _backgroundKind.asStateFlow()
 
-    /** [二开] 背景亮度（0.2~1.8，1.0=原亮度），与透明度相乘生效。 */
-    private val _backgroundBrightness = MutableStateFlow(BackgroundSettingsRepository.DEFAULT_BRIGHTNESS)
-    val backgroundBrightness: StateFlow<Float> = _backgroundBrightness.asStateFlow()
-
     /** 透明度落盘的节流 job，见 [setBackgroundAlpha]。 */
     private var backgroundAlphaWriteJob: Job? = null
 
@@ -1094,13 +1090,6 @@ class SettingsViewModel @Inject constructor(
             launch {
                 backgroundSettingsRepository.kindFlow.collectLatest {
                     _backgroundKind.value = it
-                }
-            }
-
-            // [二开] 背景亮度。
-            launch {
-                backgroundSettingsRepository.brightnessFlow.collectLatest {
-                    _backgroundBrightness.value = it
                 }
             }
 
@@ -2284,17 +2273,6 @@ class SettingsViewModel @Inject constructor(
     fun clearBackgroundImage() {
         viewModelScope.launch {
             backgroundSettingsRepository.clearBackground()
-        }
-    }
-
-    /**
-     * [二开] 调节背景亮度（0.2~1.8）。滑块拖动会连续打进数十个值，与透明度一样做 80ms 节流。
-     */
-    fun setBackgroundBrightness(brightness: Float) {
-        backgroundAlphaWriteJob?.cancel()
-        backgroundAlphaWriteJob = viewModelScope.launch {
-            delay(BACKGROUND_ALPHA_WRITE_DEBOUNCE_MS)
-            backgroundSettingsRepository.setBackgroundBrightness(brightness)
         }
     }
 

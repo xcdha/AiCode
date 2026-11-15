@@ -265,7 +265,6 @@
     <string name="settings_background_image_none">None</string>
     <string name="settings_background_image_alpha">Opacity</string>
     <!-- [custom] background brightness -->
-    <string name="settings_background_image_brightness">Brightness</string>
     <string name="settings_background_image_pick">Pick image / video</string>
     <string name="settings_background_image_remove">Remove background</string>
     <!-- [custom] desktop pet -->

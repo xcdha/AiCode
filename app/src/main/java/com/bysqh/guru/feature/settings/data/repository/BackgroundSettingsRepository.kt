@@ -56,19 +56,6 @@ class BackgroundSettingsRepository @Inject constructor(
         /** [二开] 背景类型键；历史数据没有该键时按 [Kind.IMAGE] 兜底，老用户无感升级。 */
         private val IMAGE_KIND_KEY = stringPreferencesKey("background_image_kind")
 
-        /** [二开] 背景亮度键：静态图/GIF/MP4 共用。默认 1.0 表示不做亮度调整。 */
-        private val BRIGHTNESS_KEY = floatPreferencesKey("background_brightness")
-        /** 亮度下限：太暗看不见，给用户留一点下限保护。 */
-        const val MIN_BRIGHTNESS = 0.2f
-        /**
-         * 亮度上限：1.0 = 原图亮度。
-         * 刻意不提供 >1 的提亮：乘性提亮会把中高亮区域推到纯白，背景反而糊成一片。
-         * 需要「更明显」应该调透明度，而不是继续加亮。
-         */
-        const val MAX_BRIGHTNESS = 1.0f
-        /** 亮度默认值：1.0 = 原图亮度（滑块 100%）。 */
-        const val DEFAULT_BRIGHTNESS = 1.0f
-
         /** 把 UI 百分比（0~100）线性映射为实际透明度（0~MAX_ALPHA）。 */
         fun sliderToAlpha(percent: Float): Float =
             MAX_ALPHA * (percent / 100f).coerceIn(0f, 1f)
@@ -76,18 +63,6 @@ class BackgroundSettingsRepository @Inject constructor(
         /** 把实际透明度反映射为 UI 百分比（0~100）。 */
         fun alphaToSlider(alpha: Float): Float =
             (alpha / MAX_ALPHA).coerceIn(0f, 1f) * 100f
-
-        /**
-         * [二开] 把 UI 百分比（0~100）映射为亮度（[MIN_BRIGHTNESS]~[MAX_BRIGHTNESS]）。
-         * 50% 即 1.0（原亮度），与透明度滑块的线性映射保持同一套手感。
-         */
-        fun sliderToBrightness(percent: Float): Float =
-            MIN_BRIGHTNESS + (MAX_BRIGHTNESS - MIN_BRIGHTNESS) * (percent / 100f).coerceIn(0f, 1f)
-
-        /** [二开] 把实际亮度反映射为 UI 百分比（0~100）。 */
-        fun brightnessToSlider(brightness: Float): Float =
-            ((brightness - MIN_BRIGHTNESS) / (MAX_BRIGHTNESS - MIN_BRIGHTNESS)
-                .coerceIn(0f, 1f)) * 100f
 
         /**
          * [二开] MIME 转背景类型：只认 GIF 与 MP4 两种动态格式，其余一律按静态图片处理。
@@ -113,15 +88,6 @@ class BackgroundSettingsRepository @Inject constructor(
         prefs[IMAGE_KIND_KEY]
             ?.let { name -> Kind.entries.firstOrNull { it.name == name } }
             ?: Kind.IMAGE
-    }
-
-    /**
-     * [二开] 背景亮度（0.2~1.8，1.0 = 原亮度）。
-     * 透明度决定背景「有多淡」，亮度决定背景「有多亮」，两者相乘才是最终效果；
-     * 之前只有透明度，默认 15% 叠加在浅色图上就会显得发暗。
-     */
-    val brightnessFlow: Flow<Float> = context.backgroundDataStore.data.map {
-        (it[BRIGHTNESS_KEY] ?: DEFAULT_BRIGHTNESS).coerceIn(MIN_BRIGHTNESS, MAX_BRIGHTNESS)
     }
 
     /**
@@ -173,13 +139,6 @@ class BackgroundSettingsRepository @Inject constructor(
      * 按 MIME 决定落盘扩展名。[二开] 比上游多了 gif / mp4 两种，
      * 播放器与 Movie 解码都依赖扩展名之外的容器头，这里取名只为可读性。
      */
-    /** [二开] 设置背景亮度；直接落盘（滑块拖动由 ViewModel 侧节流）。 */
-    suspend fun setBackgroundBrightness(brightness: Float) {
-        context.backgroundDataStore.edit {
-            it[BRIGHTNESS_KEY] = brightness.coerceIn(MIN_BRIGHTNESS, MAX_BRIGHTNESS)
-        }
-    }
-
     private fun extensionFor(mime: String?): String = when (mime?.lowercase(Locale.ROOT)) {
         "image/png" -> "png"
         "image/webp" -> "webp"

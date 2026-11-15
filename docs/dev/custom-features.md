@@ -167,7 +167,6 @@ Android 要求升级包的签名与已安装版本一致。**换 keystore 后，
 | 品牌 Guru / 包名 `com.bysqh.guru` | 全局 | `app/build.gradle.kts`、`app/src/main/res/values*/strings.xml` |
 | 容器内部路径 `.guru` | 全局 | `assets/guru/**`、`ContainerInstaller`、`LinuxContainerEngine` |
 | 动态背景（GIF / MP4） | 设置 → 背景图 | `AnimatedBackground.kt`、`BackgroundSettingsRepository` |
-| 背景亮度 | 设置 → 背景图 | 同上 |
 | 桌宠（表情随 Agent 状态） | 设置 → 桌宠 / 聊天页悬浮层 | `feature/pet/**` |
 | 记忆页 | 设置 → 记忆 | `MemorySection`、`MemoryViewModel` |
 | 角色 | 设置 → 角色 / 聊天侧边栏 | `feature/agent/domain/role/**`、`RolesSection` |

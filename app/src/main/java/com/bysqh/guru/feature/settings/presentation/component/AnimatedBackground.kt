@@ -14,10 +14,8 @@ package com.bysqh.guru.feature.settings.presentation.component
  */
 
 import android.graphics.Movie
-import android.graphics.RenderEffect
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
-import android.os.Build
 import android.os.SystemClock
 import android.view.Surface
 import android.view.TextureView
@@ -35,17 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.asAndroidColorFilter
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -56,18 +47,6 @@ private const val GIF_FRAME_INTERVAL_MS = 33L
 
 /** 动画时长兜底值：个别 GIF 头信息缺失会导致 duration() 返回 0，取模会崩。 */
 private const val GIF_MIN_DURATION_MS = 100
-
-/** [二开] 亮度 → ColorFilter（乘性）。1.0 时返回 null，调用方可直接跳过。 */
-internal fun backgroundBrightnessFilter(brightness: Float): ColorFilter? =
-    if (brightness == 1f) {
-        null
-    } else {
-        ColorFilter.colorMatrix(
-            ColorMatrix().apply {
-                setToScale(brightness, brightness, brightness, 1f)
-            }
-        )
-    }
 
 /**
  * 将 [movie] 按「短边铺满 + 居中裁剪」画到当前画布，语义等同 Compose 的 [ContentScale.Crop]。
@@ -95,14 +74,12 @@ private fun DrawScope.drawMovieCrop(movie: Movie, timeMs: Int) {
  *
  * @param path 应用私有目录下的 GIF 绝对路径。
  * @param alpha 不透明度（与静态图共用同一套 0~0.2 的水印透明度）。
- * @param brightness [二开] 亮度（0.2~1.8，1.0=原亮度），>1 提亮、<1 压暗。
  * @param modifier 外层修饰符，通常无需传入。
  */
 @Composable
 internal fun GifBackgroundView(
     path: String,
     alpha: Float,
-    brightness: Float,
     modifier: Modifier = Modifier
 ) {
     // Movie 解码要读整段文件，放 IO 线程；解析失败则退化为「不显示背景」，不影响正文可读性。
@@ -127,25 +104,12 @@ internal fun GifBackgroundView(
     }
 
     // 在 draw 阶段读取 elapsedMs：Compose 会记录这次状态读取并只重绘，不触发重组。
-    // [二开] 亮度走 ColorFilter（乘性），与外层 alpha 相乘：alpha*亮度 才是最终可见度。
-    // DrawScope 没有 paint 属性，用 saveLayer + Paint(colorFilter) 把再叠加一层滤色。
     Canvas(
         modifier = modifier
             .fillMaxSize()
             .alpha(alpha)
     ) {
-        val filter = backgroundBrightnessFilter(brightness)
-        if (filter != null) {
-            val paint = Paint().apply { colorFilter = filter }
-            drawContext.canvas.saveLayer(
-                androidx.compose.ui.geometry.Rect(Offset.Zero, size),
-                paint
-            )
-            drawMovieCrop(current, (elapsedMs % durationMs).toInt())
-            drawContext.canvas.restore()
-        } else {
-            drawMovieCrop(current, (elapsedMs % durationMs).toInt())
-        }
+        drawMovieCrop(current, (elapsedMs % durationMs).toInt())
     }
 }
 
@@ -156,15 +120,12 @@ internal fun GifBackgroundView(
  *
  * @param path 应用私有目录下的 MP4 绝对路径。
  * @param alpha 不透明度（与静态图共用同一套 0~0.2 的水印透明度）。
- * @param brightness [二开] 亮度（0.2~1.8，1.0=原亮度）。VideoView 层用 ColorMatrix 做乘性提亮，
- *   与 Compose 层 alpha 相乘，语义与图片/GIF 一致。
  * @param modifier 外层修饰符，通常无需传入。
  */
 @Composable
 internal fun VideoBackgroundView(
     path: String,
     alpha: Float,
-    brightness: Float,
     modifier: Modifier = Modifier
 ) {
     // Surface 由 TextureView 的回调产出，MediaPlayer 依赖它才能出画面。
@@ -238,25 +199,5 @@ internal fun VideoBackgroundView(
         modifier = modifier
             .fillMaxSize()
             .alpha(alpha)
-            .then(videoBrightnessModifier(brightness))
     )
-}
-
-/**
- * [二开] 视频亮度。
- *
- * TextureView 没有 setColorFilter，无法像图片/GIF 那样直接滤色；
- * 只能在 API 31+ 用 RenderEffect 在合成阶段乘色。
- * 低于 31 的设备降级为「不调亮度」（透明度仍生效），
- * 避免用 setLayerType 强刷硬件层引起 TextureView 黑屏。
- */
-@Composable
-private fun videoBrightnessModifier(brightness: Float): Modifier {
-    if (brightness == 1f || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return Modifier
-    val filter = backgroundBrightnessFilter(brightness) ?: return Modifier
-    return Modifier.graphicsLayer {
-        renderEffect = RenderEffect
-            .createColorFilterEffect(filter.asAndroidColorFilter())
-            .asComposeRenderEffect()
-    }
 }

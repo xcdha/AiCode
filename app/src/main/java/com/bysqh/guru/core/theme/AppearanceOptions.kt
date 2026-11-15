@@ -15,6 +15,7 @@ package com.bysqh.guru.core.theme
 
 import android.graphics.Color as AndroidColor
 import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import com.bysqh.guru.R
@@ -63,6 +64,12 @@ enum class UiStyle(val id: String, val labelRes: Int) {
         fun fromId(id: String?): UiStyle = entries.firstOrNull { it.id == id } ?: STANDARD
     }
 }
+
+/**
+ * [二开] 当前界面样式，供业务组件读取。
+ * Miuix 下分组卡片 / 列表行 / 按钮形态会切换成 Miui 语言，而不是只换色板。
+ */
+val LocalUiStyle = staticCompositionLocalOf { UiStyle.STANDARD }
 
 /** 当前外观的全部可调项，由 ThemeSettingsRepository 组装后传给主题。 */
 data class AppearanceOptions(

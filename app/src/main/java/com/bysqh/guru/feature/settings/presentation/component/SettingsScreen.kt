@@ -260,7 +260,6 @@ fun SettingsScreen(
     val backgroundAlpha by viewModel.backgroundAlpha.collectAsStateWithLifecycle()
     // [二开] 背景类型（静态图 / GIF / MP4）与亮度
     val backgroundKind by viewModel.backgroundKind.collectAsStateWithLifecycle()
-    val backgroundBrightness by viewModel.backgroundBrightness.collectAsStateWithLifecycle()
     val languageTag by viewModel.languageTag.collectAsStateWithLifecycle()
     val visionProviderId by viewModel.visionProviderId.collectAsStateWithLifecycle()
     val visionModel by viewModel.visionModel.collectAsStateWithLifecycle()
@@ -1424,10 +1423,8 @@ fun SettingsScreen(
             imagePath = backgroundImagePath,
             kind = backgroundKind,
             alpha = backgroundAlpha,
-            brightness = backgroundBrightness,
             onPickImage = { uri, mime -> viewModel.setBackgroundImage(uri, mime) },
             onAlphaChange = { viewModel.setBackgroundAlpha(it) },
-            onBrightnessChange = { viewModel.setBackgroundBrightness(it) },
             onRemove = { viewModel.clearBackgroundImage() },
             onDismiss = { showBackgroundSheet = false }
         )

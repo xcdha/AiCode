@@ -84,10 +84,8 @@ internal fun decodeBackgroundBitmap(path: String, maxWidth: Int, maxHeight: Int)
  * @param imagePath 当前背景文件路径，null 表示未设置。
  * @param kind 当前背景类型（[二开] 静态图 / GIF / MP4），决定缩略图的取帧方式。
  * @param alpha 当前透明度（0.05~1.0）。
- * @param brightness [二开] 当前亮度（0.2~1.8，1.0=原亮度）。
  * @param onPickImage 用户选定媒体后回调，携带 MIME（可能为 null）供上层判定背景类型。
  * @param onAlphaChange 透明度变化回调（写 DataStore，全局背景随之变化；落盘节流在 ViewModel 侧）。
- * @param onBrightnessChange [二开] 亮度变化回调，节流策略同 [onAlphaChange]。
  * @param onRemove 移除背景回调。
  * @param onDismiss 关闭弹窗。
  */
@@ -97,10 +95,8 @@ internal fun BackgroundImageSheet(
     imagePath: String?,
     kind: BackgroundSettingsRepository.Kind,
     alpha: Float,
-    brightness: Float,
     onPickImage: (Uri, String?) -> Unit,
     onAlphaChange: (Float) -> Unit,
-    onBrightnessChange: (Float) -> Unit,
     onRemove: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -130,10 +126,6 @@ internal fun BackgroundImageSheet(
     // 滑块位置由本地状态驱动：直接绑外部 alpha 会让每次拖动都走「写 DataStore → 回读 → 整个设置页重组」
     // 的往返，滑块因此跟不上手指。弹窗每次打开都重建，初值取当前设置即可。
     var sliderPercent by remember { mutableFloatStateOf(BackgroundSettingsRepository.alphaToSlider(alpha)) }
-    // [二开] 亮度滑条：透明度决定「多淡」，亮度决定「多亮」，两者相乘才是最终观感。
-    var brightnessPercent by remember {
-        mutableFloatStateOf(BackgroundSettingsRepository.brightnessToSlider(brightness))
-    }
 
     AdaptiveModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -200,33 +192,7 @@ internal fun BackgroundImageSheet(
                 valueRange = 0f..100f
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = Spacing.sm),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_background_image_brightness),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${brightnessPercent.toInt()}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Slider(
-                value = brightnessPercent,
-                onValueChange = { percent ->
-                    brightnessPercent = percent
-                    onBrightnessChange(BackgroundSettingsRepository.sliderToBrightness(percent))
-                },
-                valueRange = 0f..100f
-            )
+
 
             Row(
                 modifier = Modifier
