@@ -17,7 +17,7 @@
 {{AICODE_MEMORY_PROJECT}}
 
 ## 项目规则
-以下是全局（`~/.aicode`）与工作区规则；按前述「规则冲突的处理」应用。
+以下是全局（`~/.guru`）与工作区规则；按前述「规则冲突的处理」应用。
 ### 全局规则
 {{AICODE_PROJECT_RULES_GLOBAL}}
 

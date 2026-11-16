@@ -289,7 +289,7 @@
     <string name="provider_test_resp_body">响应体</string>
     <string name="provider_test_error_detail">错误堆栈</string>
     <string name="provider_dashboard_test_failed">执行失败</string>
-    <string name="provider_dashboard_no_scripts">~/.aicode/scripts 目录下暂无脚本</string>
+    <string name="provider_dashboard_no_scripts">~/.guru/scripts 目录下暂无脚本</string>
     <string name="provider_dashboard_select_title">选择面板脚本</string>
     <string name="provider_dashboard_clear_script">不使用面板脚本 (清空)</string>
     <string name="provider_dashboard_loading">正在加载面板…</string>
@@ -1392,7 +1392,7 @@
     <!-- Subagent Settings -->
     <string name="settings_subagents">子代理</string>
     <string name="subagents_empty">还没有自定义子代理</string>
-    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.aicode/agents/</string>
+    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.guru/agents/</string>
     <string name="subagents_no_project">当前项目暂无子代理</string>
     <string name="subagents_no_global">暂无全局子代理</string>
     <string name="subagents_delete_confirm_title">删除子代理</string>
