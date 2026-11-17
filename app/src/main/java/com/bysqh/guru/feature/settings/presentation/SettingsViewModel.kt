@@ -211,7 +211,9 @@ sealed interface UpdateCheckUiState {
     /** 下载或自检失败。[previous] 保留版本信息，供「重试」与「浏览器下载」继续使用。 */
     data class DownloadFailed(
         val previous: NewVersion,
-        val message: String
+        val message: String,
+        /** 换镜像只影响下载来源；自检判定同版本/更旧时换镜像无用，不展示该提示。 */
+        val showMirrorHint: Boolean = true
     ) : UpdateCheckUiState
 
     data class Error(val message: String) : UpdateCheckUiState
@@ -435,6 +437,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { terminalSettingsRepository.setFontSizeSp(sizeSp) }
     }
 
+    /** 终端是否显示插件标签页。 */
+    fun setTerminalShowPluginTabs(enabled: Boolean) {
+        viewModelScope.launch { terminalSettingsRepository.setShowPluginTabs(enabled) }
+    }
+
     fun setTerminalCursorStyle(style: Int) {
         viewModelScope.launch { terminalSettingsRepository.setCursorStyle(style) }
     }
@@ -590,6 +597,9 @@ class SettingsViewModel @Inject constructor(
 
     private val _enterToSend = MutableStateFlow(false)
     val enterToSend: StateFlow<Boolean> = _enterToSend.asStateFlow()
+
+    private val _autoExpandReasoning = MutableStateFlow(true)
+    val autoExpandReasoning: StateFlow<Boolean> = _autoExpandReasoning.asStateFlow()
 
     private val _compactionThresholdPercent = MutableStateFlow(85)
     val compactionThresholdPercent: StateFlow<Int> = _compactionThresholdPercent.asStateFlow()
@@ -1027,6 +1037,12 @@ class SettingsViewModel @Inject constructor(
             launch {
                 generalSettingsRepository.enterToSendFlow.collectLatest {
                     _enterToSend.value = it
+                }
+            }
+
+            launch {
+                generalSettingsRepository.autoExpandReasoningFlow.collectLatest {
+                    _autoExpandReasoning.value = it
                 }
             }
 
@@ -2210,6 +2226,13 @@ class SettingsViewModel @Inject constructor(
     fun setMaxNetworkRetries(count: Int) {
         viewModelScope.launch {
             generalSettingsRepository.setMaxNetworkRetries(count)
+        }
+    }
+
+    /** 思考卡片是否默认展开。 */
+    fun setAutoExpandReasoning(enabled: Boolean) {
+        viewModelScope.launch {
+            generalSettingsRepository.setAutoExpandReasoning(enabled)
         }
     }
 

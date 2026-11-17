@@ -988,6 +988,22 @@ fun AppNavigation(
                 agentViewModel.pasteBrowseEntry(targetDir, onResult)
             },
             onClearClipboard = { agentViewModel.clearBrowseClipboard() },
+            onAddLocalFolder = { uri ->
+                agentViewModel.addLocalFolder(uri) { ok ->
+                    if (!ok) toastFileOpFailed(context, R.string.file_browser_add_folder_failed)
+                }
+            },
+            onRemoveLocalFolder = { hostPath -> agentViewModel.removeLocalFolder(hostPath) },
+            onUploadFiles = { dir, uris ->
+                agentViewModel.uploadBrowseFiles(dir, uris) { ok ->
+                    if (!ok) toastFileOpFailed(context, R.string.file_browser_upload_failed)
+                }
+            },
+            onUploadFolder = { dir, uri ->
+                agentViewModel.uploadBrowseFolder(dir, uri) { ok ->
+                    if (!ok) toastFileOpFailed(context, R.string.file_browser_upload_failed)
+                }
+            },
             onPasteOverwrite = { agentViewModel.pasteBrowseEntryOverwrite() },
             onCancelPasteOverwrite = { agentViewModel.clearPasteConflict() },
             onSelect = {

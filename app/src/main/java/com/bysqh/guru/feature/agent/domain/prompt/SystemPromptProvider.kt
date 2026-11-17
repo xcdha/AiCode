@@ -3,6 +3,7 @@ package com.bysqh.guru.feature.agent.domain.prompt
 import android.content.Context
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
+import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
 import com.bysqh.guru.feature.agent.domain.memory.MemoryRepository
 import com.bysqh.guru.feature.agent.domain.role.RoleRepository
 import com.bysqh.guru.feature.agent.domain.memory.MemoryScope
@@ -41,6 +42,7 @@ class SystemPromptProvider @Inject constructor(
     private val containerInstaller: ContainerInstaller,
     private val agentDefinitionRepository: AgentDefinitionRepository,
     private val executionModeHolder: ExecutionModeHolder,
+    private val remoteSshConnection: RemoteSshConnection,
     // [二开] 角色身份：当前角色优先于内置 00-identity 片段（移植自 Muse）
     private val roleRepository: RoleRepository
 ) {
@@ -68,7 +70,7 @@ class SystemPromptProvider @Inject constructor(
         private val cachedByKey = ConcurrentHashMap<SourceCacheKey, String>()
 
         override fun build(ctx: AgentContext): String? {
-            val key = SourceCacheKey(ctx.sessionId, ctx.projectRoot)
+            val key = SourceCacheKey(ctx.sessionId, ctx.projectRoot, environment = cacheEnvironment())
             val cached = cachedByKey[key]
             if (cached != null) return cached.ifEmpty { null }
             val skills = try { skillRepository.listSkills() } catch (e: Exception) { return null }
@@ -112,7 +114,8 @@ class SystemPromptProvider @Inject constructor(
                 ctx.sessionId,
                 ctx.projectRoot,
                 ctx.mode,
-                agentDefinitionRepository.definitionsVersion
+                agentDefinitionRepository.definitionsVersion,
+                cacheEnvironment()
             )
             val cached = cachedByKey[key]
             if (cached != null) return cached.ifEmpty { null }
@@ -221,7 +224,7 @@ class SystemPromptProvider @Inject constructor(
         private val cachedByKey = ConcurrentHashMap<SourceCacheKey, MemoryLists>()
 
         fun build(ctx: AgentContext): MemoryLists {
-            val key = SourceCacheKey(ctx.sessionId, ctx.projectRoot)
+            val key = SourceCacheKey(ctx.sessionId, ctx.projectRoot, environment = cacheEnvironment())
             cachedByKey[key]?.let { return it }
             val memories = try { memoryRepository.listMemories(ctx.projectRoot) } catch (e: Exception) {
                 return MemoryLists(null, null)
@@ -253,8 +256,17 @@ class SystemPromptProvider @Inject constructor(
         val sessionId: String?,
         val projectRoot: String,
         val mode: AgentMode? = null,
-        val definitionVersion: Long = 0
+        val definitionVersion: Long = 0,
+        val environment: String
     )
+
+    /** 远程连接身份参与缓存键：换服务器/换账号后必须重建，否则会命中旧主机的清单。 */
+    private fun cacheEnvironment(): String {
+        if (executionModeHolder.currentMode() != ExecutionMode.REMOTE_SSH) return "local"
+        val config = remoteSshConnection.config ?: return "remote:disconnected"
+        return listOf(config.host, config.port.toString(), config.username, remoteSshConnection.remoteHome.orEmpty(), config.remoteWorkspacePath)
+            .joinToString("\u0000")
+    }
 
     private val staticRuleSource = StaticRuleSource()
     private val subAgentBaseSource = SubAgentBaseSource()
