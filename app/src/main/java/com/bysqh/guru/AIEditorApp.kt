@@ -265,6 +265,7 @@ class AIEditorApp : Application(), Configuration.Provider {
             return
         }
         super.onCreate()
+        migrateLegacyAicodeData()
         logDeviceInfo()
         // 补记 Java 未捕获异常处理器覆盖不到的异常退出（native 崩溃 / ANR / 低内存被杀 / 被信号杀死）。
         appScope.launch { reportAbnormalExits() }
@@ -438,6 +439,38 @@ class AIEditorApp : Application(), Configuration.Provider {
         // MainActivity 继承 ComponentActivity（非 AppCompatActivity），
         // AppCompatDelegate.setApplicationLocales 的自动 recreate 不生效，
         // 且两者同时设置 locale 会竞争导致偶发语言错乱。
+    }
+
+    /**
+     * 把误写到 files/aicode 的用户数据并回 files/guru。
+     *
+     * 中途版本把容器数据目录硬编码成了 "aicode"，那段时间安装的插件落在 files/aicode；
+     * 现已改回 files/guru，旧数据不迁移的话插件会被当成未安装（图标、开关全部消失）。
+     * 只迁移用户数据，不碰 docs/scripts 等随版本更新的资源；同名条目保留新目录的版本。
+     */
+    private fun migrateLegacyAicodeData() {
+        val legacy = File(filesDir, "aicode")
+        if (!legacy.isDirectory) return
+        val current = File(filesDir, "guru")
+        listOf("plugins", "plugin-dev").forEach { name ->
+            val src = File(legacy, name)
+            if (src.isDirectory) mergeDirectory(src, File(current, name))
+        }
+    }
+
+    private fun mergeDirectory(src: File, dst: File) {
+        if (!dst.exists()) {
+            src.renameTo(dst)
+            return
+        }
+        src.listFiles()?.forEach { child ->
+            val target = File(dst, child.name)
+            when {
+                !target.exists() -> child.renameTo(target)
+                child.isDirectory && target.isDirectory -> mergeDirectory(child, target)
+                else -> Unit // 目标已存在：保留新目录的版本
+            }
+        }
     }
 
     /** 记录设备/版本信息：用户报「某系统版本上容器起不来」时，日志里得先有系统与 ABI 上下文。 */

@@ -120,6 +120,7 @@ import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Save
 import compose.icons.feathericons.Server
+import compose.icons.feathericons.Settings
 import compose.icons.feathericons.Shield
 import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.Terminal
@@ -908,7 +909,7 @@ fun SettingsScreen(
                         SettingsSection.Plugins -> {
                             IconButton(onClick = { showPluginSettingsSheet = true }) {
                                 Icon(
-                                    FeatherIcons.Sliders,
+                                    FeatherIcons.Settings,
                                     contentDescription = stringResource(R.string.plugins_settings_title),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(22.dp)
