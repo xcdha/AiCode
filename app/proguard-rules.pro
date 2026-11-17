@@ -129,3 +129,9 @@
 # MacroInfo.macro 保持 null，渲染时 Method.invoke NPE——release 包上所有带 \begin / 自定义宏的
 # 公式空白，debug 不混淆故正常。整包保留类名与方法名，避免再被 interface 去虚化等优化破坏。
 -keep class org.scilab.forge.jlatexmath.** { *; }
+
+# ---- SnakeYAML 包信息 ----
+# snakeyaml 用 clazz.getPackage().getName() 拼属性名，R8 去掉包名后 getPackage() 返回 null，
+# 解析 YAML 时静态初始化抛 NPE，子代理定义全部被跳过。
+-keeppackagenames org.yaml.snakeyaml.**
+-keep class org.yaml.snakeyaml.** { *; }
