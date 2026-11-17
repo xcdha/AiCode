@@ -131,6 +131,27 @@ import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
 import com.bysqh.guru.feature.settings.data.local.ProviderPreset
 import com.bysqh.guru.feature.terminal.data.repository.TerminalSettings
 import com.bysqh.guru.feature.terminal.presentation.component.TerminalSettingsSheet
+import com.bysqh.guru.feature.plugin.domain.PluginPage
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
+import com.bysqh.guru.feature.plugin.domain.PluginUiSlots
+import com.bysqh.guru.feature.plugin.domain.PluginStatus
+import com.bysqh.guru.feature.plugin.presentation.PluginDetailSection
+import com.bysqh.guru.feature.plugin.presentation.PluginDevDetailSection
+import com.bysqh.guru.feature.plugin.presentation.PluginDevProject
+import com.bysqh.guru.feature.plugin.presentation.PluginSettingsSheet
+import com.bysqh.guru.feature.plugin.presentation.PluginImportHost
+import com.bysqh.guru.feature.plugin.presentation.PluginStoreDetailSection
+import com.bysqh.guru.feature.plugin.presentation.PluginStoreItem
+import com.bysqh.guru.feature.plugin.presentation.PluginThemeTokens
+import com.bysqh.guru.feature.plugin.presentation.PluginPageHost
+import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
+import com.bysqh.guru.feature.plugin.presentation.PluginWebBridgeInstaller
+import com.bysqh.guru.feature.plugin.presentation.PluginWebViewCache
+import com.bysqh.guru.feature.plugin.presentation.PluginWebViewFactory
+import com.bysqh.guru.feature.plugin.presentation.PluginsSection
+import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
+import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
+import com.bysqh.guru.feature.plugin.presentation.displayName
 
 /** 使用手册在线文档站地址。 */
 private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
@@ -166,6 +187,12 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     SubAgents(R.string.settings_subagents),
     SubAgentDetail(R.string.settings_subagents),
     SubAgentEditor(R.string.settings_subagents),
+    // 插件：列表、详情、商店、开发、插件页面
+    Plugins(R.string.settings_plugins),
+    PluginDetail(R.string.settings_plugins),
+    PluginStoreDetail(R.string.settings_plugins),
+    PluginDevDetail(R.string.settings_plugins),
+    PluginPage(R.string.settings_plugin_page_title),
     Container(R.string.settings_container),
     ContainerDownloads(R.string.container_download_image),
     Proxy(R.string.proxy_title),
@@ -404,6 +431,30 @@ fun SettingsScreen(
     val skillZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) viewModel.importSkillsFromZip(uri, skillImportScope)
     }
+    // 插件的导入流程状态都在 PluginsViewModel 里；这里只记当前打开详情的插件。
+    val pluginsViewModel: PluginsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val plugins by pluginsViewModel.plugins.collectAsStateWithLifecycle()
+    val pluginsLoaded by pluginsViewModel.loaded.collectAsStateWithLifecycle()
+    val pluginsRefreshing by pluginsViewModel.refreshing.collectAsStateWithLifecycle()
+    val pluginDependencyStates by pluginsViewModel.dependencyStates.collectAsStateWithLifecycle()
+    val shizukuGrantedPluginIds by pluginsViewModel.shizukuGrantedPluginIds.collectAsStateWithLifecycle()
+    val overlayGrantedPluginIds by pluginsViewModel.overlayGrantedPluginIds.collectAsStateWithLifecycle()
+    val backupGrantedPluginIds by pluginsViewModel.backupGrantedPluginIds.collectAsStateWithLifecycle()
+    val shizukuState by pluginsViewModel.shizukuState.collectAsStateWithLifecycle()
+    val pluginDevMode by pluginsViewModel.devMode.collectAsStateWithLifecycle()
+    val pluginDevProjects by pluginsViewModel.devProjects.collectAsStateWithLifecycle()
+    val pluginDevRefreshing by pluginsViewModel.devRefreshing.collectAsStateWithLifecycle()
+    val pluginIndexSourceText by pluginsViewModel.indexSourceText.collectAsStateWithLifecycle()
+    val pluginDownloadMirror by pluginsViewModel.downloadMirror.collectAsStateWithLifecycle()
+    var selectedPluginId by remember { mutableStateOf<String?>(null) }
+    var selectedStoreItem by remember { mutableStateOf<PluginStoreItem?>(null) }
+    var selectedDevProject by remember { mutableStateOf<PluginDevProject?>(null) }
+    val currentDevProject = pluginDevProjects.firstOrNull { it.dirName == selectedDevProject?.dirName }
+        ?: selectedDevProject
+    var showPluginSettingsSheet by remember { mutableStateOf(false) }
+    var showPluginUninstallConfirm by remember { mutableStateOf(false) }
+    val selectedPlugin = plugins.firstOrNull { it.id == selectedPluginId }
+    val pluginLanguageTag = currentLanguageTag()
     var selectedSubAgent by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     var subAgentToDelete by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     // 子代理编辑目标：null 表示新建一个；编辑现有定义时指向被编辑的条目。
@@ -1266,6 +1317,84 @@ fun SettingsScreen(
                 SettingsSection.SubAgentEditor -> {} // 已在上方 early return 处理
                 SettingsSection.RemoteServers -> {} // 已在上方 early return 处理
                 SettingsSection.Backup -> {} // 已在上方 early return 处理
+                SettingsSection.Plugins -> PluginsSection(
+                    plugins = plugins,
+                    loaded = pluginsLoaded,
+                    devMode = pluginDevMode,
+                    devProjects = pluginDevProjects,
+                    devRootPath = pluginsViewModel.devRootPath,
+                    refreshing = pluginsRefreshing,
+                    devRefreshing = pluginDevRefreshing,
+                    onRefresh = pluginsViewModel::refresh,
+                    onRefreshDevProjects = pluginsViewModel::refreshDevProjects,
+                    onOpenDevDetail = {
+                        selectedDevProject = it
+                        section = SettingsSection.PluginDevDetail
+                    },
+                    onSetDevEnabled = { project, enabled ->
+                        val installed = plugins.firstOrNull { it.id == project.pluginId }
+                        when {
+                            installed != null -> if (installed.status == PluginStatus.OK) {
+                                pluginsViewModel.setEnabled(installed.id, enabled)
+                            }
+                            enabled && project.error == null -> pluginsViewModel.installDevProject(project)
+                        }
+                    },
+                    onOpenDetail = {
+                        selectedPluginId = it.id
+                        section = SettingsSection.PluginDetail
+                    },
+                    onToggleEnabled = { plugin, enabled -> pluginsViewModel.setEnabled(plugin.id, enabled) },
+                    onShowStorePreview = pluginsViewModel::showPreview,
+                    onOpenStoreDetail = {
+                        selectedStoreItem = it
+                        section = SettingsSection.PluginStoreDetail
+                    }
+                )
+                SettingsSection.PluginDetail -> selectedPlugin?.let { plugin ->
+                    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    PluginDetailSection(
+                        plugin = plugin,
+                        onToggleEnabled = { pluginsViewModel.setEnabled(plugin.id, it) },
+                        bridgeFactory = { page, post, onClosePage ->
+                            pluginsViewModel.createWebBridge(
+                                page = page,
+                                pluginVersion = page.pluginVersion,
+                                languageTag = pluginLanguageTag,
+                                theme = { if (isDark) "dark" else "light" },
+                                onClosePage = onClosePage,
+                                post = post
+                            )
+                        },
+                        onClosePage = {
+                            section = SettingsSection.Plugins
+                        },
+                        dependencyState = pluginDependencyStates[plugin.id],
+                        onPrepareDependencies = { pluginsViewModel.prepareDependencies(plugin.id) },
+                        shizukuGranted = plugin.id in shizukuGrantedPluginIds,
+                        shizukuState = shizukuState,
+                        onSetShizukuGranted = { pluginsViewModel.setShizukuGranted(plugin, it) },
+                        overlayGranted = plugin.id in overlayGrantedPluginIds,
+                        onSetOverlayGranted = { pluginsViewModel.setOverlayGranted(plugin, it) },
+                        backupGranted = plugin.id in backupGrantedPluginIds,
+                        onSetBackupGranted = { pluginsViewModel.setBackupGranted(plugin, it) }
+                    )
+                }
+                SettingsSection.PluginStoreDetail -> selectedStoreItem?.let { item ->
+                    PluginStoreDetailSection(
+                        item = item,
+                        onShowPreview = pluginsViewModel::showPreview
+                    )
+                }
+                SettingsSection.PluginDevDetail -> currentDevProject?.let { project ->
+                    PluginDevDetailSection(
+                        project = project,
+                        plugins = plugins,
+                        devRootPath = pluginsViewModel.devRootPath,
+                        onInstall = { pluginsViewModel.installDevProject(project) }
+                    )
+                }
+                SettingsSection.PluginPage -> {} // 已在外层全屏分支处理
                 SettingsSection.About -> AboutSection(
                     updateCheckEnabled = updateCheckEnabled,
                     updateCheckChannel = updateCheckChannel,
@@ -1839,6 +1968,12 @@ internal fun SettingsMenu(
                 icon = FeatherIcons.MessageSquare,
                 title = stringResource(SettingsSection.Prompts.titleRes),
                 onClick = { onOpen(SettingsSection.Prompts) }
+            )
+            SettingsDivider()
+            SettingsRow(
+                icon = FeatherIcons.Box,
+                title = stringResource(SettingsSection.Plugins.titleRes),
+                onClick = { onOpen(SettingsSection.Plugins) }
             )
         }
 

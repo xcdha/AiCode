@@ -135,6 +135,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import com.bysqh.guru.R
+import com.bysqh.guru.feature.plugin.presentation.PluginOverlayController
+import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
+import com.bysqh.guru.feature.plugin.domain.PluginPage
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
+import com.bysqh.guru.feature.plugin.presentation.PluginEntryContext
+import com.bysqh.guru.feature.plugin.presentation.PluginPageHost
+import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
+import com.bysqh.guru.feature.plugin.presentation.displayName
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -560,6 +568,15 @@ fun AppNavigation(
     val agentViewModel: AIAgentViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+    val pluginsViewModel: PluginsViewModel = hiltViewModel()
+    val installedPlugins by pluginsViewModel.plugins.collectAsStateWithLifecycle()
+    val pluginLanguageTag = currentLanguageTag()
+    val pluginSlotEntries = remember(installedPlugins, pluginLanguageTag) {
+        installedPlugins.filter { it.isActive }.sortedBy { it.displayName(pluginLanguageTag) }
+    }
+    var activeSlotPage by remember { mutableStateOf<PluginPage?>(null) }
+    var activeSlotContext by remember { mutableStateOf(PluginEntryContext()) }
+    var pendingPluginAction by remember { mutableStateOf<Pair<PluginUiEntry, PluginEntryContext>?>(null) }
 
     // ── 首次启动引导 ──
     val onboardingStateHolder = remember { OnboardingStateHolder() }
