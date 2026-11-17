@@ -111,8 +111,18 @@ class PromptFragmentCatalog @Inject constructor(
 
     /** 静态基线正文：所有生效片段去掉前导注释后按编号拼接。 */
     fun renderStatic(projectRoot: String?): String =
+        renderStatic(projectRoot, skipIdentity = false)
+
+    /**
+     * 渲染静态片段。
+     *
+     * [skipIdentity] 为 true 时跳过 00-identity：调用方已有自己的身份文本（如角色身份），
+     * 再拼内置身份会在提示词里出现两段「你是……」，互相削弱指令权重。
+     */
+    fun renderStatic(projectRoot: String?, skipIdentity: Boolean): String =
         list(projectRoot)
             .filter { it.number !in disabledNumbersCache }
+            .filter { !skipIdentity || it.number != IDENTITY_NUMBER }
             .mapNotNull { it.content.replace(LEADING_COMMENT, "").trim().takeIf { text -> text.isNotEmpty() } }
             .joinToString("\n\n")
 
@@ -319,6 +329,8 @@ class PromptFragmentCatalog @Inject constructor(
         const val TAG = "PromptFragmentCatalog"
         const val ASSET_DIR = "prompts"
         const val CUSTOM_DIR = "prompts.custom"
+        /** 内置身份片段编号；角色身份存在时用它替换。 */
+        const val IDENTITY_NUMBER = 0
         const val LOCAL_DIR = "prompts"
         val LEADING_COMMENT = Regex("(?s)^\\s*<!--.*?-->\\s*")
         val DESCRIPTION = Regex("^\\s*<!--\\s*(.*?)\\s*-->", RegexOption.DOT_MATCHES_ALL)

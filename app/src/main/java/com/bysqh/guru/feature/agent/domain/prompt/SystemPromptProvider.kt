@@ -56,9 +56,10 @@ class SystemPromptProvider @Inject constructor(
         // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{GURU_*}} 变量承载。
         override fun build(ctx: AgentContext): String {
             // [二开] 角色身份提示词放在规则最前：选中哪个角色，就用它的身份对话。
-            // 角色身份为空时保持上游行为（只用内置片段）。
-            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot)
+            // 角色身份为空时保持上游行为（只用内置片段）；非空时跳过内置 00-identity，
+            // 否则提示词里会出现两段「你是……」，互相削弱指令权重。
             val identity = runCatching { roleRepository.current().identity }.getOrDefault("").trim()
+            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot, skipIdentity = identity.isNotEmpty())
             if (identity.isEmpty()) return rules
             return "$identity\n\n$rules"
         }

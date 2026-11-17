@@ -31,7 +31,7 @@ class RoleRepository @Inject constructor(
     private companion object {
         const val TAG = "RoleRepository"
         const val DEFAULT_ID = "guru"
-        const val DEFAULT_NAME = "Guru"
+        const val DEFAULT_NAME = "AiCode"
         const val BUILTIN_IDENTITY_ASSET = "prompts/00-identity.md"
         const val MAX_AVATAR_BYTES = 8L * 1024 * 1024
     }
@@ -56,7 +56,7 @@ class RoleRepository @Inject constructor(
         indexFile.writeText(json.encodeToString(index), Charsets.UTF_8)
     }
 
-    /** 首次使用时用内置 00-identity 作为默认角色 Muse 的身份。 */
+    /** 首次使用时用内置 00-identity 作为默认角色的身份。 */
     private fun builtinIdentity(): String = runCatching {
         context.assets.open(BUILTIN_IDENTITY_ASSET).bufferedReader().use { it.readText() }
     }.getOrDefault("")
@@ -64,10 +64,35 @@ class RoleRepository @Inject constructor(
     @Synchronized
     fun list(): List<Role> {
         val index = readIndex()
-        if (index.roles.isNotEmpty()) return index.roles
+        if (index.roles.isNotEmpty()) return refreshDefaultRole(index)
         val seeded = listOf(Role(id = DEFAULT_ID, name = DEFAULT_NAME, identity = builtinIdentity()))
         writeIndex(RoleIndex(roles = seeded, currentId = seeded.first().id))
         return seeded
+    }
+
+    /**
+     * 默认角色的身份是内置 00-identity 的快照；App 升级改了那份文案（例如品牌改名）后，
+     * 旧快照会让提示词继续用老名字。用户自己改过的身份不动：只有内容仍是旧内置文案时才刷新。
+     */
+    private fun refreshDefaultRole(index: RoleIndex): List<Role> {
+        val at = index.roles.indexOfFirst { it.id == DEFAULT_ID }
+        if (at < 0) return index.roles
+        val current = index.roles[at]
+        val latest = builtinIdentity()
+        if (latest.isBlank() || current.identity == latest) return index.roles
+        if (!isStaleBuiltinSnapshot(current.identity, latest)) return index.roles
+        val refreshed = index.roles.toMutableList().apply {
+            set(at, current.copy(identity = latest))
+        }
+        writeIndex(index.copy(roles = refreshed))
+        return refreshed
+    }
+
+    /** 旧快照与当前内置文案只差品牌名时需要刷新；用户大改过的不动。 */
+    private fun isStaleBuiltinSnapshot(identity: String, latest: String): Boolean {
+        fun normalize(text: String) = text.replace("Guru", "AiCode")
+            .replace(Regex("\\s+"), " ").trim()
+        return normalize(identity) == normalize(latest)
     }
 
     @Synchronized
