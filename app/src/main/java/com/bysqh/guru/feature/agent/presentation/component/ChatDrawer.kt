@@ -52,6 +52,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import com.bysqh.guru.core.ui.AdaptiveModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -94,6 +95,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.bysqh.guru.core.theme.Radius
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
@@ -147,6 +149,26 @@ import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.delay
 import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
+import com.bysqh.guru.feature.plugin.domain.session.PluginSessionGroup
+import com.bysqh.guru.feature.plugin.domain.session.PluginSessionSummary
+
+@Composable
+private fun DrawerProgressIndicator(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+    strokeWidth: Dp = ProgressIndicatorDefaults.CircularStrokeWidth
+) {
+    if (chatAnimationsEnabled()) {
+        CircularProgressIndicator(modifier = modifier, color = color, strokeWidth = strokeWidth)
+    } else {
+        CircularProgressIndicator(
+            progress = { 0.75f },
+            modifier = modifier,
+            color = color,
+            strokeWidth = strokeWidth
+        )
+    }
+}
 
 /**
  * 侧边栏内容：顶部 Tab 切换「会话」/「文件」，底部「设置」入口卡片。
@@ -155,6 +177,9 @@ import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
 @Composable
 fun ChatDrawerContent(
     sessions: List<ChatSession>,
+    pluginSessionGroups: List<PluginSessionGroup> = emptyList(),
+    currentPluginSessionId: String? = null,
+    onSelectPluginSession: (PluginSessionSummary) -> Unit = {},
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String> = emptySet(),
@@ -361,6 +386,9 @@ fun ChatDrawerContent(
             when (selectedTab) {
                 0 -> SessionListTab(
                     sessions = sessions,
+                    pluginSessionGroups = pluginSessionGroups,
+                    currentPluginSessionId = currentPluginSessionId,
+                    onSelectPluginSession = onSelectPluginSession,
                     currentSessionId = currentSessionId,
                     agentStates = agentStates,
                     awaitingPermissionSessionIds = awaitingPermissionSessionIds,
@@ -588,6 +616,9 @@ fun ChatDrawerContent(
 @Composable
 private fun SessionListTab(
     sessions: List<ChatSession>,
+    pluginSessionGroups: List<PluginSessionGroup>,
+    currentPluginSessionId: String?,
+    onSelectPluginSession: (PluginSessionSummary) -> Unit,
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String>,
@@ -605,6 +636,9 @@ private fun SessionListTab(
     if (searchQuery.isBlank()) {
         SessionListContent(
             sessions = sessions,
+            pluginSessionGroups = pluginSessionGroups,
+            currentPluginSessionId = currentPluginSessionId,
+            onSelectPluginSession = onSelectPluginSession,
             currentSessionId = currentSessionId,
             agentStates = agentStates,
             awaitingPermissionSessionIds = awaitingPermissionSessionIds,
@@ -621,10 +655,16 @@ private fun SessionListTab(
     }
 }
 
-/** Tab0 的会话列表本体（按最后回复时间分组）。带子代理的会话行尾有展开箭头，展开后在其下方缩进列出子代理。 */
+/**
+ * Tab0 的会话列表本体。插件会话分组固定在最上方（分组名 = 插件名），
+ * 下面是本机会话的置顶与时间分组；所有分组头都可以点击折叠/展开。
+ */
 @Composable
 private fun SessionListContent(
     sessions: List<ChatSession>,
+    pluginSessionGroups: List<PluginSessionGroup>,
+    currentPluginSessionId: String?,
+    onSelectPluginSession: (PluginSessionSummary) -> Unit,
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String>,
@@ -636,7 +676,7 @@ private fun SessionListContent(
     onSelect: (ChatSession) -> Unit,
     onLongClick: (ChatSession) -> Unit
 ) {
-    if (sessions.isEmpty()) {
+    if (sessions.isEmpty() && pluginSessionGroups.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -656,6 +696,12 @@ private fun SessionListContent(
             restore = { it.toSet() }
         )
     ) { mutableStateOf(emptySet<String>()) }
+    var collapsedGroupKeys by rememberSaveable(
+        stateSaver = listSaver<Set<String>, String>(
+            save = { it.toList() },
+            restore = { it.toSet() }
+        )
+    ) { mutableStateOf(emptySet<String>()) }
     val groups = remember(sessions) {
         val now = System.currentTimeMillis()
         val pinned = sessions.filter { it.isPinned }
@@ -665,104 +711,153 @@ private fun SessionListContent(
             addAll(buildSessionGroups(unpinned, now))
         }
     }
+
+    fun toggleGroup(key: String) {
+        collapsedGroupKeys = if (key in collapsedGroupKeys) {
+            collapsedGroupKeys - key
+        } else {
+            collapsedGroupKeys + key
+        }
+    }
+
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
-        // 每个分组占一个 item、组内 forEach 全量渲染会让 LazyColumn 失去惰性：
-        // 「最近 30 天」这种分组有上百个会话时，一个 item 就要组合上百行。分组头与会话各自成 item。
-        groups.forEach { group ->
-            item(key = "group-${group.groupKey}", contentType = "group-header") {
-                SettingsGroupHeader(
-                    text = sessionGroupLabel(group.groupKey, group.sessions.first())
+        // 插件会话：不混入时间分组，固定放在置顶之上；组内顺序保持插件返回顺序。
+        pluginSessionGroups.forEach { pluginGroup ->
+            val groupKey = "plugin:${pluginGroup.pluginId}"
+            val expanded = groupKey !in collapsedGroupKeys
+            item(key = "group-$groupKey", contentType = "group-header") {
+                CollapsibleSessionGroupHeader(
+                    text = pluginGroup.pluginName,
+                    count = pluginGroup.sessions.size,
+                    loading = pluginGroup.loading,
+                    expanded = expanded,
+                    onClick = { toggleGroup(groupKey) }
                 )
             }
-            itemsIndexed(
-                items = group.sessions,
-                key = { _, session -> session.id },
-                contentType = { _, _ -> "session" }
-            ) { index, session ->
-                Column {
-                    if (index > 0) {
-                        if (group.groupKey == "pinned") Spacer(Modifier.height(Spacing.sm)) else SettingsDivider()
-                    }
-                    val state = agentStates[session.id]
-                    val isExecuting = state is AgentUIState.Loading || state is AgentUIState.Streaming
-                    val subSessions = subSessionsByParent[session.id].orEmpty()
-                    val expanded = session.id in expandedIds
+            if (expanded) {
+                items(
+                    items = pluginGroup.sessions,
+                    key = { pluginSession -> "plugin-session-${pluginSession.id}" },
+                    contentType = { "plugin-session" }
+                ) { pluginSession ->
                     ChatSessionRow(
-                        session = session,
-                        selected = if (selectionMode) false else session.id == currentSessionId,
-                        isExecuting = isExecuting,
-                        awaitingPermission = session.id in awaitingPermissionSessionIds,
-                        pinned = session.isPinned,
-                        selectionMode = selectionMode,
-                        checked = session.id in selectedSessionIds,
-                        onCheckedChange = { onToggleSelectSession(session) },
-                        onClick = {
-                            if (selectionMode) {
-                                onToggleSelectSession(session)
-                            } else {
-                                onSelect(session)
-                            }
-                        },
-                        onLongClick = {
-                            if (selectionMode) {
-                                onToggleSelectSession(session)
-                            } else {
-                                onLongClick(session)
-                            }
-                        },
-                        trailing = if (subSessions.isEmpty()) null else {
-                            {
-                                SubAgentExpandToggle(
-                                    expanded = expanded,
-                                    count = subSessions.size,
-                                    onToggle = {
-                                        expandedIds = if (expanded) {
-                                            expandedIds - session.id
-                                        } else {
-                                            expandedIds + session.id
-                                        }
-                                    }
-                                )
-                            }
-                        }
+                        session = pluginSession.asChatSession(),
+                        selected = !selectionMode && currentPluginSessionId == pluginSession.id,
+                        isExecuting = pluginSession.running,
+                        pinned = false,
+                        selectionMode = false,
+                        onClick = { onSelectPluginSession(pluginSession) },
+                        onLongClick = {}
                     )
-                    AnimatedVisibility(
-                        visible = expanded,
-                        enter = expandVertically(expandFrom = androidx.compose.ui.Alignment.Top) + fadeIn(),
-                        exit = shrinkVertically(shrinkTowards = androidx.compose.ui.Alignment.Top) + fadeOut()
-                    ) {
-                        Column {
-                            subSessions.forEach { sub ->
-                                val subState = agentStates[sub.id]
-                                Row(modifier = Modifier.padding(start = Spacing.lg)) {
-                                    ChatSessionRow(
-                                        session = sub,
-                                        selected = if (selectionMode) false else sub.id == currentSessionId,
-                                        isExecuting = subState is AgentUIState.Loading ||
-                                            subState is AgentUIState.Streaming,
-                                        awaitingPermission = sub.id in awaitingPermissionSessionIds,
-                                        pinned = false,
-                                        selectionMode = selectionMode,
-                                        checked = sub.id in selectedSessionIds,
-                                        onCheckedChange = { onToggleSelectSession(sub) },
-                                        onClick = {
-                                            if (selectionMode) {
-                                                onToggleSelectSession(sub)
+                }
+            }
+        }
+
+        // 本机会话：每个分组占一个 item、组内 forEach 全量渲染会让 LazyColumn 失去惰性：
+        // 「最近 30 天」这种分组有上百个会话时，一个 item 就要组合上百行。分组头与会话各自成 item。
+        groups.forEach { group ->
+            val expanded = group.groupKey !in collapsedGroupKeys
+            item(key = "group-${group.groupKey}", contentType = "group-header") {
+                CollapsibleSessionGroupHeader(
+                    text = sessionGroupLabel(group.groupKey, group.sessions.first()),
+                    count = group.sessions.size,
+                    expanded = expanded,
+                    onClick = { toggleGroup(group.groupKey) }
+                )
+            }
+            if (expanded) {
+                itemsIndexed(
+                    items = group.sessions,
+                    key = { _, session -> session.id },
+                    contentType = { _, _ -> "session" }
+                ) { index, session ->
+                    Column {
+                        if (index > 0) {
+                            if (group.groupKey == "pinned") Spacer(Modifier.height(Spacing.sm)) else SettingsDivider()
+                        }
+                        val state = agentStates[session.id]
+                        val isExecuting = state is AgentUIState.Loading || state is AgentUIState.Streaming
+                        val subSessions = subSessionsByParent[session.id].orEmpty()
+                        val expanded = session.id in expandedIds
+                        ChatSessionRow(
+                            session = session,
+                            selected = if (selectionMode) false
+                            else currentPluginSessionId == null && session.id == currentSessionId,
+                            isExecuting = isExecuting,
+                            awaitingPermission = session.id in awaitingPermissionSessionIds,
+                            pinned = session.isPinned,
+                            selectionMode = selectionMode,
+                            checked = session.id in selectedSessionIds,
+                            onCheckedChange = { onToggleSelectSession(session) },
+                            onClick = {
+                                if (selectionMode) {
+                                    onToggleSelectSession(session)
+                                } else {
+                                    onSelect(session)
+                                }
+                            },
+                            onLongClick = {
+                                if (selectionMode) {
+                                    onToggleSelectSession(session)
+                                } else {
+                                    onLongClick(session)
+                                }
+                            },
+                            trailing = if (subSessions.isEmpty()) null else {
+                                {
+                                    SubAgentExpandToggle(
+                                        expanded = expanded,
+                                        count = subSessions.size,
+                                        onToggle = {
+                                            expandedIds = if (expanded) {
+                                                expandedIds - session.id
                                             } else {
-                                                onSelect(sub)
-                                            }
-                                        },
-                                        onLongClick = {
-                                            if (selectionMode) {
-                                                onToggleSelectSession(sub)
-                                            } else {
-                                                onLongClick(sub)
+                                                expandedIds + session.id
                                             }
                                         }
                                     )
+                                }
+                            }
+                        )
+                        AnimatedVisibility(
+                            visible = expanded,
+                            enter = expandVertically(expandFrom = androidx.compose.ui.Alignment.Top) + fadeIn(),
+                            exit = shrinkVertically(shrinkTowards = androidx.compose.ui.Alignment.Top) + fadeOut()
+                        ) {
+                            Column {
+                                subSessions.forEach { sub ->
+                                    val subState = agentStates[sub.id]
+                                    Row(modifier = Modifier.padding(start = Spacing.lg)) {
+                                        ChatSessionRow(
+                                            session = sub,
+                                            selected = if (selectionMode) false
+                                            else currentPluginSessionId == null && sub.id == currentSessionId,
+                                            isExecuting = subState is AgentUIState.Loading ||
+                                                subState is AgentUIState.Streaming,
+                                            awaitingPermission = sub.id in awaitingPermissionSessionIds,
+                                            pinned = false,
+                                            selectionMode = selectionMode,
+                                            checked = sub.id in selectedSessionIds,
+                                            onCheckedChange = { onToggleSelectSession(sub) },
+                                            onClick = {
+                                                if (selectionMode) {
+                                                    onToggleSelectSession(sub)
+                                                } else {
+                                                    onSelect(sub)
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (selectionMode) {
+                                                    onToggleSelectSession(sub)
+                                                } else {
+                                                    onLongClick(sub)
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -771,6 +866,63 @@ private fun SessionListContent(
             }
         }
     }
+}
+
+/** 可点击折叠的分组头：标题 + 数量/加载转圈 + 展开箭头。 */
+@Composable
+private fun CollapsibleSessionGroupHeader(
+    text: String,
+    count: Int,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    loading: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = Spacing.md, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
+            fontWeight = FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+        if (loading) {
+            DrawerProgressIndicator(
+                modifier = Modifier.size(12.dp),
+                strokeWidth = 1.5.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        } else {
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+        }
+        Spacer(Modifier.width(Spacing.xs))
+        Icon(
+            imageVector = if (expanded) FeatherIcons.ChevronDown else FeatherIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(14.dp)
+        )
+    }
+}
+
+private fun PluginSessionSummary.asChatSession(): ChatSession {
+    val time = updatedAt ?: 0L
+    return ChatSession(
+        id = "plugin:$id",
+        title = title,
+        createdAt = time,
+        updatedAt = time,
+        workspacePath = ""
+    )
 }
 
 /** Tab0 底部搜索框：复用设置页的胶囊搜索框，非空时带清除按钮。 */
@@ -826,7 +978,7 @@ private fun ChatSearchResults(
     when {
         state.hits.isEmpty() && state.loading -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
+                DrawerProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -978,7 +1130,7 @@ private fun FileBrowserTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                DrawerProgressIndicator(modifier = Modifier.size(24.dp))
             }
 
             is FileBrowseState.Error -> Box(
@@ -1059,7 +1211,7 @@ private fun FileBrowserTab(
                 )
             }
             if (fileOpPaths.isNotEmpty()) {
-                CircularProgressIndicator(
+                DrawerProgressIndicator(
                     modifier = Modifier.padding(end = Spacing.xs).size(16.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.primary
@@ -1373,7 +1525,7 @@ private fun FileTreeRow(
         Spacer(Modifier.width(Spacing.lg * node.depth))
         if (node.entry.isDirectory) {
             if (showExpanding) {
-                CircularProgressIndicator(
+                DrawerProgressIndicator(
                     modifier = Modifier.size(16.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.primary
@@ -1394,7 +1546,7 @@ private fun FileTreeRow(
         }
         Spacer(Modifier.width(Spacing.xs))
         if (busy) {
-            CircularProgressIndicator(
+            DrawerProgressIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.primary

@@ -64,10 +64,12 @@ class PluginRuntimeManager @Inject constructor(
     private val chatService: PluginChatService,
     private val modelService: PluginModelService,
     private val providerService: PluginProviderService,
+    private val sessionSourceHostService: PluginSessionHostService,
     private val secretStore: PluginSecretStore,
     private val systemService: PluginSystemService,
     private val introspectionService: PluginIntrospectionService,
     private val toolService: PluginToolService,
+    private val permissionService: PluginPermissionService,
     private val httpService: PluginHttpService,
     private val portService: PluginPortService
 ) {
@@ -310,6 +312,12 @@ class PluginRuntimeManager @Inject constructor(
             "host.chat.resolveToolApproval" -> hostCall { chatService.resolveToolApproval(pluginId, params) }
             "host.chat.resolveQuestion" -> hostCall { chatService.resolveQuestion(pluginId, params) }
             "host.chat.resolvePlanApproval" -> hostCall { chatService.resolvePlanApproval(pluginId, params) }
+            "host.sessionSource.setSessions" -> hostCall { sessionSourceHostService.setSessions(pluginId, params) }
+            "host.sessionSource.setLoading" -> hostCall { sessionSourceHostService.setLoading(pluginId, params) }
+            "host.sessionSource.setError" -> hostCall { sessionSourceHostService.setError(pluginId, params) }
+            "host.sessionSource.setThinking" -> hostCall { sessionSourceHostService.setThinking(pluginId, params) }
+            "host.sessionSource.setMessages" -> hostCall { sessionSourceHostService.setMessages(pluginId, params) }
+            "host.sessionSource.pushEvent" -> hostCall { sessionSourceHostService.pushEvent(pluginId, params) }
             "host.model.listProviders" -> hostCall { modelService.listProviders(pluginId) }
             "host.model.listModels" -> hostCall { modelService.listModels(pluginId, params) }
             "host.model.create" -> hostCall { modelService.create(pluginId, params) }
@@ -365,6 +373,8 @@ class PluginRuntimeManager @Inject constructor(
                     includeSchema = (params["includeSchema"] as? JsonPrimitive)?.booleanOrNull ?: false
                 )
             }
+            "host.permissions.request" -> hostCall { permissionService.request(pluginId, params) }
+            "host.permissions.cancel" -> hostCall { permissionService.cancel(pluginId, params) }
             "host.tools.execute" -> hostCall { toolService.execute(pluginId, params) }
             "host.tools.pending" -> hostCall { toolService.pending(pluginId, params) }
             "host.tools.resolve" -> hostCall { toolService.resolve(pluginId, params) }

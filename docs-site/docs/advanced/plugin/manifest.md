@@ -2,10 +2,15 @@
 
 `plugin.json` 是插件的唯一入口声明。宿主仅加载清单中列出的内容；无法识别的字段和贡献类型将直接拒绝安装，不会静默忽略。
 
+清单有配套的 JSON Schema（`plugins/schema/plugin.schema.json`）：在编辑器里给 `plugin.json` 加上 `"$schema": "…/plugin.schema.json"`（相对路径指向该文件）后，字段名写错或类型不对会直接红线，还有字段补全与枚举提示。`$schema` 只给编辑器用，宿主会忽略它的内容。
+
+独立项目不在本仓库里，相对路径指不到那份 schema，可以把它复制进自己的仓库，或改成仓库的 raw 地址（`https://raw.githubusercontent.com/jieapi/AiCode/main/plugins/schema/plugin.schema.json`）；使用 `plugins/template` 开始的项目默认已指向仓库内路径，搬出去时改这一行即可。
+
 ## 顶层字段
 
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
+| `$schema` | 否 | JSON Schema 地址，仅编辑器使用；宿主忽略 |
 | `manifestVersion` | 是 | 固定为整数 `1` |
 | `id` | 是 | 稳定插件标识，格式 `发布者.插件名` |
 | `name` | 是 | 展示名称，字符串或按语言的对象，最多 80 字符，不能换行 |
@@ -212,7 +217,81 @@
 | `format` | 是 | 目前仅支持 `openai` |
 | `baseUrl` | 是 | `http`/`https` 绝对地址，不能包含账号、查询参数或片段，最长 2048 字符 |
 
-宿主按此声明注册提供商；服务启动、模型与凭据维护见[插件提供商](/advanced/plugin/shizuku-providers#插件提供商)。
+宿主按此声明注册提供商；服务启动、模型与凭据维护见[插件提供商](/advanced/plugin/shizuku-providers#插件提供商)。插件 provider 的请求会自动携带 `X-AiCode-Session-Id` 请求头，值为当前 App 会话 ID，插件网关可用它把请求路由到对应会话。
+
+### sessionSources
+
+`sessionSources` 声明一个外部会话源，让 App 会话列表顶部出现以插件名为标题的独立分组。插件启用后分组会立即出现，会话列表由插件通过 `host.sessionSource.setSessions` 异步推送，不阻塞侧栏渲染。
+
+```json
+{
+  "sessionSources": [
+    {
+      "id": "ds-harness",
+      "title": {"default": "DS Harness Remote", "zh-CN": "DS Harness 远程"},
+      "handlers": {
+        "listSessions": "sessionSource.listSessions",
+        "readSession": "sessionSource.readSession",
+        "sendMessage": "sessionSource.sendMessage",
+        "interruptSession": "sessionSource.interruptSession",
+        "createSession": "sessionSource.createSession",
+        "refresh": "sessionSource.refresh"
+      }
+    }
+  ]
+}
+```
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `id` | 是 | 局部 ID |
+| `title` | 是 | 本地化名称，最多 80 字符 |
+| `handlers.listSessions` | 是 | 返回会话列表的 handler |
+| `handlers.readSession` | 是 | 读取会话历史的 handler |
+| `handlers.sendMessage` | 否 | 发送消息的 handler；首版只读展示可省略 |
+| `handlers.interruptSession` | 否 | 中断执行的 handler |
+| `handlers.createSession` | 否 | 新建远端会话的 handler |
+| `handlers.refresh` | 否 | 宿主请求刷新列表的 handler；应立即返回，随后通过 `host.sessionSource.setSessions` 推送结果 |
+
+handler 命名规则与工具 handler 相同，最长 64 字符。声明了 `sessionSources` 的插件必须提供 `runtime`。消息格式约定为 `role` + `blocks[]`：`text`、`reasoning`、`tool`、`attachment`、`notice`；宿主按 block 类型渲染，不把插件返回值当 HTML 执行。
+
+会话源异步推送 host API：`host.sessionSource.setSessions`（`sourceId` + `sessions[]`）、`host.sessionSource.setLoading`、`host.sessionSource.setError`；聊天页等待动画用 `host.sessionSource.setThinking`（`sessionId`、`visible`、可选 `text`）。
+
+### 远程会话流与主动交互
+
+会话摘要可增加 `providerId`（本插件提供商的局部 ID）、`model` 和 `executionMode: "remote"`。App 为这类会话发送 OpenAI 流式请求，远端继续负责模型与工具编排；不要把已经执行的远端工具作为普通 `tool_calls` 返回。
+
+历史分页继续由 `readSession` 提供。插件也可主动调用：
+
+- `host.sessionSource.setMessages({sourceId, sessionId, page, revision?})`：推送最多 100 条消息的历史快照，`page` 与 `readSession` 返回结构相同。
+- `host.sessionSource.pushEvent({sourceId, sessionId, type, ...})`：推送 `message`、`tool-start`、`tool-output`、`tool-end`、`turn-end`。工具事件带稳定的 `callId`，消息事件带 `message`；历史工具 block 使用相同 `callId`，以便原位合并。
+
+页面对应 `aicode.sessionSource.setMessages(options)` / `pushEvent(options)`。来源由宿主绑定当前插件，不能推送到其他插件的会话源。
+
+远程网关应遵守以下约定：
+
+- `X-AiCode-Session-Id` 为外部会话完整 ID。
+- `X-AiCode-Operation-Id` 是请求幂等键，重试不得再次执行同一任务。
+- `X-AiCode-Subscribe-Only: true` 表示仅订阅已有执行，不能创建会话或发送新任务。
+- 正文和思考实时转成 `delta.content` / `delta.reasoning_content`。单个助手消息结束时可发送 `delta.aicode_message_id`，其值与历史消息 ID 一致；只在整轮结束时发送 `[DONE]`。
+- 断开订阅不等于中断远端任务；显式停止走 `interruptSession`。
+
+插件需要用户授权时，可以使用原生授权卡片：
+
+```ts
+const result = await hostCall('host.permissions.request', {
+  sessionId: appSessionId,
+  requestId: remoteRequestId,
+  title: '执行远端命令',
+  description: '运行项目测试',
+  operation: {kind: 'command', command: 'npm test', workingDirectory: '/project'},
+});
+if (result.decision === 'allow') {
+  // 将本次决定回传给实际执行方。
+}
+```
+
+`sessionId` 必须是当前工作区会话，或本插件已发布的外部会话完整 ID。返回 `allow` / `deny` / `cancel`，只批准本次请求，不产生永久授权，也不覆盖宿主工具的权限判断。超时、工作区切换、会话移除或插件停用时取消。可用 `host.permissions.cancel({requestId})` 撤回；页面对应 `aicode.permissions.request(options)` / `cancel(requestId)`。卡片由 App 固定标注插件来源。请求默认等待 2 分钟，可用 `timeoutMs` 设置 1 秒至 10 分钟。
 
 ### workspaceTools
 

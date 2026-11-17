@@ -90,6 +90,7 @@ import com.bysqh.guru.feature.settings.data.repository.ToolSafetySettingsReposit
 import com.bysqh.guru.feature.settings.data.repository.BackgroundSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.ImageGenModelSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.VisionModelSettingsRepository
+import com.bysqh.guru.feature.workspace.domain.RemoteAgentConfigIdentityChangedException
 import com.bysqh.guru.feature.workspace.domain.model.RemoteConnection
 import com.bysqh.guru.feature.workspace.domain.repository.RemoteRepository
 import com.bysqh.guru.feature.settings.domain.model.AIProviderConfig
@@ -1552,16 +1553,26 @@ class SettingsViewModel @Inject constructor(
     fun refreshSkills() {
         viewModelScope.launch {
             _skills.value = withContext(Dispatchers.IO) {
-                val disabled = skillRepository.disabledNames()
-                skillRepository.listAllSkills().map { entry ->
-                    SkillUiEntry(
-                        name = entry.skill.name,
-                        description = entry.skill.description,
-                        scope = entry.scope,
-                        disabled = entry.skill.name.lowercase() in disabled,
-                        instructions = entry.skill.instructions,
-                        requiredTools = entry.skill.requiredTools
-                    )
+                try {
+                    val disabled = skillRepository.disabledNames()
+                    skillRepository.listAllSkills().map { entry ->
+                        SkillUiEntry(
+                            name = entry.skill.name,
+                            description = entry.skill.description,
+                            scope = entry.scope,
+                            disabled = entry.skill.name.lowercase() in disabled,
+                            instructions = entry.skill.instructions,
+                            requiredTools = entry.skill.requiredTools
+                        )
+                    }
+                } catch (error: java.io.IOException) {
+                    if (error is java.io.InterruptedIOException) throw error
+                    if (isTransientRemoteConfigError(error)) {
+                        FileLogger.d("Settings", "技能清单等待 SSH 就绪")
+                    } else {
+                        FileLogger.w("Settings", "技能清单读取失败", error)
+                    }
+                    emptyList()
                 }
             }
         }
@@ -1707,23 +1718,33 @@ class SettingsViewModel @Inject constructor(
     fun refreshSubAgents() {
         viewModelScope.launch {
             _subAgents.value = withContext(Dispatchers.IO) {
-                val disabled = agentDefinitionRepository.disabledNames()
-                agentDefinitionRepository.listAll().map { entry ->
-                    SubAgentUiEntry(
-                        name = entry.definition.name,
-                        description = entry.definition.description,
-                        scope = entry.scope,
-                        disabled = entry.definition.name.lowercase() in disabled,
-                        providerId = entry.definition.providerId,
-                        model = entry.definition.model,
-                        reasoningEffort = entry.definition.reasoningEffort,
-                        mode = entry.definition.mode,
-                        allowedTools = entry.definition.allowedTools,
-                        disallowedTools = entry.definition.disallowedTools,
-                        inject = entry.definition.inject,
-                        prompt = entry.definition.prompt,
-                        filePath = entry.definition.filePath
-                    )
+                try {
+                    val disabled = agentDefinitionRepository.disabledNames()
+                    agentDefinitionRepository.listAll().map { entry ->
+                        SubAgentUiEntry(
+                            name = entry.definition.name,
+                            description = entry.definition.description,
+                            scope = entry.scope,
+                            disabled = entry.definition.name.lowercase() in disabled,
+                            providerId = entry.definition.providerId,
+                            model = entry.definition.model,
+                            reasoningEffort = entry.definition.reasoningEffort,
+                            mode = entry.definition.mode,
+                            allowedTools = entry.definition.allowedTools,
+                            disallowedTools = entry.definition.disallowedTools,
+                            inject = entry.definition.inject,
+                            prompt = entry.definition.prompt,
+                            filePath = entry.definition.filePath
+                        )
+                    }
+                } catch (error: java.io.IOException) {
+                    if (error is java.io.InterruptedIOException) throw error
+                    if (isTransientRemoteConfigError(error)) {
+                        FileLogger.d("Settings", "子代理清单等待 SSH 就绪")
+                    } else {
+                        FileLogger.w("Settings", "子代理清单读取失败", error)
+                    }
+                    emptyList()
                 }
             }
         }
@@ -3019,6 +3040,17 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { toolSafetySettingsRepository.setDisableSafetyInterception(disabled) }
     }
 }
+
+/**
+ * 远程模式下技能/子代理清单的“暂不可用”是否属于瞬态：
+ * - 刚启动/刚切换模式时 SSH 配置或主目录尚未就绪（异常文案标识）；
+ * - 读取过程中连接身份变化（刚好连上或重连，见 [RemoteAgentConfigIdentityChangedException]）。
+ * 这两类后续会被连接就绪/文件变更监听重扫补齐，不应按故障打 WARN。
+ */
+private fun isTransientRemoteConfigError(error: java.io.IOException): Boolean =
+    error is RemoteAgentConfigIdentityChangedException ||
+        error.message == "SSH configuration unavailable" ||
+        error.message == "SSH home unavailable"
 
 /** 读取公告 md（zh 用中文版，其余英文版）；跟随系统语言时按系统语言判断。读取失败返回空串（空内容不弹窗）。 */
 private fun loadContainerAnnouncement(context: Context, languageTag: String?): String {

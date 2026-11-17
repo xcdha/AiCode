@@ -4,6 +4,7 @@ import android.content.Context
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.agent.domain.skill.Skill
 import com.bysqh.guru.feature.agent.domain.skill.SkillRepository
+import com.bysqh.guru.feature.workspace.domain.RemoteAgentConfigIdentityChangedException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.bysqh.guru.feature.plugin.domain.PluginManager
 import javax.inject.Inject
@@ -79,7 +80,11 @@ class SlashCommandRegistry @Inject constructor(
         } catch (error: IOException) {
             if (error is InterruptedIOException) throw error
             skills = emptyList()
-            FileLogger.w(TAG, "斜杠命令技能清单暂不可用", error)
+            if (error is RemoteAgentConfigIdentityChangedException) {
+                FileLogger.d(TAG, "斜杠命令技能清单等待连接就绪")
+            } else {
+                FileLogger.w(TAG, "斜杠命令技能清单暂不可用", error)
+            }
         }
         _commands.value = buildCommands()
     }

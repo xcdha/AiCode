@@ -371,6 +371,7 @@ export interface ChatRunStateResult {
 }
 
 export interface ChatWaitForRunResult {
+  sessionId: string;
   timedOut: boolean;
   run: ChatRun;
 }
@@ -739,7 +740,10 @@ export interface AicodeBridge {
 
   /** 在对话中显示可关闭提示条；按钮点击回调同插件进程的 handler。 */
   tip(options: { title?: string; text: string; action?: { label: string; handler: string } }): Promise<{
-    ok: boolean;
+    /** 提示条实例 ID。 */
+    tipId: string;
+    /** 是否已入队；宿主同一时刻只展示有限条提示。 */
+    queued: boolean;
   }>;
 
   app: {
@@ -948,6 +952,17 @@ export interface AicodeBridge {
     set(key: string, value: string): Promise<{ ok: boolean }>;
     delete(key: string): Promise<{ ok: boolean }>;
     list(): Promise<{ keys: string[] }>;
+  };
+
+  sessionSource: {
+    setMessages(options: import('./host').HostParamsOf<'host.sessionSource.setMessages'>): Promise<{ ok: boolean }>;
+    pushEvent(options: import('./host').HostParamsOf<'host.sessionSource.pushEvent'>): Promise<{ ok: boolean }>;
+  };
+
+  /** 仅本次用户决定；不会覆盖宿主权限策略或记忆授权。 */
+  permissions: {
+    request(options: import('./host').PermissionRequest): Promise<import('./host').PermissionDecision>;
+    cancel(requestId: string): Promise<{ cancelled: boolean }>;
   };
 
   /** 宿主工具目录与执行；只允许内置 / MCP 工具。 */

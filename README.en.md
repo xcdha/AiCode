@@ -14,6 +14,10 @@
   <a href="https://github.com/jieapi/aicode/releases"><img src="https://img.shields.io/github/v/release/jieapi/aicode?display_name=tag&include_prereleases" alt="Latest Release" /></a>
 </p>
 
+<p align="center">
+  <a href="https://trendshift.io/repositories/193355?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-193355" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/193355" alt="jieapi%2FAiCode | Trendshift" width="250" height="55"/></a>
+</p>
+
 ## Statement on Open-Source License Compliance
 
 We recently discovered that a closed-source commercial app makes extensive use of AiCode's code and static assets, even retaining class names and other identifiers from this project, without complying with its open-source license. Meanwhile, its developer claims never to have heard of AiCode.
