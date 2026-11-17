@@ -58,8 +58,8 @@ class AgentDefinitionConfigRepository @Inject constructor(
     val changes: SharedFlow<Unit> = merge(
         fileChangeHub.watchAicode(AGENTS_DIR, recursive = true),
         fileChangeHub.watchAicode(),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR/$AGENTS_DIR", recursive = true),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR/$AGENTS_DIR", recursive = true),
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR")
     ).mapNotNull { batch ->
         if (!batch.changes.any(::isAgentChange)) return@mapNotNull null
         FileLogger.i(TAG, "检测到子代理目录或配置变化，已通知刷新")
@@ -105,7 +105,7 @@ class AgentDefinitionConfigRepository @Inject constructor(
         private const val TAG = "AgentDefinitionConfigRepository"
         private const val CONFIG_FILE = "agents.json"
         private const val GLOBAL_CONFIG_PATH = "~/.guru/$CONFIG_FILE"
-        private const val AICODE_DIR = ".guru"
+        private const val GURU_DIR = ".guru"
         private const val AGENTS_DIR = "agents"
         private val JSON = Json { ignoreUnknownKeys = true; isLenient = true }
         private val PRETTY_JSON = Json { prettyPrint = true }

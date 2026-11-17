@@ -130,7 +130,7 @@ interface CommandEngine {
 }
 
 /**
- * 日志打印前对命令串脱敏：命令可能带 env 前缀（如面板脚本的 `AICODE_PROVIDER_API_KEY=...`）
+ * 日志打印前对命令串脱敏：命令可能带 env 前缀（如面板脚本的 `GURU_PROVIDER_API_KEY=...`）
  * 或内联凭据（`--header "Authorization: Bearer ..."`）。按敏感键名把值打码为 `***`。
  */
 private val SENSITIVE_COMMAND_VALUE_REGEX = Regex(

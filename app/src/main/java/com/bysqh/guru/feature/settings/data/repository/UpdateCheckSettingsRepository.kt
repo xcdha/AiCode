@@ -59,13 +59,13 @@ class UpdateCheckSettingsRepository @Inject constructor(
     }
 
     /**
-     * 把版本与更新信息写入 `~/.guru/update-info.json`（宿主 filesDir/aicode/），
+     * 把版本与更新信息写入 `~/.guru/update-info.json`（宿主 filesDir/guru/），
      * 供容器内 AI 读取（当前版本、更新通道、最近检查时间、最新版本与逐版本更新日志）。
      * 写入失败静默，不影响检测流程。
      */
     fun writeUpdateInfo(currentVersion: String, channel: UpdateChannel, result: UpdateCheckResult) {
         runCatching {
-            val dir = File(context.filesDir, "aicode").apply { mkdirs() }
+            val dir = File(context.filesDir, "guru").apply { mkdirs() }
             val obj = JSONObject()
             obj.put("currentVersion", currentVersion)
             obj.put("channel", channel.name.lowercase())

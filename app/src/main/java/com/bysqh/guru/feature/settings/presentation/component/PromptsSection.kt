@@ -86,7 +86,10 @@ internal fun PromptsSection(
     onDeleteFragment: (Int) -> Unit,
     onReorder: (List<PromptFragment>) -> Unit,
     onToggleBuiltinDisabled: (Boolean) -> Unit,
-    onBatchDeleteFragments: (List<Int>) -> Unit
+    onBatchDeleteFragments: (List<Int>) -> Unit,
+    // [二开] 片段开关
+    disabledNumbers: Set<Int> = emptySet(),
+    onToggleEnabled: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
     // 内置来源的片段删不了，也就不参与多选：勾选框置灰、全选也不会选中它们。
@@ -152,6 +155,8 @@ internal fun PromptsSection(
                 onOpenFragment = onOpenFragment,
                 onDeleteFragment = onDeleteFragment,
                 onReorder = onReorder,
+                disabledNumbers = disabledNumbers,
+                onToggleEnabled = onToggleEnabled,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -183,6 +188,9 @@ private fun PromptList(
     onOpenFragment: (PromptFragment) -> Unit,
     onDeleteFragment: (Int) -> Unit,
     onReorder: (List<PromptFragment>) -> Unit,
+    // [二开] 片段开关
+    disabledNumbers: Set<Int> = emptySet(),
+    onToggleEnabled: (Int, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var localFragments by remember { mutableStateOf(fragments) }
@@ -241,6 +249,8 @@ private fun PromptList(
                         selectionMode = selection.isActive,
                         selected = selection.isSelected(fragment.number.toString()),
                         onToggleSelect = { selection.toggle(fragment.number.toString()) },
+                        enabled = fragment.number !in disabledNumbers,
+                        onToggleEnabled = { checked -> onToggleEnabled(fragment.number, checked) },
                         dragModifier = if (selection.isActive) {
                             Modifier
                         } else {
@@ -277,7 +287,10 @@ private fun PromptRow(
     dragModifier: Modifier,
     selectionMode: Boolean = false,
     selected: Boolean = false,
-    onToggleSelect: () -> Unit = {}
+    onToggleSelect: () -> Unit = {},
+    // [二开] 片段开关：关闭后不参与系统提示词渲染
+    enabled: Boolean = true,
+    onToggleEnabled: (Boolean) -> Unit = {}
 ) {
     val sortDescription = stringResource(R.string.prompts_sort_long_press)
     val row: @Composable () -> Unit = {
@@ -331,6 +344,10 @@ private fun PromptRow(
             Spacer(modifier = Modifier.width(Spacing.sm))
             SourceBadge(fragment.source)
             Spacer(modifier = Modifier.width(Spacing.xs))
+            if (!selectionMode) {
+                AppSwitch(checked = enabled, onCheckedChange = onToggleEnabled)
+                Spacer(modifier = Modifier.width(Spacing.xs))
+            }
             Icon(
                 imageVector = FeatherIcons.ChevronRight,
                 contentDescription = null,

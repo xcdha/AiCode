@@ -10,7 +10,7 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 /**
- * MCP OAuth 的依赖绑定。令牌与客户端信息落在与 mcp.json 同级的 aicode 目录下，
+ * MCP OAuth 的依赖绑定。令牌与客户端信息落在与 mcp.json 同级的 guru 目录下，
  * 限定符 `mcpOAuthFile` 与 [com.bysqh.guru.feature.agent.domain.mcp.auth.McpTokenStore] 的构造参数一致。
  */
 @Module

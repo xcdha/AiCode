@@ -4,6 +4,7 @@ import android.content.Context
 import com.bysqh.guru.R
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.bysqh.guru.core.datastore.preferencesCorruptionHandler
@@ -39,6 +40,12 @@ class ThemeSettingsRepository @Inject constructor(
         val DARK_THEME_KEY = booleanPreferencesKey("dark_theme_enabled")
         val THEME_PRESET_KEY = stringPreferencesKey("theme_preset_id")
         val DYNAMIC_COLOR_KEY = booleanPreferencesKey("dynamic_color_enabled")
+        // [二开] 外观选项（参考 Eta）：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放
+        val ACCENT_COLOR_KEY = stringPreferencesKey("appearance_accent_color")
+        val PALETTE_STYLE_KEY = stringPreferencesKey("appearance_palette_style")
+        val UI_STYLE_KEY = stringPreferencesKey("appearance_ui_style")
+        val PURE_BLACK_KEY = booleanPreferencesKey("appearance_pure_black")
+        val INTERFACE_SCALE_KEY = floatPreferencesKey("appearance_interface_scale")
     }
 
     val themeModeFlow: Flow<AppThemeMode> = context.themeDataStore.data.map { prefs ->
@@ -53,6 +60,50 @@ class ThemeSettingsRepository @Inject constructor(
     /** 是否启用系统莫奈取色。开启后配色主题的选择不再生效。 */
     val dynamicColorFlow: Flow<Boolean> =
         context.themeDataStore.data.map { it[DYNAMIC_COLOR_KEY] == true }
+
+    /** [二开] 强调色（强色调）。 */
+    val accentColorFlow: Flow<com.bysqh.guru.core.theme.AccentColor> =
+        context.themeDataStore.data.map { com.bysqh.guru.core.theme.AccentColor.fromId(it[ACCENT_COLOR_KEY]) }
+
+    /** [二开] 色彩风格。 */
+    val paletteStyleFlow: Flow<com.bysqh.guru.core.theme.PaletteStyle> =
+        context.themeDataStore.data.map { com.bysqh.guru.core.theme.PaletteStyle.fromId(it[PALETTE_STYLE_KEY]) }
+
+    /** [二开] 界面样式（标准 / Miuix）。 */
+    val uiStyleFlow: Flow<com.bysqh.guru.core.theme.UiStyle> =
+        context.themeDataStore.data.map { com.bysqh.guru.core.theme.UiStyle.fromId(it[UI_STYLE_KEY]) }
+
+    /** [二开] 纯黑背景（仅深色模式生效）。 */
+    val pureBlackFlow: Flow<Boolean> = context.themeDataStore.data.map { it[PURE_BLACK_KEY] == true }
+
+    /** [二开] 界面缩放（0.85~1.15）。 */
+    val interfaceScaleFlow: Flow<Float> = context.themeDataStore.data.map {
+        com.bysqh.guru.core.theme.AppearanceOptions.normalizeScale(
+            it[INTERFACE_SCALE_KEY] ?: com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE
+        )
+    }
+
+    suspend fun setAccentColor(value: com.bysqh.guru.core.theme.AccentColor) {
+        context.themeDataStore.edit { it[ACCENT_COLOR_KEY] = value.id }
+    }
+
+    suspend fun setPaletteStyle(value: com.bysqh.guru.core.theme.PaletteStyle) {
+        context.themeDataStore.edit { it[PALETTE_STYLE_KEY] = value.id }
+    }
+
+    suspend fun setUiStyle(value: com.bysqh.guru.core.theme.UiStyle) {
+        context.themeDataStore.edit { it[UI_STYLE_KEY] = value.id }
+    }
+
+    suspend fun setPureBlack(enabled: Boolean) {
+        context.themeDataStore.edit { it[PURE_BLACK_KEY] = enabled }
+    }
+
+    suspend fun setInterfaceScale(value: Float) {
+        context.themeDataStore.edit {
+            it[INTERFACE_SCALE_KEY] = com.bysqh.guru.core.theme.AppearanceOptions.normalizeScale(value)
+        }
+    }
 
     suspend fun setThemeMode(mode: AppThemeMode) {
         context.themeDataStore.edit { it[THEME_MODE_KEY] = mode.name }

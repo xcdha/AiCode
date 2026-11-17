@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AiCode</string>
+<string name="app_name">Guru</string>
     <string name="common_tool_missing_argument">缺少参数：%1$s。</string>
     <string name="plan_mode_invalid_action">无效的 action：%1$s。支持 enter 或 exit。</string>
     <string name="plan_mode_already_active">当前已处于 PLAN（计划）模式。</string>
@@ -88,9 +88,6 @@
     <string name="settings_startup_session_recent_desc">直接进入最近更新的会话</string>
     <string name="settings_delete_external_workspace_sessions">删除外部工作区聊天记录</string>
     <string name="settings_delete_external_workspace_sessions_desc">移除外部本地工作区时，一并删除该工作区的聊天记录</string>
-    <string name="settings_general_reply">回复</string>
-    <string name="settings_auto_expand_reasoning">思考自动展开</string>
-    <string name="settings_auto_expand_reasoning_desc">思考过程默认展开显示，关闭后保持收起、点击查看</string>
     <string name="settings_general_network">网络</string>
     <string name="settings_first_byte_timeout">首字节超时</string>
     <string name="settings_first_byte_timeout_desc">等待首个响应块的最长时间</string>
@@ -266,9 +263,25 @@
     <string name="theme_dynamic_color_unsupported">需要 Android 12 及以上系统</string>
     <string name="settings_background_image">背景图</string>
     <string name="settings_background_image_none">未设置</string>
-    <string name="settings_background_image_alpha">透明度</string>
-    <string name="settings_background_image_pick">选择图片</string>
+    <string name="settings_background_image_alpha">背景可见度</string>
+    <!-- [二开] 背景亮度 -->
+    <string name="settings_background_image_pick">选择图片 / 视频</string>
     <string name="settings_background_image_remove">移除背景</string>
+    <!-- [二开] 桌宠 -->
+    <string name="settings_pet_title">桌宠</string>
+    <string name="settings_pet_enable">显示桌宠</string>
+    <string name="settings_pet_enable_desc">在对话页显示一只会跟着 Agent 状态变表情的小宠物，可拖动位置</string>
+    <string name="settings_pet_size">桌宠大小</string>
+    <string name="settings_pet_size_hint">桌面宠物只在对话页显示，侧栏展开时自动淡出</string>
+    <string name="pet_bubble_thinking">思考中…</string>
+    <string name="pet_bubble_working">正在输出…</string>
+    <string name="pet_bubble_done">搞定！</string>
+    <string name="pet_bubble_error">出错了…</string>
+    <!-- [二开] 动态背景（GIF / MP4）相关文案 -->
+    <string name="settings_background_image_hint">支持图片、GIF 与 MP4 视频；动态背景会静音循环播放</string>
+    <string name="settings_background_kind_gif">GIF 动图</string>
+    <string name="settings_background_kind_mp4">MP4 视频</string>
+    <string name="settings_background_kind_motion">动态照片</string>
     <string name="provider_cache_anthropic_title">Anthropic 缓存断点</string>
     <string name="provider_cache_anthropic_subtitle">为 system/工具/消息前缀打显式缓存断点，降低重复输入成本</string>
     <string name="provider_cache_openai_chat_title">OpenAI 兼容缓存键</string>
@@ -295,7 +308,7 @@
     <string name="provider_dashboard_loading">正在加载面板…</string>
     <string name="provider_dashboard_raw_output">原始输出</string>
     <string name="provider_script_params_title">脚本参数</string>
-    <string name="provider_script_params_desc">以 AICODE_KEY_&lt;KEY&gt; 注入面板脚本环境变量</string>
+    <string name="provider_script_params_desc">以 GURU_KEY_&lt;KEY&gt; 注入面板脚本环境变量</string>
     <string name="provider_script_params_empty">暂无参数，点击下方添加</string>
     <string name="provider_script_param_key">参数名 (KEY)</string>
     <string name="provider_script_param_key_hint">例如 ACCOUNT_ID</string>
@@ -348,8 +361,6 @@
     <string name="notification_agent_live_title_multi">%1$d 个任务进行中</string>
     <string name="notification_channel_agent_approval">授权审批通知</string>
     <string name="notification_channel_agent_approval_desc">AI 在后台请求授权、提问或等待计划审批时弹出的通知</string>
-    <string name="notification_channel_plugin_events">插件通知</string>
-    <string name="notification_channel_plugin_events_desc">插件通过 host.notify 发送的通知</string>
     <string name="notification_approval_title">AI 等待你的确认</string>
     <string name="notification_approval_multi_title">%1$d 个任务等待确认</string>
     <string name="notification_approval_needed">需要审批</string>
@@ -366,8 +377,6 @@
     <string name="settings_permission_storage_desc">读写工作区文件与容器镜像</string>
     <string name="settings_permission_battery">忽略电池优化</string>
     <string name="settings_permission_battery_desc">允许后台持续运行，减少被杀</string>
-    <string name="settings_permission_overlay">显示在其他应用上层</string>
-    <string name="settings_permission_overlay_desc">允许本应用在其他应用上方显示内容</string>
     <string name="settings_autostart_title">自启动管理</string>
     <string name="settings_autostart_subtitle">允许系统在后台自动拉起应用</string>
     <string name="settings_permission_granted">已允许</string>
@@ -436,7 +445,7 @@
     <string name="credential_auto_inject_title">自动注入凭证</string>
     <string name="credential_auto_inject_hint">把应用中保存的 git 凭据同步到远程服务器，仅对当前工作区根目录下的仓库生效，不影响你在服务器上手动使用 git</string>
     <string name="credential_auto_inject_prompt_title">自动注入 git 凭证？</string>
-    <string name="credential_auto_inject_prompt_body">是否让 AiCode 把应用中保存的 git 凭据同步到该远程服务器？仅对当前工作区根目录下的仓库生效，不会改动服务器的全局 git 配置。</string>
+    <string name="credential_auto_inject_prompt_body">是否让 Guru 把应用中保存的 git 凭据同步到该远程服务器？仅对当前工作区根目录下的仓库生效，不会改动服务器的全局 git 配置。</string>
     <string name="credential_auto_inject_enable">开启</string>
     <string name="common_rename">重命名</string>
     <string name="common_hide">隐藏</string>
@@ -573,7 +582,7 @@
     <string name="about_update_verify_not_newer">安装包版本不高于当前版本</string>
     <string name="about_update_install_failed">没有可用的安装程序</string>
 
-    <string name="agreement_title">欢迎使用 AiCode</string>
+    <string name="agreement_title">欢迎使用 Guru</string>
     <string name="agreement_terms">用户协议</string>
     <string name="agreement_privacy">隐私政策</string>
     <string name="agreement_notice_prefix">使用前，请阅读并同意</string>
@@ -717,13 +726,6 @@
     <string name="drawer_expand_subagents">展开子代理</string>
     <string name="drawer_collapse_subagents">收起子代理</string>
     <string name="file_browser_up">上一级</string>
-    <string name="file_browser_title">文件树</string>
-    <string name="file_browser_add_folder">添加本机文件夹</string>
-    <string name="file_browser_add_folder_failed">无法添加该文件夹，请选择设备存储中的目录并授予存储权限</string>
-    <string name="file_browser_upload_file">上传文件</string>
-    <string name="file_browser_upload_folder">上传文件夹</string>
-    <string name="file_browser_upload_failed">上传失败，请检查存储权限与目标目录写入权限</string>
-    <string name="file_browser_remove_folder">移除此文件夹</string>
     <string name="file_browser_empty">空目录</string>
     <string name="file_browser_error">读取目录失败</string>
     <string name="file_browser_refresh">刷新</string>
@@ -1017,7 +1019,7 @@
     <string name="credential_device_waiting_desc">完成授权后将自动绑定并保存凭据</string>
     <string name="credential_device_success_title">授权成功</string>
     <string name="credential_device_success">已成功关联账号 %1$s 并保存凭据</string>
-    <string name="credential_device_install_required">已登录为 %1$s。还需把 AiCode 安装到你的仓库，之后才能推送/拉取代码。</string>
+    <string name="credential_device_install_required">已登录为 %1$s。还需把 Guru 安装到你的仓库，之后才能推送/拉取代码。</string>
     <string name="credential_device_install_now">去安装</string>
     <string name="credential_device_install_later">稍后</string>
     <string name="credential_device_failed_title">授权未能完成</string>
@@ -1744,9 +1746,6 @@
     <string name="terminal_theme_title">配色主题</string>
     <string name="terminal_font_size_title">字体大小</string>
     <string name="terminal_cursor_style_title">光标样式</string>
-    <string name="provider_source_plugin">插件</string>
-    <string name="terminal_show_plugin_tabs">显示插件运行</string>
-    <string name="terminal_show_plugin_tabs_desc">在标签栏显示插件创建的运行标签</string>
     <string name="terminal_cursor_block">方块</string>
     <string name="terminal_cursor_underline">下划线</string>
     <string name="terminal_cursor_bar">竖线</string>
@@ -1844,7 +1843,7 @@
     <string name="crash_restart">重启应用</string>
     <string name="crash_exit">退出应用</string>
     <string name="crash_log_hint">完整日志文件位置：%1$s</string>
-    <string name="crash_report_title">AiCode 崩溃报告</string>
+    <string name="crash_report_title">Guru 崩溃报告</string>
     <string name="crash_report_time">时间：%1$s</string>
     <string name="crash_report_version">版本：%1$s</string>
     <string name="crash_report_device">设备：%1$s</string>
@@ -2022,6 +2021,266 @@
     <string name="browser_ua_custom_dialog_title">自定义 User-Agent</string>
     <string name="browser_ua_custom_input_hint">输入完整的 User-Agent 字符串</string>
     <string name="browser_ua_applied_toast">已切换浏览器标识并刷新页面</string>
+    <!-- [二开] 记忆页与角色页（移植自 Muse） -->
+    <string name="settings_memory">记忆</string>
+    <string name="settings_roles">角色</string>
+    <string name="memory_global_title">全局记忆</string>
+    <string name="memory_project_title">项目记忆</string>
+    <string name="memory_project_title_named">项目记忆 · %1$s</string>
+    <string name="memory_add">新建记忆</string>
+    <string name="memory_empty_global">还没有全局记忆</string>
+    <string name="memory_empty_project">这个项目还没有记忆</string>
+    <string name="memory_no_workspace">未选择工作区，项目记忆暂不可用</string>
+    <string name="memory_editor_new">新建记忆</string>
+    <string name="memory_editor_edit">编辑记忆</string>
+    <string name="memory_name">名称</string>
+    <string name="memory_name_hint">字母、数字、连字符，作为记忆标识</string>
+    <string name="memory_description">描述</string>
+    <string name="memory_description_hint">一句话说明这条记忆的内容</string>
+    <string name="memory_content">内容</string>
+    <string name="memory_content_hint">写给 AI 的长期记忆正文，支持 Markdown</string>
+    <string name="memory_scope">作用域</string>
+    <string name="memory_scope_global">全局</string>
+    <string name="memory_scope_project">项目</string>
+    <string name="memory_saved">已保存</string>
+    <string name="memory_save_failed">保存失败</string>
+    <string name="memory_deleted">已删除</string>
+    <string name="memory_delete_failed">删除失败</string>
+    <string name="memory_delete_confirm_title">删除记忆</string>
+    <string name="memory_delete_confirm_message">确定删除「%1$s」吗？此操作不可撤销。</string>
+    <!-- [二开] 角色页 -->
+    <string name="role_intro">选中哪个角色，就用它的身份提示词对话。身份已从系统规则中独立出来，这里修改后对新会话立即生效。</string>
+    <string name="role_group_title">角色</string>
+    <string name="role_new">新建角色</string>
+    <string name="role_new_blank">从空白身份开始</string>
+    <string name="role_name_label">角色名</string>
+    <string name="role_default_name">新角色</string>
+    <string name="role_cannot_delete_title">无法删除</string>
+    <string name="role_cannot_delete_message">至少要保留一个角色。</string>
+    <string name="role_identity_empty">未设置身份提示词</string>
+    <string name="role_identity_length">身份提示词 %1$d 字</string>
+    <string name="role_current">当前角色</string>
+    <string name="role_edit_title">编辑角色</string>
+    <string name="role_change_avatar">更换头像</string>
+    <string name="role_remove_avatar">移除头像</string>
+    <string name="role_identity">身份提示词</string>
+    <string name="role_import_prompt">导入提示词</string>
+    <string name="role_delete">删除角色</string>
+    <string name="crop_decode_failed_title">无法读取图片</string>
+    <string name="crop_decode_failed_message">这张图片无法解码，换一张试试。</string>
+    <string name="crop_title">调整头像</string>
+    <string name="crop_hint">拖动与缩放，圆框内就是最终头像</string>
+    <!-- [二开] 外观与主题整页 -->
+    <string name="appearance_title">外观与主题</string>
+    <string name="appearance_group_color">颜色与主题</string>
+    <string name="appearance_group_style">界面样式</string>
+    <string name="appearance_group_effects">界面与效果</string>
+    <string name="appearance_theme_mode">主题模式</string>
+    <string name="appearance_preset">配色方案</string>
+    <string name="appearance_monet">Monet 取色</string>
+    <string name="appearance_monet_desc">从系统壁纸提取配色；开启后配色方案不再生效</string>
+    <string name="appearance_palette_style">色彩风格</string>
+    <string name="appearance_palette_tonal_spot">柔和</string>
+    <string name="appearance_palette_neutral">中性</string>
+    <string name="appearance_palette_vibrant">鲜艳</string>
+    <string name="appearance_palette_expressive">表现力</string>
+    <string name="appearance_palette_rainbow">彩虹</string>
+    <string name="appearance_palette_fruit_salad">缤纷</string>
+    <string name="appearance_palette_monochrome">单色</string>
+    <string name="appearance_palette_fidelity">还原</string>
+    <string name="appearance_palette_content">内容</string>
+    <string name="appearance_accent_color">强色调</string>
+    <string name="appearance_accent_system">跟随主题</string>
+    <string name="appearance_accent_blue">蓝色</string>
+    <string name="appearance_accent_purple">紫色</string>
+    <string name="appearance_accent_pink">粉色</string>
+    <string name="appearance_accent_red">红色</string>
+    <string name="appearance_accent_orange">橙色</string>
+    <string name="appearance_accent_yellow">黄色</string>
+    <string name="appearance_accent_green">绿色</string>
+    <string name="appearance_accent_teal">青色</string>
+    <string name="appearance_ui_style">界面样式</string>
+    <string name="appearance_ui_style_standard">标准</string>
+    <string name="appearance_ui_style_miuix">Miuix</string>
+    <string name="appearance_interface_scale">界面缩放</string>
+    <string name="appearance_interface_scale_desc">调整全局字号大小（85% ~ 115%）</string>
+    <string name="appearance_pure_black">纯黑背景</string>
+    <string name="appearance_pure_black_desc">深色模式下把页面底色压到纯黑，省电且对比更高</string>
+    <string name="appearance_pure_black_dark_only">仅深色模式生效（当前为浅色模式）</string>
+    <!-- [二开] 导航手势 -->
+    <string name="appearance_swipe_back">横移返回手势</string>
+    <string name="appearance_swipe_back_desc">从屏幕左/右边缘向内滑动返回上一页（聊天页留给侧栏手势）</string>
+    <string name="appearance_predictive_back">预测性返回动画</string>
+    <string name="appearance_predictive_back_desc">拖动时页面跟手位移并预览，松手超过阈值完成返回，否则回弹</string>
+<!-- 子代理模型档位 -->
+    <!-- 子代理派发卡片 -->
+
+    <!-- 设置页菜单标题 -->
+    <string name="settings_general_reply">回复</string>
+    <string name="settings_auto_expand_reasoning">思考自动展开</string>
+    <string name="settings_auto_expand_reasoning_desc">思考过程默认展开显示，关闭后保持收起、点击查看</string>
+
+    <!-- Token 统计页 -->
+
+    <!-- 存储空间页 -->
+
+    <!-- 语言设置页 -->
+
+    <!-- SettingsScreen 通用 -->
+    <string name="notification_channel_plugin_events">插件通知</string>
+    <string name="notification_channel_plugin_events_desc">插件通过 host.notify 发送的通知</string>
+    <string name="settings_permission_overlay">显示在其他应用上层</string>
+    <string name="settings_permission_overlay_desc">允许本应用在其他应用上方显示内容</string>
+    <!-- Settings category titles -->
+
+    <!-- i18n: UI 文案 -->
+    <!-- Common -->
+    <!-- 档位名后附接口值，如「最高（max）」，便于对照模型文档与报错文案。 -->
+
+    <!-- Log -->
+
+    <!-- ? -->
+
+    <!-- AI Chat Panel -->
+
+    <!-- Agent Status -->
+    <!-- About -->
+
+
+    <!-- Ask User Question -->
+
+    <!-- Backup -->
+
+    <!-- Backup ViewModel -->
+
+    <!-- 网络备份 -->
+
+    <!-- Chat Drawer -->
+
+    <!-- Subagent -->
+    <string name="file_browser_title">文件树</string>
+    <string name="file_browser_add_folder">添加本机文件夹</string>
+    <string name="file_browser_add_folder_failed">无法添加该文件夹，请选择设备存储中的目录并授予存储权限</string>
+    <string name="file_browser_upload_file">上传文件</string>
+    <string name="file_browser_upload_folder">上传文件夹</string>
+    <string name="file_browser_upload_failed">上传失败，请检查存储权限与目标目录写入权限</string>
+    <string name="file_browser_remove_folder">移除此文件夹</string>
+
+    <!-- Chat Input Bar -->
+
+    <!-- Checkpoint & Rewind -->
+
+    <!-- Editor save conflict -->
+
+    <!-- Chat Message Bubbles -->
+
+    <!-- Container Settings -->
+
+    <!-- Credential Editor -->
+    <!-- Credential Toast -->
+
+    <!-- Credential List -->
+
+    <!-- Credential Add / Quick Login -->
+
+    <!-- Credential Prompt -->
+
+    <!-- Diff Viewer -->
+
+    <!-- Git -->
+
+    <!-- Git Toast Messages -->
+
+    <!-- Git Merge -->
+
+    <!-- Git Stash -->
+
+    <!-- Git Conflict -->
+
+    <!-- Git Commit Enhancements -->
+
+    <!-- Git Log & Commit Detail Actions -->
+
+    <!-- Gitignore -->
+
+    <!-- Git Identity -->
+    <!-- Main Activity -->
+
+    <!-- MCP Editor -->
+
+    <!-- MCP HTTP Fields -->
+
+    <!-- MCP Settings -->
+
+    <!-- Custom Prompts -->
+
+    <!-- Skills Settings -->
+
+    <!-- Subagent Settings -->
+
+    <!-- MCP stdio Fields -->
+
+    <!-- Permissions Settings -->
+
+    <!-- Provider Editor -->
+    <!-- 列表批量操作（多选模式）：通用文案，跨页面复用 -->
+
+    <!-- Provider Logo -->
+
+    <!-- Providers & Log -->
+    <!-- Remote Dialogs -->
+
+    <!-- Remote FTP -->
+
+    <!-- Remote Server -->
+
+    <!-- Remote Server ViewModel -->
+
+    <!-- Remote Sync -->
+
+    <!-- Terminal -->
+
+    <!-- Terminal Settings & Themes -->
+    <string name="provider_source_plugin">插件</string>
+    <string name="terminal_show_plugin_tabs">显示插件运行</string>
+    <string name="terminal_show_plugin_tabs_desc">在标签栏显示插件创建的运行标签</string>
+
+    <!-- Todo Card -->
+
+    <!-- Tool Message -->
+
+    <!-- Vision Model -->
+
+    <!-- Compaction Model -->
+
+    <!-- Image Generation Model -->
+
+    <!-- Web Search Result -->
+
+    <!-- Workspace Picker -->
+
+    <!-- Helper Strings -->
+
+    <!-- 崩溃错误页 -->
+
+    <!-- 自定义面板（ProviderDashboardBar） -->
+
+    <!-- 通用 -->
+
+
+    <!-- Token 统计 -->
+
+    <!-- Git -->
+
+    <!-- 远程服务器删除确认 -->
+
+    <!-- 代理设置 -->
+
+    <!-- 供应商编辑：代理（可选） -->
+
+    <!-- 首次启动引导 -->
+
+    <!-- Browser -->
 
     <!-- 插件 -->
     <string name="settings_plugins">插件</string>

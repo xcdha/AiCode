@@ -43,12 +43,12 @@ internal fun WorkbenchPaneContent(
     kind: WorkbenchPaneKind,
     editorPath: String,
     editorLine: Int,
-    pluginPage: PluginPage?,
-    pluginPageContext: () -> PluginEntryContext,
-    editorPluginEntries: List<PluginUiEntry>,
-    pluginLanguageTag: String,
-    pluginsViewModel: PluginsViewModel,
-    onEditorPluginEntry: (PluginUiEntry, PluginEntryContext) -> Unit,
+    pluginPage: PluginPage? = null,
+    pluginPageContext: () -> PluginEntryContext = { PluginEntryContext() },
+    editorPluginEntries: List<PluginUiEntry> = emptyList(),
+    pluginLanguageTag: String = "zh",
+    pluginsViewModel: PluginsViewModel? = null,
+    onEditorPluginEntry: (PluginUiEntry, PluginEntryContext) -> Unit = { _, _ -> },
     onClose: () -> Unit,
     onOpenFile: ((String) -> Unit)? = null,
     editorLeaveGuard: EditorLeaveGuard? = null,
@@ -109,11 +109,12 @@ internal fun WorkbenchPaneContent(
 
             WorkbenchPaneKind.PLUGIN -> {
                 val page = pluginPage
-                if (page != null) {
+                val vm = pluginsViewModel
+                if (page != null && vm != null) {
                     PluginPageHost(
                         page = page,
                         languageTag = pluginLanguageTag,
-                        pluginsViewModel = pluginsViewModel,
+                        pluginsViewModel = vm,
                         onClose = onClose,
                         applySystemBarInsets = false,
                         context = pluginPageContext

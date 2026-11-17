@@ -698,6 +698,7 @@ fun AIChatPanel(
     viewModel: AIAgentViewModel,
     onNavigateToTerminal: () -> Unit = {},
     onNavigateToGit: () -> Unit = {},
+    onNavigateToBrowser: (() -> Unit)? = null,
     pluginEntries: List<PluginUiEntry> = emptyList(),
     pluginLanguageTag: String = "zh-CN",
     onPluginEntry: (PluginUiEntry) -> Unit = {},
@@ -709,6 +710,7 @@ fun AIChatPanel(
     /** 大屏右栏当前开的是终端 / Git 时，顶栏对应图标高亮。 */
     terminalActive: Boolean = false,
     gitActive: Boolean = false,
+    browserActive: Boolean = false,
     currentFile: String? = null,
     selectedCode: String? = null,
     onboardingStep: OnboardingStep? = null,

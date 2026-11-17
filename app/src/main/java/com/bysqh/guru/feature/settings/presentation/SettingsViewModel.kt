@@ -210,9 +210,7 @@ sealed interface UpdateCheckUiState {
     /** 下载或自检失败。[previous] 保留版本信息，供「重试」与「浏览器下载」继续使用。 */
     data class DownloadFailed(
         val previous: NewVersion,
-        val message: String,
-        /** 换镜像只影响下载来源；自检判定同版本/更旧时换镜像无用，不展示该提示。 */
-        val showMirrorHint: Boolean = true
+        val message: String
     ) : UpdateCheckUiState
 
     data class Error(val message: String) : UpdateCheckUiState
@@ -363,6 +361,8 @@ class SettingsViewModel @Inject constructor(
     private val logSettingsRepository: LogSettingsRepository,
     private val themeSettingsRepository: ThemeSettingsRepository,
     private val backgroundSettingsRepository: BackgroundSettingsRepository,
+    // [二开] 导航手势偏好
+    private val gestureSettingsRepository: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository,
     private val keepaliveSettingsRepository: KeepaliveSettingsRepository,
     private val screenOnSettingsRepository: ScreenOnSettingsRepository,
     private val agentSoundSettingsRepository: AgentSoundSettingsRepository,
@@ -440,10 +440,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setTerminalFontPath(path: String) {
         viewModelScope.launch { terminalSettingsRepository.setFontPath(path) }
-    }
-
-    fun setTerminalShowPluginTabs(enabled: Boolean) {
-        viewModelScope.launch { terminalSettingsRepository.setShowPluginTabs(enabled) }
     }
 
     // ── 全局代理 ──
@@ -594,9 +590,6 @@ class SettingsViewModel @Inject constructor(
     private val _enterToSend = MutableStateFlow(false)
     val enterToSend: StateFlow<Boolean> = _enterToSend.asStateFlow()
 
-    private val _autoExpandReasoning = MutableStateFlow(true)
-    val autoExpandReasoning: StateFlow<Boolean> = _autoExpandReasoning.asStateFlow()
-
     private val _compactionThresholdPercent = MutableStateFlow(85)
     val compactionThresholdPercent: StateFlow<Int> = _compactionThresholdPercent.asStateFlow()
 
@@ -628,6 +621,34 @@ class SettingsViewModel @Inject constructor(
     /** 背景图不透明度（0~0.2，实际范围由 BackgroundSettingsRepository 的 MIN/MAX 决定），实时写 DataStore，全局背景同步变化。 */
     private val _backgroundAlpha = MutableStateFlow(BackgroundSettingsRepository.DEFAULT_ALPHA)
     val backgroundAlpha: StateFlow<Float> = _backgroundAlpha.asStateFlow()
+
+    /** [二开] 横移返回手势（默认开启）。 */
+    private val _swipeBackEnabled = MutableStateFlow(true)
+    val swipeBackEnabled: StateFlow<Boolean> = _swipeBackEnabled.asStateFlow()
+
+    /** [二开] 预测性返回动画（默认开启）。 */
+    private val _predictiveBackEnabled = MutableStateFlow(true)
+    val predictiveBackEnabled: StateFlow<Boolean> = _predictiveBackEnabled.asStateFlow()
+
+    /** [二开] 外观选项（参考 Eta）：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放。 */
+    private val _accentColor = MutableStateFlow(com.bysqh.guru.core.theme.AccentColor.SYSTEM)
+    val accentColor: StateFlow<com.bysqh.guru.core.theme.AccentColor> = _accentColor.asStateFlow()
+
+    private val _paletteStyle = MutableStateFlow(com.bysqh.guru.core.theme.PaletteStyle.TONAL_SPOT)
+    val paletteStyle: StateFlow<com.bysqh.guru.core.theme.PaletteStyle> = _paletteStyle.asStateFlow()
+
+    private val _uiStyle = MutableStateFlow(com.bysqh.guru.core.theme.UiStyle.STANDARD)
+    val uiStyle: StateFlow<com.bysqh.guru.core.theme.UiStyle> = _uiStyle.asStateFlow()
+
+    private val _pureBlack = MutableStateFlow(false)
+    val pureBlack: StateFlow<Boolean> = _pureBlack.asStateFlow()
+
+    private val _interfaceScale = MutableStateFlow(com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE)
+    val interfaceScale: StateFlow<Float> = _interfaceScale.asStateFlow()
+
+    /** [二开] 背景类型（静态图 / GIF / MP4），供设置弹窗展示与全局背景分发渲染。 */
+    private val _backgroundKind = MutableStateFlow(BackgroundSettingsRepository.Kind.IMAGE)
+    val backgroundKind: StateFlow<BackgroundSettingsRepository.Kind> = _backgroundKind.asStateFlow()
 
     /** 透明度落盘的节流 job，见 [setBackgroundAlpha]。 */
     private var backgroundAlphaWriteJob: Job? = null
@@ -874,8 +895,9 @@ class SettingsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             launch {
-                repository.getAllProviders()
-                    .collectLatest { _providers.value = it }
+                repository.getAllProviders().collectLatest {
+                    _providers.value = it
+                }
             }
 
             launch {
@@ -1008,12 +1030,6 @@ class SettingsViewModel @Inject constructor(
             }
 
             launch {
-                generalSettingsRepository.autoExpandReasoningFlow.collectLatest {
-                    _autoExpandReasoning.value = it
-                }
-            }
-
-            launch {
                 generalSettingsRepository.compactionThresholdPercentFlow.collectLatest {
                     _compactionThresholdPercent.value = it
                 }
@@ -1070,6 +1086,24 @@ class SettingsViewModel @Inject constructor(
             launch {
                 backgroundSettingsRepository.alphaFlow.collectLatest {
                     _backgroundAlpha.value = it
+                }
+            }
+
+            // [二开] 导航手势
+            launch { gestureSettingsRepository.swipeBackFlow.collectLatest { _swipeBackEnabled.value = it } }
+            launch { gestureSettingsRepository.predictiveBackFlow.collectLatest { _predictiveBackEnabled.value = it } }
+
+            // [二开] 外观选项
+            launch { themeSettingsRepository.accentColorFlow.collectLatest { _accentColor.value = it } }
+            launch { themeSettingsRepository.paletteStyleFlow.collectLatest { _paletteStyle.value = it } }
+            launch { themeSettingsRepository.uiStyleFlow.collectLatest { _uiStyle.value = it } }
+            launch { themeSettingsRepository.pureBlackFlow.collectLatest { _pureBlack.value = it } }
+            launch { themeSettingsRepository.interfaceScaleFlow.collectLatest { _interfaceScale.value = it } }
+
+            // [二开] 背景类型随背景文件一起变化，用于全局背景层选择渲染方式。
+            launch {
+                backgroundSettingsRepository.kindFlow.collectLatest {
+                    _backgroundKind.value = it
                 }
             }
 
@@ -1517,25 +1551,18 @@ class SettingsViewModel @Inject constructor(
     /** 重新扫描技能（进入设置页 / 启停切换后调用，反映磁盘上增删改）。 */
     fun refreshSkills() {
         viewModelScope.launch {
-            _skills.value = try {
-                withContext(Dispatchers.IO) {
-                    skillRepository.refreshDirectoryCache()
-                    val disabled = skillRepository.disabledNames()
-                    skillRepository.listAllSkills().map { entry ->
-                        SkillUiEntry(
-                            name = entry.skill.name,
-                            description = entry.skill.description,
-                            scope = entry.scope,
-                            disabled = entry.skill.name.lowercase() in disabled,
-                            instructions = entry.skill.instructions,
-                            requiredTools = entry.skill.requiredTools
-                        )
-                    }
+            _skills.value = withContext(Dispatchers.IO) {
+                val disabled = skillRepository.disabledNames()
+                skillRepository.listAllSkills().map { entry ->
+                    SkillUiEntry(
+                        name = entry.skill.name,
+                        description = entry.skill.description,
+                        scope = entry.scope,
+                        disabled = entry.skill.name.lowercase() in disabled,
+                        instructions = entry.skill.instructions,
+                        requiredTools = entry.skill.requiredTools
+                    )
                 }
-            } catch (error: java.io.IOException) {
-                if (error is java.io.InterruptedIOException) throw error
-                FileLogger.w("Settings", "技能清单读取失败", error)
-                emptyList()
             }
         }
     }
@@ -1679,32 +1706,25 @@ class SettingsViewModel @Inject constructor(
     /** 重新扫描子代理定义（进入设置页 / 删除后调用，反映盘上增删改）。 */
     fun refreshSubAgents() {
         viewModelScope.launch {
-            _subAgents.value = try {
-                withContext(Dispatchers.IO) {
-                    agentDefinitionRepository.refreshDirectoryCache()
-                    val disabled = agentDefinitionRepository.disabledNames()
-                    agentDefinitionRepository.listAll().map { entry ->
-                        SubAgentUiEntry(
-                            name = entry.definition.name,
-                            description = entry.definition.description,
-                            scope = entry.scope,
-                            disabled = entry.definition.name.lowercase() in disabled,
-                            providerId = entry.definition.providerId,
-                            model = entry.definition.model,
-                            reasoningEffort = entry.definition.reasoningEffort,
-                            mode = entry.definition.mode,
-                            allowedTools = entry.definition.allowedTools,
-                            disallowedTools = entry.definition.disallowedTools,
-                            inject = entry.definition.inject,
-                            prompt = entry.definition.prompt,
-                            filePath = entry.definition.filePath
-                        )
-                    }
+            _subAgents.value = withContext(Dispatchers.IO) {
+                val disabled = agentDefinitionRepository.disabledNames()
+                agentDefinitionRepository.listAll().map { entry ->
+                    SubAgentUiEntry(
+                        name = entry.definition.name,
+                        description = entry.definition.description,
+                        scope = entry.scope,
+                        disabled = entry.definition.name.lowercase() in disabled,
+                        providerId = entry.definition.providerId,
+                        model = entry.definition.model,
+                        reasoningEffort = entry.definition.reasoningEffort,
+                        mode = entry.definition.mode,
+                        allowedTools = entry.definition.allowedTools,
+                        disallowedTools = entry.definition.disallowedTools,
+                        inject = entry.definition.inject,
+                        prompt = entry.definition.prompt,
+                        filePath = entry.definition.filePath
+                    )
                 }
-            } catch (error: java.io.IOException) {
-                if (error is java.io.InterruptedIOException) throw error
-                FileLogger.w("Settings", "子代理清单读取失败", error)
-                emptyList()
             }
         }
     }
@@ -1901,7 +1921,7 @@ class SettingsViewModel @Inject constructor(
             val result = apkDownloader.download(
                 url = asset.url,
                 mirror = updateCheckSettingsRepository.downloadMirror,
-                fileName = "aicode-${target.latestTag}.apk",
+                fileName = "guru-${target.latestTag}.apk",
                 expectedSize = asset.size,
                 expectedSha256 = asset.sha256
             ) { downloaded, total ->
@@ -1927,8 +1947,7 @@ class SettingsViewModel @Inject constructor(
                     } else {
                         _updateCheckState.value = UpdateCheckUiState.DownloadFailed(
                             previous = target,
-                            message = verifyFailureMessage(verify),
-                            showMirrorHint = verify !is ApkVerifyResult.NotNewer
+                            message = verifyFailureMessage(verify)
                         )
                     }
                 }
@@ -2180,13 +2199,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** 思考卡片是否默认展开正文。 */
-    fun setAutoExpandReasoning(enabled: Boolean) {
-        viewModelScope.launch {
-            generalSettingsRepository.setAutoExpandReasoning(enabled)
-        }
-    }
-
     /** 自动压缩触发阈值（上下文窗口百分比，1..100）。 */
     fun setCompactionThresholdPercent(percent: Int) {
         viewModelScope.launch {
@@ -2234,16 +2246,48 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setSwipeBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setSwipeBack(enabled) }
+    }
+
+    fun setPredictiveBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setPredictiveBack(enabled) }
+    }
+
+    fun setAccentColor(value: com.bysqh.guru.core.theme.AccentColor) {
+        viewModelScope.launch { themeSettingsRepository.setAccentColor(value) }
+    }
+
+    fun setPaletteStyle(value: com.bysqh.guru.core.theme.PaletteStyle) {
+        viewModelScope.launch { themeSettingsRepository.setPaletteStyle(value) }
+    }
+
+    fun setUiStyle(value: com.bysqh.guru.core.theme.UiStyle) {
+        viewModelScope.launch { themeSettingsRepository.setUiStyle(value) }
+    }
+
+    fun setPureBlack(enabled: Boolean) {
+        viewModelScope.launch { themeSettingsRepository.setPureBlack(enabled) }
+    }
+
+    fun setInterfaceScale(value: Float) {
+        viewModelScope.launch { themeSettingsRepository.setInterfaceScale(value) }
+    }
+
     fun setDynamicColorEnabled(enabled: Boolean) {
         viewModelScope.launch {
             themeSettingsRepository.setDynamicColorEnabled(enabled)
         }
     }
 
-    /** 选择新背景图（拷贝到私有目录后替换）。 */
-    fun setBackgroundImage(uri: Uri) {
+    /**
+     * 选择新背景（静态图片 / GIF / MP4 均由选择器统一返回）。
+     *
+     * @param mime 选择器给出的 MIME，用于判定背景类型；为空时由 Repository 兜底查 ContentResolver。
+     */
+    fun setBackgroundImage(uri: Uri, mime: String? = null) {
         viewModelScope.launch {
-            backgroundSettingsRepository.setBackgroundImage(uri)
+            backgroundSettingsRepository.setBackgroundImage(uri, mime)
         }
     }
 
@@ -2783,7 +2827,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** 批量删除提供商（列表多选批量操作）。 */
+    /** 批量删除提供商（列表多选批量操作）。Room 单事务提交，删完 Flow 自动刷新列表。 */
     fun deleteProviders(ids: Collection<String>) {
         if (ids.isEmpty()) return
         viewModelScope.launch {

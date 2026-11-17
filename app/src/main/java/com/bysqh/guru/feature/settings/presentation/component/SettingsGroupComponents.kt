@@ -39,7 +39,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bysqh.guru.R
+import com.bysqh.guru.core.theme.LocalUiStyle
 import com.bysqh.guru.core.theme.Spacing
+import com.bysqh.guru.core.theme.UiStyle
 import com.bysqh.guru.core.theme.semanticColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronRight
@@ -116,9 +118,11 @@ internal fun SettingsGroup(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // [二开] Miuix：卡片圆角更大（22dp），标准样式保持 14dp
+    val miuix = LocalUiStyle.current == UiStyle.MIUIX
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(if (miuix) 22.dp else 14.dp),
         color = MaterialTheme.semanticColors.cardSurface,
         shadowElevation = 0.dp
     ) {
@@ -139,11 +143,12 @@ internal fun LazyGroupItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val corner = if (LocalUiStyle.current == UiStyle.MIUIX) 22.dp else 14.dp
     val shape = RoundedCornerShape(
-        topStart = if (index == 0) 14.dp else 0.dp,
-        topEnd = if (index == 0) 14.dp else 0.dp,
-        bottomStart = if (index == lastIndex) 14.dp else 0.dp,
-        bottomEnd = if (index == lastIndex) 14.dp else 0.dp
+        topStart = if (index == 0) corner else 0.dp,
+        topEnd = if (index == 0) corner else 0.dp,
+        bottomStart = if (index == lastIndex) corner else 0.dp,
+        bottomEnd = if (index == lastIndex) corner else 0.dp
     )
     Column(
         modifier = modifier
@@ -173,10 +178,12 @@ internal fun SettingsRow(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    // [二开] Miuix 行高更松（54dp 观感），图标 20dp，标题 Medium；标准样式保持原样
+    val miuix = LocalUiStyle.current == UiStyle.MIUIX
     val baseModifier = modifier
         .fillMaxWidth()
         .let { if (onClick != null && enabled) it.clickable { onClick() } else it }
-        .padding(horizontal = Spacing.lg, vertical = 11.dp)
+        .padding(horizontal = Spacing.lg, vertical = if (miuix) 15.dp else 11.dp)
     Row(
         modifier = baseModifier.alpha(if (enabled) 1f else 0.5f),
         verticalAlignment = Alignment.CenterVertically
@@ -186,7 +193,7 @@ internal fun SettingsRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(if (miuix) 20.dp else 16.dp)
             )
             Spacer(Modifier.width(Spacing.md))
         }
@@ -194,7 +201,7 @@ internal fun SettingsRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Normal,
+                fontWeight = if (miuix) FontWeight.Medium else FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (subtitle != null) {

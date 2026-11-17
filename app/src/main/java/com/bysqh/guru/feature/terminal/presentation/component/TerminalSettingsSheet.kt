@@ -80,7 +80,7 @@ fun TerminalSettingsSheet(
     onChangeFontSize: (Int) -> Unit,
     onChangeCursorStyle: (Int) -> Unit,
     onChangeFontPath: (String) -> Unit,
-    onChangeShowPluginTabs: (Boolean) -> Unit
+    onChangeShowPluginTabs: (Boolean) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 

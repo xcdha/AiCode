@@ -244,8 +244,8 @@ internal class MathImageTransformer(
          * 在 IO/Default 线程调用，不阻塞组合。
          */
         fun prewarm(processedMarkdown: String, textSizePx: Float, colorArgb: Int) {
-            if (!processedMarkdown.contains("aicode-math-")) return
-            // 从 Markdown 图片链接 ![](aicode-math-xxx://enc) 中抽取 link
+            if (!processedMarkdown.contains("guru-math-")) return
+            // 从 Markdown 图片链接 ![](guru-math-xxx://enc) 中抽取 link
             for (match in MATH_LINK_REGEX.findAll(processedMarkdown)) {
                 val link = match.groupValues[1]
                 val spec = MarkdownPreprocessor.decodeMathLink(link) ?: continue
@@ -257,7 +257,7 @@ internal class MathImageTransformer(
             }
         }
 
-        private val MATH_LINK_REGEX = Regex("""!\[]\((aicode-math-(?:block|inline)://[^)]+)\)""")
+        private val MATH_LINK_REGEX = Regex("""!\[]\((guru-math-(?:block|inline)://[^)]+)\)""")
 
         private fun renderLatex(latex: String, textSizePx: Float, colorArgb: Int): Bitmap? {
             return try {

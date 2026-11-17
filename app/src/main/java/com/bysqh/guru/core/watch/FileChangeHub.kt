@@ -173,7 +173,7 @@ class FileChangeHub @Inject constructor(
         return watchHostDir(
             hostDir = if (sub.isEmpty()) containerInstaller.guruDir else File(containerInstaller.guruDir, sub),
             containerRootPath = if (sub.isEmpty()) GURU_ROOT else "$GURU_ROOT/$sub",
-            root = ChangeRoot.AICODE,
+            root = ChangeRoot.GURU,
             recursive = recursive,
             filter = filter,
             fallbackPoll = fallbackPoll,

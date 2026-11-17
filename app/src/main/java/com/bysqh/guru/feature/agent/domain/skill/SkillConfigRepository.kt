@@ -87,8 +87,8 @@ class SkillConfigRepository @Inject constructor(
     val changes: SharedFlow<Unit> = merge(
         fileChangeHub.watchAicode(SKILLS_DIR, recursive = true),
         fileChangeHub.watchAicode(),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR/$SKILLS_DIR", recursive = true),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR/$SKILLS_DIR", recursive = true),
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR")
     ).mapNotNull { batch ->
         if (!batch.changes.any(::isSkillChange)) return@mapNotNull null
         FileLogger.i(TAG, "检测到技能目录或配置变化，已通知刷新")
@@ -110,7 +110,7 @@ class SkillConfigRepository @Inject constructor(
         private const val TAG = "SkillConfigRepository"
         private const val CONFIG_FILE = "skills.json"
         private const val GLOBAL_CONFIG_PATH = "~/.guru/$CONFIG_FILE"
-        private const val AICODE_DIR = ".guru"
+        private const val GURU_DIR = ".guru"
         private const val SKILLS_DIR = "skills"
         private val JSON = Json { ignoreUnknownKeys = true; isLenient = true }
         private val PRETTY_JSON = Json { prettyPrint = true }

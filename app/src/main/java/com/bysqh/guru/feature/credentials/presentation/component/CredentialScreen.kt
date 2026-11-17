@@ -276,7 +276,7 @@ fun CredentialScreen(
         )
     }
 
-    // 远程模式下首次进入该服务器：询问是否需要 aicode 自动注入凭证
+    // 远程模式下首次进入该服务器：询问是否需要 guru 自动注入凭证
     if (state.showAutoInjectPrompt) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissAutoInjectPrompt(false) },
