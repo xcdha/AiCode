@@ -1,13 +1,13 @@
 #!/bin/sh
 # AiCode 容器环境公共库：包管理器探测、包名映射、版本探测、镜像换源、场景定义与安装。
 #
-# 由容器环境脚本 provision.sh source——它的两个入口（首次进入终端的初始化菜单、`aicode` 命令
+# 由容器环境脚本 provision.sh source——它的两个入口（首次进入终端的初始化菜单、`guru` 命令
 # 打开的环境安装菜单）共用本库。逻辑集中在此，改一处两个入口同时生效。若改动了包清单/安装逻辑
 # 且需存量设备重跑初始化，另需同步 LinuxContainerEngine.PROVISION_VERSION。
 
 # 公共库目录：用于定位 android-sdk.sh 与 scenarios/。由 provision.sh 在 source 前设置 SELF_DIR 后传入；
-# 单独 source 时回退到 ~/.aicode/lib。
-: "${AICODE_LIB_DIR:=${HOME:-/root}/.aicode/lib}"
+# 单独 source 时回退到 ~/.guru/lib。
+: "${GURU_LIB_DIR:=${HOME:-/root}/.guru/lib}"
 
 # 多镜像候选（按优先级排序，换源时自动探测跳过不可用；阿里云对服务器访问全量 403 放最后，探测会跳过）
 MIRRORS="mirrors.huaweicloud.com mirrors.tuna.tsinghua.edu.cn mirrors.ustc.edu.cn mirrors.cloud.tencent.com mirrors.aliyun.com"
@@ -15,10 +15,10 @@ MIRROR=""
 # 基础工具（不参与自定义勾选，始终安装）：git/ripgrep 是 AI 工作流与版本管理基础，bash/curl 是通用依赖
 BASE_PKGS="bash curl ripgrep git"
 
-# ── 诊断日志：写入宿主可见的 $HOME/.aicode/provision.log（容器内 /root/.aicode 绑定到 App 私有目录）。
+# ── 诊断日志：写入宿主可见的 $HOME/.guru/provision.log（容器内 /root/.guru 绑定到 App 私有目录）。
 # 终端 PTY 起不来或卡住时，App 侧「容器诊断」会把本文件尾部一并打进日志，用于判断脚本执行到了哪一步、
 # 菜单有没有弹出来。超过 256KB 只保留尾部 64KB，避免每次进终端追加一行而无限增长。全部静默失败，不阻塞初始化。
-LOG_FILE="$HOME/.aicode/provision.log"
+LOG_FILE="$HOME/.guru/provision.log"
 plog() {
     [ -n "$HOME" ] || return 0
     printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null)" "$*" >> "$LOG_FILE" 2>/dev/null || return 0
@@ -513,7 +513,7 @@ setup_apt_mirror() {
         echo "Suites: $suites"
         echo "Components: $components"
         [ -n "$signed_by" ] && echo "$signed_by"
-    } > /etc/apt/sources.list.d/aicode-mirror.sources
+    } > /etc/apt/sources.list.d/guru-mirror.sources
     if [ -n "$security_uri" ]; then
         {
             echo "Types: deb"
@@ -521,7 +521,7 @@ setup_apt_mirror() {
             echo "Suites: $codename-security"
             echo "Components: $components"
             [ -n "$signed_by" ] && echo "$signed_by"
-        } > /etc/apt/sources.list.d/aicode-mirror-security.sources
+        } > /etc/apt/sources.list.d/guru-mirror-security.sources
     fi
     # 验证：update 失败输出原因并恢复原配置
     if ! apt-get update -y; then
@@ -587,19 +587,19 @@ git_config() {
     command -v git >/dev/null 2>&1 || return 0
     # 凭据注入最小化：只对工作区根目录（$HOME/workspace/）下的仓库生效——
     # credential.helper 写进 gitconfig.credential，经 includeIf 按目录条件加载，
-    # 容器内其它目录的 git 仓库不会被注入（aicode 自定义 helper 解码凭据文件命中秒过，未命中时经文件 IPC 弹窗回填）。
-    # 用 $HOME 而非写死 /root：容器 home 由环境决定，保持一致（App 侧 GIT_CONFIG_GLOBAL 同指向 $HOME/.aicode/.gitconfig）。
-    AICODE_DIR="$HOME/.aicode"
-    mkdir -p "$AICODE_DIR"
-    cat > "$AICODE_DIR/gitconfig.credential" <<EOF
+    # 容器内其它目录的 git 仓库不会被注入（guru 自定义 helper 解码凭据文件命中秒过，未命中时经文件 IPC 弹窗回填）。
+    # 用 $HOME 而非写死 /root：容器 home 由环境决定，保持一致（App 侧 GIT_CONFIG_GLOBAL 同指向 $HOME/.guru/.gitconfig）。
+    GURU_DIR="$HOME/.guru"
+    mkdir -p "$GURU_DIR"
+    cat > "$GURU_DIR/gitconfig.credential" <<EOF
 [credential]
-    helper = $AICODE_DIR/git-credential-aicode
+    helper = $GURU_DIR/git-credential-guru
 EOF
     # 先清旧的 includeIf 段（幂等），再写限定工作区根的 includeIf。
     # 段名必须带 subsection：真实段是 [includeIf "gitdir:…"]，只写 `--remove-section includeIf`
     # 匹配不到它、报 fatal 后被 2>/dev/null 吞掉，于是每跑一次初始化就 --add 累加一条重复 path。
     git config --global --remove-section "includeIf.gitdir:$HOME/workspace/" 2>/dev/null || true
-    git config --global --add includeIf."gitdir:$HOME/workspace/".path "$AICODE_DIR/gitconfig.credential"
+    git config --global --add includeIf."gitdir:$HOME/workspace/".path "$GURU_DIR/gitconfig.credential"
     # 清掉全局顶层 [credential] 段：helper 只应经上面的 includeIf 按目录加载，
     # 写在顶层会对容器内所有仓库生效，破坏「只注入工作区根下」的最小化设计。
     git config --global --remove-section credential 2>/dev/null || true
@@ -613,8 +613,8 @@ EOF
 SCENARIO_IDS="common python node android flutter java go rust php base"
 
 # 载入共享工具与各场景脚本（android-sdk.sh 供 android / flutter 场景共用）
-[ -f "$AICODE_LIB_DIR/android-sdk.sh" ] && . "$AICODE_LIB_DIR/android-sdk.sh"
-for f in "$AICODE_LIB_DIR/scenarios/"*.sh; do
+[ -f "$GURU_LIB_DIR/android-sdk.sh" ] && . "$GURU_LIB_DIR/android-sdk.sh"
+for f in "$GURU_LIB_DIR/scenarios/"*.sh; do
     [ -f "$f" ] && . "$f"
 done
 

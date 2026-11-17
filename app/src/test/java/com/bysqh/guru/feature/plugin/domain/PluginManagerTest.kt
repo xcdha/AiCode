@@ -149,7 +149,7 @@ class PluginManagerTest {
         check(old.install(preview.preview.token) is PluginInstallResult.Installed)
         assertTrue(File(legacy, "registry.json").isFile)
 
-        val newRoot = File(tmp.root, "aicode/plugins")
+        val newRoot = File(tmp.root, "guru/plugins")
         val registry = File(tmp.root, "filesDir/plugin-registry.json")
         val migrated = PluginManager(newRoot, PluginApi.VERSION, { now++ }, registry, legacy)
         migrated.ensureLoaded()

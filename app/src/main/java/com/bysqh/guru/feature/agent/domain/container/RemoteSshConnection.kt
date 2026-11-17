@@ -644,20 +644,20 @@ class RemoteSshConnection @Inject constructor(
 
 
                 // 上传 credential helper 脚本（本地由 ContainerInstaller 提取），配置为唯一 helper；
-                // 服务器上没有 App，用 AICODE_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
+                // 服务器上没有 App，用 GURU_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
                 containerInstaller.extractCredentialHelper()
-                val helperScript = java.io.File(containerInstaller.guruDir, "git-credential-aicode").readText()
+                val helperScript = java.io.File(containerInstaller.guruDir, "git-credential-guru").readText()
                 check(helperScript.isNotBlank()) { "Git credential helper is empty" }
                 val remoteHelperScript = helperScript.replaceFirst(
                     "#!/bin/sh\n",
-                    "#!/bin/sh\nexport AICODE_CRED_NO_PROMPT=1\n"
+                    "#!/bin/sh\nexport GURU_CRED_NO_PROMPT=1\n"
                 )
-                writeRemoteFile("$guruDir/git-credential-aicode", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
+                writeRemoteFile("$guruDir/git-credential-guru", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
                 writeRemoteFile("$guruDir/git-credentials", encodeCreds(creds).toByteArray(Charsets.UTF_8))
 
                 val credentialConfig = buildString {
                     append("[credential]\n")
-                    append("    helper = !AICODE_CRED_NO_PROMPT=1 $guruDir/git-credential-aicode\n")
+                    append("    helper = !GURU_CRED_NO_PROMPT=1 $guruDir/git-credential-guru\n")
                 }
                 writeRemoteFile("$guruDir/gitconfig.credential", credentialConfig.toByteArray(Charsets.UTF_8))
                 gitCredentialWorkspaceRoot = wsRoot
@@ -679,7 +679,7 @@ class RemoteSshConnection @Inject constructor(
             runCatching {
                 sftpOperationMutex.withLock {
                     val sftp = sftp()
-                    listOf("gitconfig.credential", "git-credentials", "git-credential-aicode").forEach { name ->
+                    listOf("gitconfig.credential", "git-credentials", "git-credential-guru").forEach { name ->
                         val path = "$guruDir/$name"
                         if (sftp.statExistence(path) != null) sftp.rm(path)
                     }

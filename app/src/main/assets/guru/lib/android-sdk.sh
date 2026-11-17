@@ -77,8 +77,8 @@ install_android_tools_arm64() {
     [ "$(uname -m)" = "aarch64" ] || return 0
     sdk="$HOME/android/sdk"
     [ -d "$sdk/build-tools" ] || return 0
-    zip="$HOME/.aicode-cache/android-sdk-tools-static-aarch64.zip"
-    mkdir -p "$HOME/.aicode-cache"
+    zip="$HOME/.guru-cache/android-sdk-tools-static-aarch64.zip"
+    mkdir -p "$HOME/.guru-cache"
     if [ ! -f "$zip" ]; then
         echo "下载 ARM64 原生二进制（aapt2 / adb 等）..."
         curl -fL -o "$zip" "$ARM_TOOLS_PROXY_URL" || curl -fL -o "$zip" "$ARM_TOOLS_URL" || {
@@ -86,7 +86,7 @@ install_android_tools_arm64() {
             return 1
         }
     fi
-    tmp="$HOME/.aicode-cache/armtools35"
+    tmp="$HOME/.guru-cache/armtools35"
     rm -rf "$tmp"
     mkdir -p "$tmp"
     unzip -q -o "$zip" -d "$tmp" || return 1
@@ -111,7 +111,7 @@ write_android_profile() {
         echo "export ANDROID_HOME=\"$sdk\""
         echo "export ANDROID_SDK_ROOT=\"$sdk\""
         echo "export PATH=\"$sdk/cmdline-tools/latest/bin:$sdk/platform-tools:\$PATH\""
-    } > /etc/profile.d/aicode-android.sh
+    } > /etc/profile.d/guru-android.sh
     if [ -x "$sdk/build-tools/35.0.0/aapt2" ]; then
         mkdir -p "$HOME/.gradle"
         gp="$HOME/.gradle/gradle.properties"

@@ -373,7 +373,7 @@ class PluginHostPathsTest {
     fun mutation_resolvesLinkBeforeParentAndPreservesFinalLinkOperations() {
         useBackendPathResolution()
         val workspace = File(tmp.root, "workspace")
-        File(tmp.root, "aicode/plugins").mkdirs()
+        File(tmp.root, "guru/plugins").mkdirs()
         Files.createSymbolicLink(File(workspace, "config").toPath(), File("$AICODE/plugins").toPath())
         every { fileAccess.isDirectory("$WORKSPACE/config") } returns true
         assertCode("PATH_DENIED") { paths.delete("config/..") }

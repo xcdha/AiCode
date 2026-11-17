@@ -2,10 +2,10 @@
 # 容器环境脚本（通用）：一个脚本，两个入口。
 #   1) 首次进入终端：在 PTY 上弹出初始化菜单（自动安装 / 环境安装 / 手动安装 / 退出），用户完成
 #      后写 /.provisioned 标记，之后进入终端不再弹。
-#   2) 容器内执行命令 `aicode`（等价于 `provision.sh --env`）：直接打开「环境安装」菜单，按场景
+#   2) 容器内执行命令 `guru`（等价于 `provision.sh --env`）：直接打开「环境安装」菜单，按场景
 #      安装开发环境，可反复使用，不受初始化标记影响。
 # 两个入口共用同一套逻辑：按容器内包管理器（apk/apt-get/dnf/yum/pacman）安装运行时，并可换国内镜像源。
-# 由 App 启动时提取到 ~/.aicode/provision.sh（容器内 /root/.aicode/provision.sh，经 -b 绑定可见）；
+# 由 App 启动时提取到 ~/.guru/provision.sh（容器内 /root/.guru/provision.sh，经 -b 绑定可见）；
 # 公共能力（包管理器探测/包名映射/版本探测/换源/场景）在 lib/env-common.sh，与本脚本一并提取。
 # 修改包清单/安装逻辑/镜像源后，需同步在 LinuxContainerEngine.PROVISION_VERSION 上 +1 触发存量设备重跑。
 # 注意：apk 源分支 v3.21 需与 assets 内 alpine-rootfs 的 Alpine 分支一致（见 ContainerInstaller.ROOTFS_ASSET_VERSION）。
@@ -15,16 +15,16 @@ PROVISION_VERSION="provision-script-v9"
 PROVISION_SKIPPED="provision-script-skipped"
 MARKER="/.provisioned"
 
-# ── 载入公共库（包名映射/换源/场景等）。按脚本自身所在目录定位：生产脚本在 /root/.aicode/provision.sh、
-# 库在 /root/.aicode/lib/；工作区草稿副本（aicode-env/）结构相同，故同一份脚本两处都能跑。
+# ── 载入公共库（包名映射/换源/场景等）。按脚本自身所在目录定位：生产脚本在 /root/.guru/provision.sh、
+# 库在 /root/.guru/lib/；工作区草稿副本（guru-env/）结构相同，故同一份脚本两处都能跑。
 # 缺失时不阻塞：提示重启 App 重新提取后重进终端。──
 SELF_DIR=$(dirname "$0")
 [ "${SELF_DIR#/}" = "$SELF_DIR" ] && SELF_DIR="$(pwd)/$SELF_DIR"
-AICODE_LIB_DIR="$SELF_DIR/lib"
-LIB_FILE="$AICODE_LIB_DIR/env-common.sh"
+GURU_LIB_DIR="$SELF_DIR/lib"
+LIB_FILE="$GURU_LIB_DIR/env-common.sh"
 if [ ! -f "$LIB_FILE" ]; then
-    AICODE_LIB_DIR="${HOME:-/root}/.aicode/lib"
-    LIB_FILE="$AICODE_LIB_DIR/env-common.sh"
+    GURU_LIB_DIR="${HOME:-/root}/.guru/lib"
+    LIB_FILE="$GURU_LIB_DIR/env-common.sh"
 fi
 if [ ! -f "$LIB_FILE" ]; then
     echo "环境工具未就绪，请重启 App 后重新进入终端" >&2
@@ -52,7 +52,7 @@ list_installed() {
     [ -x "$HOME/.local/flutter-$FLUTTER_VERSION/bin/flutter" ] && echo "  · Flutter SDK：$HOME/.local/flutter-$FLUTTER_VERSION"
 }
 
-# ── 环境安装菜单（场景化）：初始化菜单的「环境安装」与 `aicode` 命令共用 ──
+# ── 环境安装菜单（场景化）：初始化菜单的「环境安装」与 `guru` 命令共用 ──
 env_install_menu() {
     TOTAL=$(echo $SCENARIO_IDS | wc -w)
     CUSTOM_IDX=$((TOTAL + 1))
@@ -118,9 +118,9 @@ env_install_menu() {
     done
 }
 
-# ══ 入口 2：`aicode`（provision.sh --env）→ 直接打开环境安装菜单，不受初始化标记影响 ══
+# ══ 入口 2：`guru`（provision.sh --env）→ 直接打开环境安装菜单，不受初始化标记影响 ══
 if [ "$1" = "--env" ]; then
-    plog "aicode 打开环境安装菜单：PMGR=${PMGR:-未识别}"
+    plog "guru 打开环境安装菜单：PMGR=${PMGR:-未识别}"
     if [ -z "$PMGR" ]; then
         echo "${C_RED}未识别的包管理器（apk/apt-get/dnf/yum/pacman），无法安装依赖。${C_RESET}"
         exit 1
@@ -167,7 +167,7 @@ ${C_YELLOW}═══════════════════════
   ${C_BOLD}3. 手动安装${C_RESET}（不再提示）
   ${C_DIM}4. 退出${C_RESET}
 ${C_YELLOW}══════════════════════════════════════════════${C_RESET}
-${C_DIM}  提示：之后随时可在终端执行命令 aicode 打开环境安装${C_RESET}
+${C_DIM}  提示：之后随时可在终端执行命令 guru 打开环境安装${C_RESET}
 EOF
     printf "请选择: "
     if ! read choice; then
