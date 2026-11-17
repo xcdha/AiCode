@@ -143,6 +143,13 @@ import com.bysqh.guru.feature.plugin.presentation.PluginEntryContext
 import com.bysqh.guru.feature.plugin.presentation.PluginPageHost
 import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
 import com.bysqh.guru.feature.plugin.presentation.displayName
+import com.bysqh.guru.feature.plugin.domain.PluginUiSlots
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntryKind
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.luminance
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -569,10 +576,36 @@ fun AppNavigation(
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
     val pluginsViewModel: PluginsViewModel = hiltViewModel()
+    val projectToolsViewModel: com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsViewModel = hiltViewModel()
     val installedPlugins by pluginsViewModel.plugins.collectAsStateWithLifecycle()
     val pluginLanguageTag = currentLanguageTag()
+    // 入口直接从已加载的插件快照算，不在组合期读盘；顺序按插件显示名，重装后仍稳定。
     val pluginSlotEntries = remember(installedPlugins, pluginLanguageTag) {
-        installedPlugins.filter { it.isActive }.sortedBy { it.displayName(pluginLanguageTag) }
+        installedPlugins.filter { it.isActive }
+            .sortedBy { it.displayName(pluginLanguageTag) }
+            .flatMap { plugin ->
+                plugin.content.uiEntries.map { entry ->
+                    entry.copy(page = entry.page?.copy(pluginVersion = plugin.record.version))
+                }
+            }
+    }
+    val drawerPluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.DRAWER_FOOTER }
+    }
+    val headerPluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.CHAT_HEADER_MENU }
+    }
+    val welcomePluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.CHAT_WELCOME }
+    }
+    val sessionPluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.CHAT_SESSION_MENU }
+    }
+    val fileTreePluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.FILES_TREE_MENU }
+    }
+    val editorPluginEntries = remember(pluginSlotEntries) {
+        pluginSlotEntries.filter { it.slot == PluginUiSlots.EDITOR_SELECTION_MENU }
     }
     var activeSlotPage by remember { mutableStateOf<PluginPage?>(null) }
     var activeSlotContext by remember { mutableStateOf(PluginEntryContext()) }
@@ -798,7 +831,107 @@ fun AppNavigation(
         }
     }
 
+    var panePluginKey by rememberSaveable { mutableStateOf("") }
+    var panePluginContext by remember { mutableStateOf(PluginEntryContext()) }
+    // 右栏插件页只存 key，页面对象从插件快照重新解析；插件更新或卸载后不会继续用旧页面。
+    val panePluginEntry = remember(pluginSlotEntries, panePluginKey) {
+        pluginSlotEntries.firstOrNull { it.key == panePluginKey }
+    }
+    val panePluginPage = panePluginEntry?.page
+
+    val rightDrawerState = com.bysqh.guru.core.ui.rememberEndDrawerState()
+    var reopenRightDrawerOnDetailBack by remember { mutableStateOf(false) }
+    val projectToolsListState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    // 从右侧工具抽屉进入详情时，返回后恢复抽屉与列表位置；从全部工具页进入则不恢复。
+    val returnFromToolDetail: () -> Unit = {
+        if (reopenRightDrawerOnDetailBack) {
+            reopenRightDrawerOnDetailBack = false
+            scope.launch { rightDrawerState.open() }
+        }
+        navController.popBackStack()
+    }
+
+    // 插件槽位入口：页面进右栏或全屏；提示词填草稿；动作交给插件 runtime。
+    val openPluginEntryPage: (PluginUiEntry, PluginEntryContext) -> Unit = { entry, context ->
+        val page = entry.page
+        if (page != null) {
+            if (drawerState.isOpen) scope.launch { drawerState.close() }
+            if (expanded && currentRoute == "chat") {
+                activeSlotPage = null
+                activeSlotContext = PluginEntryContext()
+                panePluginKey = entry.key
+                panePluginContext = context
+                paneKind = WorkbenchPaneKind.PLUGIN
+            } else {
+                activeSlotPage = page
+                activeSlotContext = context
+            }
+        }
+    }
+    val showPluginActionResult: (String?) -> Unit = { message ->
+        if (!message.isNullOrBlank()) Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+    val runPluginEntry: (PluginUiEntry, PluginEntryContext) -> Unit = { entry, context ->
+        if (drawerState.isOpen) scope.launch { drawerState.close() }
+        when (entry.kind) {
+            PluginUiEntryKind.PAGE -> openPluginEntryPage(entry, context)
+            PluginUiEntryKind.DATA -> Unit
+            PluginUiEntryKind.ACTION -> {
+                val actionContext = if (context.sessionId == null) {
+                    context.copy(sessionId = agentViewModel.currentSessionId.value)
+                } else {
+                    context
+                }
+                if (entry.confirm) {
+                    pendingPluginAction = entry to actionContext
+                } else {
+                    pluginsViewModel.runUiAction(entry, actionContext, showPluginActionResult)
+                }
+            }
+        }
+    }
+
+    // 插件停用 / 卸载或更新后，全屏页不能继续抱着旧页面。
+    LaunchedEffect(pluginSlotEntries, activeSlotPage) {
+        val active = activeSlotPage ?: return@LaunchedEffect
+        if (pluginSlotEntries.none { it.page?.key == active.key && it.cacheKey == active.cacheKey }) {
+            activeSlotPage = null
+            activeSlotContext = PluginEntryContext()
+        }
+    }
+
     // 侧栏内容：modal 抽屉与大屏常驻栏共用同一份，不在两处重复几十行参数。
+    val rightDrawerSheet: @Composable () -> Unit = {
+        ModalDrawerSheet(
+            drawerShape = RectangleShape,
+            drawerContainerColor = MaterialTheme.colorScheme.surface,
+            drawerTonalElevation = 0.dp,
+            modifier = Modifier.width(drawerWidth())
+        ) {
+            val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
+            val activeTools by projectToolsViewModel.activePluginTools.collectAsStateWithLifecycle()
+            val toolsMap = remember(activeTools) { activeTools.associateBy { it.key } }
+
+            com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsDrawer(
+                workspacePath = projectToolsViewModel.currentWorkspacePath,
+                tools = tools,
+                pluginToolsMap = toolsMap,
+                listState = projectToolsListState,
+                onOpenToolDetail = { tool, _ ->
+                    reopenRightDrawerOnDetailBack = true
+                    scope.launch { rightDrawerState.close() }
+                    projectToolsViewModel.selectTool(tool)
+                    navController.navigate("plugin_tool_detail/${tool.key}")
+                },
+                onOpenAllTools = {
+                    scope.launch { rightDrawerState.close() }
+                    navController.navigate("plugin_all_tools")
+                }
+            )
+        }
+    }
+
     val drawerBody: @Composable () -> Unit = {
         ChatDrawerContent(
             sessions = sessions,
@@ -870,6 +1003,14 @@ fun AppNavigation(
                 navController.navigate("settings")
                 if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
             },
+            pluginEntries = drawerPluginEntries,
+            pluginLanguageTag = pluginLanguageTag,
+            onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
+            sessionPluginEntries = sessionPluginEntries,
+            onSessionPluginEntry = { session, entry ->
+                runPluginEntry(entry, PluginEntryContext(sessionId = session.id))
+            },
+            filePluginEntries = fileTreePluginEntries,
             // [二开] 侧边栏角色入口：直达设置里的角色页
             onNavigateToRoles = {
                 settingsEntryKey = "roles"
@@ -945,6 +1086,8 @@ fun AppNavigation(
                                     terminalActive = paneOpen && paneKind == WorkbenchPaneKind.TERMINAL,
                                     gitActive = paneOpen && paneKind == WorkbenchPaneKind.GIT,
                                     browserActive = paneOpen && paneKind == WorkbenchPaneKind.BROWSER,
+                                    welcomePluginEntries = welcomePluginEntries,
+                                    onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
                                     onboardingStep = if (onboardingUiState.active) onboardingUiState.step else null,
                                     onSelectModelInOnboarding = {
                                         if (onboardingUiState.active && onboardingUiState.step == OnboardingStep.SIMULATE_CHOOSE_MODEL) {
@@ -965,6 +1108,18 @@ fun AppNavigation(
                                 kind = paneKind,
                                 editorPath = paneEditorPath,
                                 editorLine = paneEditorLine,
+                                pluginPage = panePluginPage,
+                                pluginLanguageTag = pluginLanguageTag,
+                                pluginsViewModel = pluginsViewModel,
+                                pluginPageContext = {
+                                    if (panePluginContext.sessionId == null) {
+                                        panePluginContext.copy(sessionId = agentViewModel.currentSessionId.value)
+                                    } else {
+                                        panePluginContext
+                                    }
+                                },
+                                editorPluginEntries = editorPluginEntries,
+                                onEditorPluginEntry = { entry, context -> runPluginEntry(entry, context) },
                                 onClose = { paneKind = WorkbenchPaneKind.NONE },
                                 onOpenFile = { path -> openFile(path, 0, false) },
                                 // rc5 的平板右栏脏状态确认：主分支把调用重构进了 if (paneOpen)，
@@ -1042,6 +1197,53 @@ fun AppNavigation(
                     browserManager = browserViewModel.browserManager,
                     onNavigateBack = { navController.popBackStack() }
                 )
+            }
+            composable("plugin_all_tools") {
+                val allTools by projectToolsViewModel.allPluginTools.collectAsStateWithLifecycle()
+                val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
+                val enabledKeys = remember(tools) { tools.map { it.toolKey }.toSet() }
+
+                com.bysqh.guru.feature.plugin.presentation.drawer.AllToolsScreen(
+                    availableTools = allTools,
+                    enabledToolKeys = enabledKeys,
+                    onBack = { navController.popBackStack() },
+                    onAddTool = { tool -> projectToolsViewModel.addToolToProject(tool) },
+                    onRemoveTool = { tool -> projectToolsViewModel.removeToolFromProject(tool.key) },
+                    onViewDetail = { tool ->
+                        projectToolsViewModel.selectTool(tool)
+                        navController.navigate("plugin_tool_detail/${tool.key}")
+                    }
+                )
+            }
+            composable("plugin_tool_detail/{toolKey}") { backStackEntry ->
+                val toolKey = backStackEntry.arguments?.getString("toolKey").orEmpty()
+                androidx.compose.runtime.LaunchedEffect(toolKey) {
+                    projectToolsViewModel.selectToolByKey(toolKey)
+                }
+                val tool by projectToolsViewModel.selectedTool.collectAsStateWithLifecycle()
+
+                BackHandler { returnFromToolDetail() }
+                if (tool != null) {
+                    val languageTag = currentLanguageTag()
+                    val pageDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    com.bysqh.guru.feature.plugin.presentation.drawer.ToolDetailScreen(
+                        tool = tool!!,
+                        languageTag = languageTag,
+                        bridgeFactory = { page, post, onClose ->
+                            pluginsViewModel.createWebBridge(
+                                page = page,
+                                pluginVersion = page.pluginVersion,
+                                languageTag = languageTag,
+                                theme = { if (pageDark) "dark" else "light" },
+                                onClosePage = onClose,
+                                post = post
+                            )
+                        },
+                        onBack = returnFromToolDetail
+                    )
+                } else {
+                    com.bysqh.guru.feature.plugin.presentation.drawer.ToolUnavailableScreen(onBack = returnFromToolDetail)
+                }
             }
             composable("git") {
                 val gitViewModel: GitViewModel = hiltViewModel()
@@ -1134,7 +1336,14 @@ fun AppNavigation(
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             Box(modifier = Modifier.weight(1f)) {
-                navBody()
+                com.bysqh.guru.core.ui.EndModalDrawer(
+                    state = rightDrawerState,
+                    gesturesEnabled = currentRoute == "chat",
+                    drawerWidth = drawerWidth(),
+                    drawerContent = { rightDrawerSheet() }
+                ) {
+                    navBody()
+                }
             }
         }
     } else {
@@ -1156,7 +1365,14 @@ fun AppNavigation(
                 }
             }
         ) {
-            navBody()
+            com.bysqh.guru.core.ui.EndModalDrawer(
+                state = rightDrawerState,
+                gesturesEnabled = currentRoute == "chat",
+                drawerWidth = drawerWidth(),
+                drawerContent = { rightDrawerSheet() }
+            ) {
+                navBody()
+            }
         }
     }
 
@@ -1168,6 +1384,62 @@ fun AppNavigation(
             agentState = agentViewModel.agentState.collectAsStateWithLifecycle().value,
             viewModel = androidx.hilt.navigation.compose.hiltViewModel(),
             hiddenByDrawer = false
+        )
+    }
+
+    // 插件停用 / 卸载或更新后，右栏与全屏页都不能继续抱着旧页面。
+    LaunchedEffect(pluginSlotEntries, panePluginKey) {
+        val entry = pluginSlotEntries.firstOrNull { it.key == panePluginKey }
+        if (paneKind == WorkbenchPaneKind.PLUGIN && entry?.page == null) {
+            paneKind = WorkbenchPaneKind.NONE
+            panePluginContext = PluginEntryContext()
+        }
+    }
+
+    // 插件槽位页的全局宿主：侧栏与顶栏入口共用；大屏聊天页走右栏，设置页在自身分栏内渲染。
+    activeSlotPage?.let { page ->
+        PluginPageHost(
+            page = page,
+            languageTag = pluginLanguageTag,
+            pluginsViewModel = pluginsViewModel,
+            onClose = {
+                activeSlotPage = null
+                activeSlotContext = PluginEntryContext()
+            },
+            modifier = Modifier.fillMaxSize(),
+            context = {
+                if (activeSlotContext.sessionId == null) {
+                    activeSlotContext.copy(sessionId = agentViewModel.currentSessionId.value)
+                } else {
+                    activeSlotContext
+                }
+            }
+        )
+    }
+
+    pendingPluginAction?.let { (entry, actionContext) ->
+        AlertDialog(
+            onDismissRequest = { pendingPluginAction = null },
+            title = { Text(stringResource(R.string.plugins_action_confirm_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.plugins_action_confirm_message,
+                        entry.title.resolve(pluginLanguageTag)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingPluginAction = null
+                    pluginsViewModel.runUiAction(entry, actionContext, showPluginActionResult)
+                }) { Text(stringResource(R.string.common_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingPluginAction = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            }
         )
     }
 

@@ -168,6 +168,12 @@ private val SettingsMenuWidth = 320.dp
 private val SettingsTwoPaneMinWidth = 840.dp
 
 /** 设置页内部二级菜单分区。Menu 为首页菜单，其余为各自的二级页。 */
+private val PluginPackageMimeTypes = arrayOf(
+    "application/zip",
+    "application/x-zip-compressed",
+    "application/octet-stream"
+)
+
 internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     Menu(R.string.settings_title),
     General(R.string.settings_general),
@@ -453,6 +459,9 @@ fun SettingsScreen(
         ?: selectedDevProject
     var showPluginSettingsSheet by remember { mutableStateOf(false) }
     var showPluginUninstallConfirm by remember { mutableStateOf(false) }
+    val pluginZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) pluginsViewModel.import(uri)
+    }
     val selectedPlugin = plugins.firstOrNull { it.id == selectedPluginId }
     val pluginLanguageTag = currentLanguageTag()
     var selectedSubAgent by remember { mutableStateOf<SubAgentUiEntry?>(null) }
@@ -893,6 +902,34 @@ fun SettingsScreen(
                                     contentDescription = stringResource(R.string.subagent_edit),
                                     tint = MaterialTheme.colorScheme.onBackground,
                                     modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        SettingsSection.Plugins -> {
+                            IconButton(onClick = { showPluginSettingsSheet = true }) {
+                                Icon(
+                                    FeatherIcons.Sliders,
+                                    contentDescription = stringResource(R.string.plugins_settings_title),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            IconButton(onClick = { pluginZipLauncher.launch(PluginPackageMimeTypes) }) {
+                                Icon(
+                                    FeatherIcons.Plus,
+                                    contentDescription = stringResource(R.string.plugins_import),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        SettingsSection.PluginDetail -> selectedPlugin?.let {
+                            IconButton(onClick = { showPluginUninstallConfirm = true }) {
+                                Icon(
+                                    FeatherIcons.Trash2,
+                                    contentDescription = stringResource(R.string.plugins_uninstall),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
@@ -1628,6 +1665,49 @@ fun SettingsScreen(
     }
 
     SkillImportResultDialog(state = skillImportState, onDismiss = { viewModel.clearSkillImportState() })
+
+    PluginImportHost(viewModel = pluginsViewModel)
+
+    if (showPluginUninstallConfirm) {
+        selectedPlugin?.let { plugin ->
+            AlertDialog(
+                onDismissRequest = { showPluginUninstallConfirm = false },
+                title = { Text(stringResource(R.string.plugins_uninstall_confirm_title)) },
+                text = {
+                    Text(stringResource(R.string.plugins_uninstall_confirm_message, plugin.displayName(pluginLanguageTag)))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showPluginUninstallConfirm = false
+                            pluginsViewModel.uninstall(plugin.id)
+                        }
+                    ) { Text(stringResource(R.string.common_delete)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPluginUninstallConfirm = false }) {
+                        Text(stringResource(R.string.common_cancel))
+                    }
+                }
+            )
+        }
+    }
+
+    if (showPluginSettingsSheet && section == SettingsSection.Plugins) {
+        PluginSettingsSheet(
+            devMode = pluginDevMode,
+            devRootPath = pluginsViewModel.devRootPath,
+            indexSourceText = pluginIndexSourceText,
+            downloadMirror = pluginDownloadMirror,
+            onSetIndexSourceText = pluginsViewModel::setIndexSourceText,
+            onSetDownloadMirror = pluginsViewModel::setDownloadMirror,
+            onSetDevMode = pluginsViewModel::setDevMode,
+            onDismiss = {
+                pluginsViewModel.savePluginSettings()
+                showPluginSettingsSheet = false
+            }
+        )
+    }
 
     subAgentToDelete?.let { target ->
         val deleting = target.name in subAgentDeleting

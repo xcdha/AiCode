@@ -146,6 +146,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.delay
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
 
 /**
  * 侧边栏内容：顶部 Tab 切换「会话」/「文件」，底部「设置」入口卡片。
@@ -184,6 +185,12 @@ fun ChatDrawerContent(
     onCancelPasteOverwrite: () -> Unit,
     onClearClipboard: () -> Unit,
     onNavigateToBrowser: (() -> Unit)? = null,
+    pluginEntries: List<PluginUiEntry> = emptyList(),
+    pluginLanguageTag: String = "zh-CN",
+    onPluginEntry: (PluginUiEntry) -> Unit = {},
+    sessionPluginEntries: List<PluginUiEntry> = emptyList(),
+    onSessionPluginEntry: (ChatSession, PluginUiEntry) -> Unit = { _, _ -> },
+    filePluginEntries: List<PluginUiEntry> = emptyList(),
     // [二开] 侧边栏角色入口（移植自 Muse）
     onNavigateToRoles: (() -> Unit)? = null,
     onNavigateToSettings: () -> Unit,
@@ -198,6 +205,7 @@ fun ChatDrawerContent(
     // SaveableStateProvider），用 remember 存会让每次回到聊天页都重置回「会话」页。
     var selectedTab by rememberSaveable { mutableStateOf(0) }
     var isSelectionMode by rememberSaveable { mutableStateOf(false) }
+    var showAllPlugins by remember { mutableStateOf(false) }
     val selectedSessionIds = remember { mutableStateListOf<String>() }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ChatSession?>(null) }
@@ -391,6 +399,29 @@ fun ChatDrawerContent(
                     onPasteEntry = onPasteEntry,
                     onClearClipboard = onClearClipboard
                 )
+            }
+        }
+
+        if (pluginEntries.isNotEmpty()) {
+            SettingsGroupHeader(text = stringResource(R.string.settings_plugins))
+            SettingsGroup {
+                pluginEntries.take(3).forEachIndexed { index, entry ->
+                    if (index > 0) SettingsDivider()
+                    SettingsRow(
+                        icon = com.bysqh.guru.feature.plugin.presentation.pluginPageIcon(entry.icon),
+                        title = entry.title.resolve(pluginLanguageTag),
+                        subtitle = stringResource(R.string.plugins_ext_entry_subtitle, entry.pluginId),
+                        onClick = { onPluginEntry(entry) }
+                    )
+                }
+                if (pluginEntries.size > 3) {
+                    SettingsDivider()
+                    SettingsRow(
+                        icon = FeatherIcons.ChevronRight,
+                        title = stringResource(R.string.plugins_more_in_drawer),
+                        onClick = { showAllPlugins = true }
+                    )
+                }
             }
         }
 
