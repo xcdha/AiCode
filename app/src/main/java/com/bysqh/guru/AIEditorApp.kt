@@ -352,6 +352,7 @@ class AIEditorApp : Application(), Configuration.Provider {
                 executionModeHolder.mode
             ) { config, mode -> config to mode }.collect { (config, mode) ->
                 if (mode != com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
+                    cancelDocsSync()
                     remoteSshConnection.stopSupervisor()
                     remoteTerminalSessionManager.tabs.value.map { it.id }.forEach {
                         remoteTerminalSessionManager.closeTab(it)
@@ -359,7 +360,11 @@ class AIEditorApp : Application(), Configuration.Provider {
                     withContext(Dispatchers.IO) { remoteSshConnection.disconnect() }
                     return@collect
                 }
-                if (config == null) return@collect
+                if (config == null) {
+                    cancelDocsSync()
+                    return@collect
+                }
+                if (config != remoteSshConnection.config || !remoteSshConnection.isConnected()) cancelDocsSync()
                 remoteSshConnection.startSupervisor(appScope) {
                     if (executionModeHolder.currentMode() != com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
                         return@startSupervisor
@@ -516,6 +521,14 @@ class AIEditorApp : Application(), Configuration.Provider {
                     FileLogger.w(TAG, "同步内置文档到远程失败", error)
                 }
             }
+        }
+    }
+
+    /** 连接身份变化或退出远程模式时中止在途的文档同步，避免写到旧连接。 */
+    private fun cancelDocsSync() {
+        synchronized(docsSyncLock) {
+            docsSyncJob?.cancel()
+            docsSyncTarget = null
         }
     }
 

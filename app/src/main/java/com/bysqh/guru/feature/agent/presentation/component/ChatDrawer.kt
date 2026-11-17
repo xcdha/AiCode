@@ -185,6 +185,7 @@ private fun DrawerProgressIndicator(
  * 侧边栏内容：顶部 Tab 切换「会话」/「文件」，底部「设置」入口卡片。
  * Tab0 为根会话列表，带子代理的会话行可就地展开；Tab1 为当前工作区的文件树。
  */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ChatDrawerContent(
     sessions: List<ChatSession>,
@@ -505,6 +506,32 @@ fun ChatDrawerContent(
         }
     }
 
+    if (showAllPlugins && pluginEntries.isNotEmpty()) {
+        AdaptiveModalBottomSheet(onDismissRequest = { showAllPlugins = false }) {
+            Text(
+                text = stringResource(R.string.settings_plugins),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+            )
+            Column(modifier = Modifier.padding(bottom = Spacing.xl)) {
+                pluginEntries.forEachIndexed { index, entry ->
+                    if (index > 0) SettingsDivider()
+                    SettingsRow(
+                        icon = pluginPageIcon(entry.icon),
+                        title = entry.title.resolve(pluginLanguageTag),
+                        subtitle = stringResource(R.string.plugins_ext_entry_subtitle, entry.pluginId),
+                        onClick = {
+                            showAllPlugins = false
+                            onPluginEntry(entry)
+                        }
+                    )
+                }
+            }
+        }
+    }
+
     pasteConflict?.let { (_, targetPath) ->
         AlertDialog(
             onDismissRequest = onCancelPasteOverwrite,
@@ -568,6 +595,9 @@ fun ChatDrawerContent(
                 menuSession = null
                 pendingDelete = session
             },
+            pluginEntries = sessionPluginEntries,
+            pluginLanguageTag = pluginLanguageTag,
+            onPluginEntry = { entry -> onSessionPluginEntry(session, entry) },
             onDismiss = { menuSession = null }
         )
     }
@@ -1791,6 +1821,9 @@ private fun SessionActionSheet(
     onExport: () -> Unit,
     onBatchSelect: () -> Unit,
     onDelete: () -> Unit,
+    pluginEntries: List<PluginUiEntry> = emptyList(),
+    pluginLanguageTag: String = "zh-CN",
+    onPluginEntry: (PluginUiEntry) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -1850,6 +1883,25 @@ private fun SessionActionSheet(
                     onBatchSelect()
                 }
             )
+            if (pluginEntries.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.settings_plugins),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm)
+                )
+                pluginEntries.forEach { entry ->
+                    SheetActionRow(
+                        icon = pluginPageIcon(entry.icon),
+                        label = entry.title.resolve(pluginLanguageTag),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        onClick = {
+                            onDismiss()
+                            onPluginEntry(entry)
+                        }
+                    )
+                }
+            }
             SheetActionRow(
                 icon = FeatherIcons.Trash2,
                 label = stringResource(R.string.common_delete),

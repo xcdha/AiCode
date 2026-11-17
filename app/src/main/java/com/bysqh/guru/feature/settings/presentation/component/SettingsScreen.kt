@@ -465,6 +465,17 @@ fun SettingsScreen(
     }
     val selectedPlugin = plugins.firstOrNull { it.id == selectedPluginId }
     val pluginLanguageTag = currentLanguageTag()
+    // 直接从插件快照算入口，不走 PluginManager.ensureLoaded：组合期间不能同步读盘。
+    val pluginPages = remember(plugins, pluginLanguageTag) {
+        plugins.filter { it.isActive }
+            .sortedBy { it.displayName(pluginLanguageTag) }
+            .flatMap { plugin ->
+                plugin.content.uiEntries.mapNotNull { entry ->
+                    entry.page?.copy(pluginVersion = plugin.record.version)
+                }
+            }
+    }
+    var activePluginPage by remember { mutableStateOf<com.bysqh.guru.feature.plugin.domain.PluginPage?>(null) }
     var selectedSubAgent by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     var subAgentToDelete by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     // 子代理编辑目标：null 表示新建一个；编辑现有定义时指向被编辑的条目。
@@ -578,6 +589,12 @@ fun SettingsScreen(
                 )
             },
             onRerunOnboarding = onRerunOnboarding,
+            pluginPages = pluginPages,
+            pluginLanguageTag = pluginLanguageTag,
+            onOpenPluginPage = { page ->
+                activePluginPage = page
+                section = SettingsSection.PluginPage
+            },
             onOpen = {
                 if (it == SettingsSection.Log) {
                     logReturnSection = SettingsSection.Menu
@@ -711,6 +728,26 @@ fun SettingsScreen(
                     },
                     onNavigateBack = { section = promptEditorReturn }
                 )
+            }
+
+            current == SettingsSection.PluginPage -> {
+                val page = activePluginPage
+                if (page == null) {
+                    // 移动端退出插件页时 old 分支还在退场动画里，此时 activePluginPage 已清空；
+                    // 不渲染大屏「从左侧选择」占位，避免返回瞬间闪一下空态。
+                    if (expanded) SettingsDetailPlaceholder()
+                } else {
+                    com.bysqh.guru.feature.plugin.presentation.PluginPageHost(
+                        page = page,
+                        languageTag = pluginLanguageTag,
+                        pluginsViewModel = pluginsViewModel,
+                        onClose = {
+                            activePluginPage = null
+                            section = SettingsSection.Menu
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
 
             current == SettingsSection.RemoteServers ->
@@ -1908,6 +1945,9 @@ internal fun SettingsMenu(
     onOpenLanguageSheet: () -> Unit,
     onOpenManual: () -> Unit,
     onRerunOnboarding: () -> Unit,
+    pluginPages: List<com.bysqh.guru.feature.plugin.domain.PluginPage> = emptyList(),
+    pluginLanguageTag: String = "zh-CN",
+    onOpenPluginPage: (com.bysqh.guru.feature.plugin.domain.PluginPage) -> Unit = {},
     onOpen: (SettingsSection) -> Unit
 ) {
     Column(
@@ -2002,6 +2042,7 @@ internal fun SettingsMenu(
                     )
                 }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_GENERAL, pluginLanguageTag, onOpenPluginPage)
         }
 
         // ── AI 配置 ──
@@ -2056,6 +2097,7 @@ internal fun SettingsMenu(
                 title = stringResource(SettingsSection.Plugins.titleRes),
                 onClick = { onOpen(SettingsSection.Plugins) }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_AI, pluginLanguageTag, onOpenPluginPage)
         }
 
         // ── 运行环境 ──
@@ -2078,6 +2120,7 @@ internal fun SettingsMenu(
                 title = stringResource(SettingsSection.RemoteServers.titleRes),
                 onClick = { onOpen(SettingsSection.RemoteServers) }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_ENVIRONMENT, pluginLanguageTag, onOpenPluginPage)
         }
 
         // ── 权限与后台 ──
@@ -2100,6 +2143,7 @@ internal fun SettingsMenu(
                 title = stringResource(SettingsSection.BackgroundRun.titleRes),
                 onClick = { onOpen(SettingsSection.BackgroundRun) }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_PERMISSIONS, pluginLanguageTag, onOpenPluginPage)
         }
 
         // ── 数据与诊断 ──
@@ -2128,6 +2172,7 @@ internal fun SettingsMenu(
                 title = stringResource(SettingsSection.Log.titleRes),
                 onClick = { onOpen(SettingsSection.Log) }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_DATA, pluginLanguageTag, onOpenPluginPage)
         }
 
         // ── 帮助与关于 ──
@@ -2150,9 +2195,29 @@ internal fun SettingsMenu(
                 title = stringResource(SettingsSection.About.titleRes),
                 onClick = { onOpen(SettingsSection.About) }
             )
+            PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_HELP, pluginLanguageTag, onOpenPluginPage)
         }
     }
 
+}
+
+/** 插件槽位入口行：按槽位追加到对应分组末尾，副标题标明来源。 */
+@Composable
+private fun PluginSettingsRows(
+    pages: List<com.bysqh.guru.feature.plugin.domain.PluginPage>,
+    slot: String,
+    languageTag: String,
+    onOpen: (com.bysqh.guru.feature.plugin.domain.PluginPage) -> Unit
+) {
+    pages.filter { it.slot == slot }.forEach { page ->
+        SettingsDivider()
+        SettingsRow(
+            icon = com.bysqh.guru.feature.plugin.presentation.pluginPageIcon(page.icon),
+            title = page.title.resolve(languageTag),
+            subtitle = stringResource(R.string.plugins_ext_entry_subtitle, page.pluginId),
+            onClick = { onOpen(page) }
+        )
+    }
 }
 
 /** 导入结果弹窗：导入中显示转圈；完成时展示成功数量与逐个跳过原因（整体失败则直接报错误）。 */
