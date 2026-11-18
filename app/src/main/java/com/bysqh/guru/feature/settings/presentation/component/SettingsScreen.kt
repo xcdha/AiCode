@@ -511,8 +511,24 @@ fun SettingsScreen(
         SettingsSection.SkillEditor -> skillEditorReturn
         SettingsSection.SubAgentDetail -> SettingsSection.SubAgents
         SettingsSection.SubAgentEditor -> subAgentEditorReturn
+        SettingsSection.PluginDetail -> SettingsSection.Plugins
+        SettingsSection.PluginStoreDetail -> SettingsSection.Plugins
+        SettingsSection.PluginDevDetail -> SettingsSection.Plugins
+        SettingsSection.PluginPage -> if (expanded) null else SettingsSection.Menu
         SettingsSection.ContainerDownloads -> SettingsSection.Container
         else -> if (expanded) null else SettingsSection.Menu
+    }
+
+    // 商店 / 开发中详情依赖内存里的选中项；没有选中项时退回插件列表。
+    LaunchedEffect(selectedStoreItem, section) {
+        if (section == SettingsSection.PluginStoreDetail && selectedStoreItem == null) {
+            section = SettingsSection.Plugins
+        }
+    }
+    LaunchedEffect(selectedDevProject, section) {
+        if (section == SettingsSection.PluginDevDetail && selectedDevProject == null) {
+            section = SettingsSection.Plugins
+        }
     }
 
     // 有上一层时系统返回键先回上一层；没有则交还给上层导航。
@@ -2075,15 +2091,15 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.MessageSquare,
-                title = stringResource(SettingsSection.Prompts.titleRes),
-                onClick = { onOpen(SettingsSection.Prompts) }
-            )
-            SettingsDivider()
-            SettingsRow(
                 icon = FeatherIcons.Box,
                 title = stringResource(SettingsSection.Plugins.titleRes),
                 onClick = { onOpen(SettingsSection.Plugins) }
+            )
+            SettingsDivider()
+            SettingsRow(
+                icon = FeatherIcons.MessageSquare,
+                title = stringResource(SettingsSection.Prompts.titleRes),
+                onClick = { onOpen(SettingsSection.Prompts) }
             )
             PluginSettingsRows(pluginPages, PluginUiSlots.SETTINGS_AI, pluginLanguageTag, onOpenPluginPage)
         }
