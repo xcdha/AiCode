@@ -2336,7 +2336,7 @@
     <string name="plugins_store_update">更新</string>
     <string name="plugins_store_installed">已安装</string>
     <string name="plugins_store_incompatible">不兼容</string>
-    <string name="plugins_store_requires_min_version">要求 AiCode >= %1$s</string>
+    <string name="plugins_store_requires_min_version">要求 Guru >= %1$s</string>
     <string name="plugins_store_retry">重试</string>
     <string name="plugins_store_error_network">无法连接索引仓库，请检查网络或地址。</string>
     <string name="plugins_store_error_invalid">索引内容无效，已拒绝加载。</string>
@@ -2430,7 +2430,7 @@
     <string name="plugins_enable">启用插件</string>
     <string name="plugins_enable_hint">关闭后，它提供的技能、子代理、工具和页面都不再生效。</string>
     <string name="plugins_hint_damaged">插件文件已损坏或丢失，无法启用。请卸载后重新导入。</string>
-    <string name="plugins_hint_incompatible">这个插件与当前版本的 AiCode 不兼容，无法启用。</string>
+    <string name="plugins_hint_incompatible">这个插件与当前版本的 Guru 不兼容，无法启用。</string>
     <string name="plugins_section_summary">简介</string>
     <string name="plugins_section_info">信息</string>
     <string name="plugins_section_dependencies">依赖环境</string>
@@ -2465,7 +2465,7 @@
     <string name="plugins_error_manifest_version">不支持的清单版本：%1$s</string>
     <string name="plugins_error_unsupported_field">此版本不支持的字段：%1$s</string>
     <string name="plugins_error_unsupported_contribution">此版本暂不支持的内容类型：%1$s</string>
-    <string name="plugins_error_api_incompatible">插件要求的插件接口版本（%1$s）与当前 AiCode 不兼容。</string>
+    <string name="plugins_error_api_incompatible">插件要求的插件接口版本（%1$s）与当前 Guru 不兼容。</string>
     <string name="plugins_error_duplicate_id">重复的 ID：%1$s</string>
     <string name="plugins_error_file_missing">清单引用的文件不存在：%1$s</string>
     <string name="plugins_error_content_invalid">内容无效：%1$s</string>

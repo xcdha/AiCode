@@ -179,7 +179,7 @@ object AgentModule {
         val userAgent = runCatching {
             val name = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
             "guru/$name (Android)"
-        }.getOrDefault("aicode (Android)")
+        }.getOrDefault("guru (Android)")
         // 流式 SSE 下读超时是「相邻数据块之间」的等待上限，设为 0（无限制），
         // 慢生成不会因块间隔超时被掐断；首字节前的卡死由上层 watchdog（RetryPolicy）兜底。
         return OkHttpClient.Builder()

@@ -92,7 +92,7 @@ python3 scripts/package-plugins.py <目录名>
 
 - TypeScript 运行时可用 SDK 的 `log(message)` 写入日志；handler 返回 `logs` 的规则见 [handler 约定](/advanced/plugin/tools-runtime#handler-约定)。
 - 运行时启动失败时，检查本地容器是否已准备 Node.js / Python 环境，以及运行期依赖是否已安装。
-- 页面空白时，检查构建是否完成、清单页面路径与 assets 是否齐全，并在 AiCode 真机上验证宿主桥调用。
+- 页面空白时，检查构建是否完成、清单页面路径与 assets 是否齐全，并在 Guru 真机上验证宿主桥调用。
 - 侧载未更新时，确认「开发者侧载」仍开启，构建结果已同步到侧载目录；必要时在项目详情手动重载。
 - Shizuku、浮层或备份事件失败时，先检查插件详情中的独立授权；提供商调用失败时，检查兼容服务是否就绪。
 

@@ -2337,7 +2337,7 @@
     <string name="plugins_store_update">Update</string>
     <string name="plugins_store_installed">Installed</string>
     <string name="plugins_store_incompatible">Incompatible</string>
-    <string name="plugins_store_requires_min_version">Requires AiCode >= %1$s</string>
+    <string name="plugins_store_requires_min_version">Requires Guru >= %1$s</string>
     <string name="plugins_store_retry">Retry</string>
     <string name="plugins_store_error_network">Cannot reach the index repository. Check the network or URL.</string>
     <string name="plugins_store_error_invalid">The index is invalid and was rejected.</string>
@@ -2431,7 +2431,7 @@
     <string name="plugins_enable">Enable plugin</string>
     <string name="plugins_enable_hint">When off, the skills, sub-agents, tools, and pages it provides stop working.</string>
     <string name="plugins_hint_damaged">The plugin files are damaged or missing, so it can\'t be enabled. Uninstall it and import it again.</string>
-    <string name="plugins_hint_incompatible">This plugin isn\'t compatible with this version of AiCode, so it can\'t be enabled.</string>
+    <string name="plugins_hint_incompatible">This plugin isn\'t compatible with this version of Guru, so it can\'t be enabled.</string>
     <string name="plugins_section_summary">About</string>
     <string name="plugins_section_info">Details</string>
     <string name="plugins_section_dependencies">Dependencies</string>
@@ -2466,7 +2466,7 @@
     <string name="plugins_error_manifest_version">Unsupported manifest version: %1$s</string>
     <string name="plugins_error_unsupported_field">Field not supported by this version: %1$s</string>
     <string name="plugins_error_unsupported_contribution">Content type not supported by this version yet: %1$s</string>
-    <string name="plugins_error_api_incompatible">The plugin requires plugin API %1$s, which this version of AiCode doesn\'t provide.</string>
+    <string name="plugins_error_api_incompatible">The plugin requires plugin API %1$s, which this version of Guru doesn\'t provide.</string>
     <string name="plugins_error_duplicate_id">Duplicate ID: %1$s</string>
     <string name="plugins_error_file_missing">A file referenced by the manifest is missing: %1$s</string>
     <string name="plugins_error_content_invalid">Invalid content: %1$s</string>
