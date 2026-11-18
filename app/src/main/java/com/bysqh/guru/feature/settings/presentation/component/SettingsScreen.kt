@@ -207,7 +207,6 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     Permissions(R.string.settings_permissions),
     AppPermissions(R.string.settings_app_permissions),
     BackgroundRun(R.string.settings_category_background),
-    Pet(R.string.settings_pet_title),
     // [二开] 外观与主题整页
     Appearance(R.string.appearance_title),
     RemoteServers(R.string.settings_remote_servers),
@@ -1349,10 +1348,6 @@ fun SettingsScreen(
                 )
                 // [二开] 外观与主题整页
                 SettingsSection.Appearance -> AppearanceSettingsSection(viewModel = viewModel)
-                // [二开] 桌宠设置分区
-                SettingsSection.Pet -> PetSettingsSection(
-                    viewModel = androidx.hilt.navigation.compose.hiltViewModel()
-                )
                 // [二开] 记忆页（移植自 Muse）
                 SettingsSection.Memory -> MemorySection(
                     viewModel = androidx.hilt.navigation.compose.hiltViewModel()
@@ -2021,13 +2016,6 @@ internal fun SettingsMenu(
                         color = MaterialTheme.semanticColors.subtleText
                     )
                 }
-            )
-            SettingsDivider()
-            SettingsRow(
-                // [二开] 桌宠入口
-                icon = FeatherIcons.Smile,
-                title = stringResource(R.string.settings_pet_title),
-                onClick = { onOpen(SettingsSection.Pet) }
             )
             SettingsDivider()
             SettingsRow(

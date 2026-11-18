@@ -269,15 +269,6 @@
     <string name="settings_background_image_pick">选择图片 / 视频</string>
     <string name="settings_background_image_remove">移除背景</string>
     <!-- [二开] 桌宠 -->
-    <string name="settings_pet_title">桌宠</string>
-    <string name="settings_pet_enable">显示桌宠</string>
-    <string name="settings_pet_enable_desc">在对话页显示一只会跟着 Agent 状态变表情的小宠物，可拖动位置</string>
-    <string name="settings_pet_size">桌宠大小</string>
-    <string name="settings_pet_size_hint">桌面宠物只在对话页显示，侧栏展开时自动淡出</string>
-    <string name="pet_bubble_thinking">思考中…</string>
-    <string name="pet_bubble_working">正在输出…</string>
-    <string name="pet_bubble_done">搞定！</string>
-    <string name="pet_bubble_error">出错了…</string>
     <!-- [二开] 动态背景（GIF / MP4）相关文案 -->
     <string name="settings_background_image_hint">支持图片、GIF 与 MP4 视频；动态背景会静音循环播放</string>
     <string name="settings_background_kind_gif">GIF 动图</string>

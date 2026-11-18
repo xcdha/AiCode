@@ -269,15 +269,6 @@
     <string name="settings_background_image_pick">Pick image / video</string>
     <string name="settings_background_image_remove">Remove background</string>
     <!-- [custom] desktop pet -->
-    <string name="settings_pet_title">Desktop pet</string>
-    <string name="settings_pet_enable">Show desktop pet</string>
-    <string name="settings_pet_enable_desc">A small pet on the chat screen whose expression follows the agent state. Drag to reposition.</string>
-    <string name="settings_pet_size">Pet size</string>
-    <string name="settings_pet_size_hint">The pet only appears on the chat screen and fades out when the sidebar opens.</string>
-    <string name="pet_bubble_thinking">Thinking…</string>
-    <string name="pet_bubble_working">Writing…</string>
-    <string name="pet_bubble_done">Done!</string>
-    <string name="pet_bubble_error">Something went wrong…</string>
     <!-- [custom] animated background (GIF / MP4) -->
     <string name="settings_background_image_hint">Supports images, GIF and MP4 video. Animated backgrounds loop silently.</string>
     <string name="settings_background_kind_gif">GIF</string>

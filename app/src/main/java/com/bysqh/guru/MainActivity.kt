@@ -116,7 +116,6 @@ import com.bysqh.guru.feature.settings.presentation.SettingsViewModel
 import com.bysqh.guru.feature.settings.presentation.FetchState
 import com.bysqh.guru.feature.settings.presentation.UpdateCheckUiState
 import com.bysqh.guru.feature.settings.presentation.component.githubReleaseUrl
-import com.bysqh.guru.feature.pet.presentation.PetOverlay
 import com.bysqh.guru.feature.settings.presentation.component.GifBackgroundView
 import com.bysqh.guru.feature.settings.presentation.component.SettingsScreen
 import com.bysqh.guru.feature.settings.presentation.component.UpdateCheckDialog
@@ -1418,17 +1417,6 @@ fun AppNavigation(
                 navBody()
             }
         }
-    }
-
-    // [二开] 桌宠悬浮层：放在导航层与抽屉之外，层级最上。
-    // 之前放在聊天页内部，抽屉一展开就被抽屉与遮罩盖住，看起来像「闪一下就消失」。
-    // 表情跟随当前会话的 Agent 状态（Idle/Loading/Streaming/Result/Error）。
-    if (currentRoute == "chat") {
-        PetOverlay(
-            agentState = agentViewModel.agentState.collectAsStateWithLifecycle().value,
-            viewModel = androidx.hilt.navigation.compose.hiltViewModel(),
-            hiddenByDrawer = false
-        )
     }
 
     // 插件停用 / 卸载或更新后，右栏与全屏页都不能继续抱着旧页面。
