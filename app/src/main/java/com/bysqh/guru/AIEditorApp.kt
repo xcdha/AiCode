@@ -180,6 +180,18 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var permissionRulesRepository: com.bysqh.guru.feature.agent.domain.permission.PermissionRulesRepository
 
+    /** 进程级 AI 执行器：启动即接管运行态与订阅，Activity 被回收后任务继续。 */
+    @Inject
+    lateinit var agentRunManager: com.bysqh.guru.feature.agent.presentation.run.AgentRunManager
+
+    /** 插件 AI 工具注册：启动即把插件声明的工具挂进 ToolRegistry。 */
+    @Inject
+    lateinit var pluginToolManager: com.bysqh.guru.feature.plugin.runtime.PluginToolManager
+
+    /** 插件生命周期 hook 分发：负责 app.started，声明该事件的插件在此拉起进程。 */
+    @Inject
+    lateinit var pluginHookDispatcher: com.bysqh.guru.feature.plugin.runtime.PluginHookDispatcher
+
     /** 技能配置仓库：启动即监听技能目录与 skills.json 外部变更，改动数秒内刷新技能列表。 */
     @Inject
     lateinit var skillConfigRepository: com.bysqh.guru.feature.agent.domain.skill.SkillConfigRepository
@@ -265,6 +277,7 @@ class AIEditorApp : Application(), Configuration.Provider {
             return
         }
         super.onCreate()
+        agentRunManager.start()
         migrateLegacyAicodeData()
         logDeviceInfo()
         // 补记 Java 未捕获异常处理器覆盖不到的异常退出（native 崩溃 / ANR / 低内存被杀 / 被信号杀死）。
@@ -426,6 +439,14 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
         // 连接已配置的 MCP server，把其工具注册进 ToolRegistry（内部自有 scope，失败不影响启动）。
         mcpManager.start()
+        pluginToolManager.start(appScope)
+        // 插件启动事件：声明 app.started 的插件在此拉起进程；runtime.resident 的进程不参与空闲回收。
+        appScope.launch {
+            val appVersion = runCatching {
+                packageManager.getPackageInfo(packageName, 0).versionName
+            }.getOrNull().orEmpty()
+            pluginHookDispatcher.dispatchAppStarted(appVersion)
+        }
         // 权限规则由 App 启动即常驻订阅（AI 评估随时要读到最新规则）；MCP 配置与技能列表
         // 改由各自消费方（McpManager / 设置页）按需订阅，无需在这里拉起。
         appScope.launch { permissionRulesRepository.startWatching() }
