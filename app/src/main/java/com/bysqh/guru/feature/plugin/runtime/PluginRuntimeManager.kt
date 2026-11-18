@@ -189,6 +189,8 @@ class PluginRuntimeManager @Inject constructor(
         }
         val dataDir = dataDirectory(pluginId)
         val wsRoot = workspaceRoot()
+        // 插件配置根目录：本地是容器内 /root/.guru（绑定到宿主 guruDir），远程是服务器 ~/.guru。
+        val homeDir = homeResolver.guruRoot()
         // 上面的挂起调用期间可能已有并发调用创建了同一版本的进程。
         processes[key]?.let { entry ->
             entry.resident = runtime.resident
@@ -207,7 +209,11 @@ class PluginRuntimeManager @Inject constructor(
                 "AICODE_PLUGIN_ID" to pluginId,
                 "AICODE_PLUGIN_VERSION" to version,
                 "AICODE_DATA_DIR" to dataDir,
-                "AICODE_WORKSPACE" to wsRoot
+                "AICODE_WORKSPACE" to wsRoot,
+                // 插件按 AICODE_HOME 定位配置根目录（未设置时回退 ~/.aicode）。
+                // 宿主把 guruDir 绑定到 /root/.guru，这里必须显式给出，
+                // 否则插件会写进容器内另一个 /root/.aicode，宿主读不到。
+                "AICODE_HOME" to homeDir
             ),
             onRequest = { method, params -> hostRequest(pluginId, runtime, method, params) },
             onNotification = { method, params -> handleNotification(pluginId, method, params) },
