@@ -31,7 +31,7 @@ class RoleRepository @Inject constructor(
     private companion object {
         const val TAG = "RoleRepository"
         const val DEFAULT_ID = "guru"
-        const val DEFAULT_NAME = "AiCode"
+        const val DEFAULT_NAME = "Guru"
         const val BUILTIN_IDENTITY_ASSET = "prompts/00-identity.md"
         const val MAX_AVATAR_BYTES = 8L * 1024 * 1024
     }
@@ -90,7 +90,7 @@ class RoleRepository @Inject constructor(
 
     /** 旧快照与当前内置文案只差品牌名时需要刷新；用户大改过的不动。 */
     private fun isStaleBuiltinSnapshot(identity: String, latest: String): Boolean {
-        fun normalize(text: String) = text.replace("Guru", "AiCode")
+        fun normalize(text: String) = text.replace("AiCode", "Guru")
             .replace(Regex("\\s+"), " ").trim()
         return normalize(identity) == normalize(latest)
     }
