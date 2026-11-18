@@ -1570,6 +1570,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _skills.value = withContext(Dispatchers.IO) {
                 try {
+                    skillRepository.refreshDirectoryCache()
                     val disabled = skillRepository.disabledNames()
                     skillRepository.listAllSkills().map { entry ->
                         SkillUiEntry(
@@ -1735,6 +1736,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _subAgents.value = withContext(Dispatchers.IO) {
                 try {
+                    agentDefinitionRepository.refreshDirectoryCache()
                     val disabled = agentDefinitionRepository.disabledNames()
                     agentDefinitionRepository.listAll().map { entry ->
                         SubAgentUiEntry(

@@ -425,6 +425,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         releaseWallpaper()
         browserManager.detachHiddenHost()
+        com.bysqh.guru.feature.plugin.presentation.PluginWebViewCache.clear()
         super.onDestroy()
     }
 

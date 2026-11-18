@@ -153,6 +153,9 @@ import com.bysqh.guru.feature.plugin.presentation.PluginsSection
 import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
 import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
 import com.bysqh.guru.feature.plugin.presentation.displayName
+import androidx.compose.ui.graphics.toArgb
+import kotlinx.coroutines.delay
+import com.bysqh.guru.core.util.FileLogger
 
 /** 使用手册在线文档站地址。 */
 private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
@@ -281,6 +284,7 @@ fun SettingsScreen(
     val streamIdleTimeoutSec by viewModel.streamIdleTimeoutSec.collectAsStateWithLifecycle()
     val maxNetworkRetries by viewModel.maxNetworkRetries.collectAsStateWithLifecycle()
     val enterToSend by viewModel.enterToSend.collectAsStateWithLifecycle()
+    val autoExpandReasoning by viewModel.autoExpandReasoning.collectAsStateWithLifecycle()
     val compactionThresholdPercent by viewModel.compactionThresholdPercent.collectAsStateWithLifecycle()
     val sendFileMaxSizeMb by viewModel.sendFileMaxSizeMb.collectAsStateWithLifecycle()
     val goalMaxTurns by viewModel.goalMaxTurns.collectAsStateWithLifecycle()
@@ -475,6 +479,58 @@ fun SettingsScreen(
             }
     }
     var activePluginPage by remember { mutableStateOf<com.bysqh.guru.feature.plugin.domain.PluginPage?>(null) }
+    // 进入设置后预热最近打开的插件页：提前创建 WebView，打开入口时直接 attach。
+    // 设置页首帧之后再执行，避免 Chromium 拉起阻塞进入动画。
+    // 不在这里加载页面：此时 WebView 还没挂到窗口，0×0 视口会让页面按错误尺寸完成首次布局
+    // （vh 等视口单位会被固定成 0），加载交给页面挂载后的 PluginPageHost。
+    val pluginThemeDark = PluginThemeTokens.isDark(MaterialTheme.colorScheme)
+    val pluginThemeFontScale = LocalConfiguration.current.fontScale
+    val pluginColorScheme = MaterialTheme.colorScheme
+    val pluginSemanticColors = MaterialTheme.semanticColors
+    val pluginThemeVariables = remember(pluginColorScheme, pluginSemanticColors, pluginThemeFontScale) {
+        PluginThemeTokens.variables(pluginColorScheme, pluginSemanticColors, pluginThemeFontScale)
+    }
+    val pluginThemeBackground = MaterialTheme.semanticColors.pageBackground.toArgb()
+    LaunchedEffect(pluginsLoaded, pluginPages) {
+        if (!pluginsLoaded || pluginPages.isEmpty() || PluginWebViewCache.hasCachedWebView) return@LaunchedEffect
+        val target = PluginWebViewCache.lastPageKey
+            ?.let { key -> pluginPages.firstOrNull { it.cacheKey == key } }
+            ?: pluginPages.first()
+        delay(200)
+        // 预热等待期间用户可能已打开插件页，此时不要再替换掉正在显示的实例。
+        if (PluginWebViewCache.hasCachedWebView) return@LaunchedEffect
+        runCatching {
+            val webView = PluginWebViewFactory.create(
+                context = context,
+                page = target,
+                dark = pluginThemeDark,
+                backgroundColor = pluginThemeBackground,
+                themeVariables = { pluginThemeVariables },
+                onPageFinished = { view ->
+                    PluginWebViewCache.markLoaded(target.cacheKey, PluginWebViewFactory.pageUrl(target), view)
+                    view.evaluateJavascript(PluginThemeTokens.applyScript(pluginThemeVariables), null)
+                },
+                onMainFrameError = {}
+            )
+            val bridge = pluginsViewModel.createWebBridge(
+                page = target,
+                pluginVersion = target.pluginVersion,
+                languageTag = pluginLanguageTag,
+                theme = { if (pluginThemeDark) "dark" else "light" },
+                onClosePage = {},
+                post = { script ->
+                    runCatching { webView.evaluateJavascript(script, null) }
+                }
+            )
+            PluginWebBridgeInstaller.install(webView, bridge) { message ->
+                bridge.postMessage(message)
+            }
+            PluginWebViewCache.put(target.cacheKey, webView)
+            PluginWebViewCache.putBridge(target.cacheKey, bridge)
+        }.onFailure { e ->
+            FileLogger.w("SettingsScreen", "插件页预热失败", e)
+        }
+    }
     var selectedSubAgent by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     var subAgentToDelete by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     // 子代理编辑目标：null 表示新建一个；编辑现有定义时指向被编辑的条目。
@@ -1094,6 +1150,8 @@ fun SettingsScreen(
                     onSetMaxNetworkRetries = { viewModel.setMaxNetworkRetries(it) },
                     enterToSend = enterToSend,
                     onToggleEnterToSend = { viewModel.setEnterToSend(it) },
+                    autoExpandReasoning = autoExpandReasoning,
+                    onToggleAutoExpandReasoning = { viewModel.setAutoExpandReasoning(it) },
                     compactionThresholdPercent = compactionThresholdPercent,
                     onSetCompactionThresholdPercent = { viewModel.setCompactionThresholdPercent(it) },
                     sendFileMaxSizeMb = sendFileMaxSizeMb,
@@ -1629,7 +1687,8 @@ fun SettingsScreen(
             onSelectTheme = { viewModel.setTerminalTheme(it) },
             onChangeFontSize = { viewModel.setTerminalFontSize(it) },
             onChangeCursorStyle = { viewModel.setTerminalCursorStyle(it) },
-            onChangeFontPath = { viewModel.setTerminalFontPath(it) }
+            onChangeFontPath = { viewModel.setTerminalFontPath(it) },
+            onChangeShowPluginTabs = { viewModel.setTerminalShowPluginTabs(it) }
         )
     }
 
