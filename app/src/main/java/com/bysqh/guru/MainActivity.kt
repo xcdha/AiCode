@@ -373,28 +373,10 @@ class MainActivity : ComponentActivity() {
                                 BackgroundSettingsRepository.Kind.MP4,
                                 BackgroundSettingsRepository.Kind.MOTION_PHOTO -> Unit
 
-                                BackgroundSettingsRepository.Kind.IMAGE -> {
-                                    val screen = LocalView.current
-                                    val bitmap by produceState<ImageBitmap?>(initialValue = null, bgPathSnapshot) {
-                                        value = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                                            decodeBackgroundBitmap(
-                                                bgPathSnapshot!!,
-                                                screen.width.coerceAtLeast(1),
-                                                screen.height.coerceAtLeast(1)
-                                            )
-                                        }
-                                    }
-                                    bitmap?.let {
-                                        Image(
-                                            bitmap = it,
-                                            contentDescription = null,
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .alpha(bgAlpha)
-                                        )
-                                    }
-                                }
+                                // 静态图走 BackgroundImageOverlay：在插件悬浮窗区域挖洞，
+                                // 宠物这类弹层周围不会出现一圈背景色方框。
+                                BackgroundSettingsRepository.Kind.IMAGE ->
+                                    BackgroundImageOverlay(path = bgPathSnapshot, imageAlpha = bgAlpha)
                             }
                         }
 
