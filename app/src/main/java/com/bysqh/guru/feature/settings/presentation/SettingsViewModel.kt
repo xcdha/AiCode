@@ -1986,7 +1986,9 @@ class SettingsViewModel @Inject constructor(
                     } else {
                         _updateCheckState.value = UpdateCheckUiState.DownloadFailed(
                             previous = target,
-                            message = verifyFailureMessage(verify)
+                            message = verifyFailureMessage(verify),
+                            // 自检判定同版本或更旧时换镜像无用，不展示换源提示。
+                            showMirrorHint = verify !is ApkVerifyResult.NotNewer
                         )
                     }
                 }

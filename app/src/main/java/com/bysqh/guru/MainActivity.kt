@@ -945,6 +945,7 @@ fun AppNavigation(
             fileOpPaths = fileOpPaths,
             clipboard = browseClipboard,
             pasteConflict = pasteConflict,
+            workspaceName = currentWorkspace?.name.orEmpty(),
             onToggleExpand = { agentViewModel.toggleExpand(it) },
             onOpenFile = openTreeEntry,
             onRefreshBrowse = { agentViewModel.refreshBrowse() },
@@ -1033,6 +1034,15 @@ fun AppNavigation(
                 runPluginEntry(entry, PluginEntryContext(sessionId = session.id))
             },
             filePluginEntries = fileTreePluginEntries,
+            onFilePluginEntry = { node, entry ->
+                runPluginEntry(
+                    entry,
+                    PluginEntryContext(
+                        path = node.path,
+                        isDirectory = node.entry.isDirectory
+                    )
+                )
+            },
             // [二开] 侧边栏角色入口：直达设置里的角色页
             onNavigateToRoles = {
                 settingsEntryKey = "roles"
@@ -1109,6 +1119,8 @@ fun AppNavigation(
                                     terminalActive = paneOpen && paneKind == WorkbenchPaneKind.TERMINAL,
                                     gitActive = paneOpen && paneKind == WorkbenchPaneKind.GIT,
                                     browserActive = paneOpen && paneKind == WorkbenchPaneKind.BROWSER,
+                                    pluginEntries = headerPluginEntries,
+                                    pluginLanguageTag = pluginLanguageTag,
                                     welcomePluginEntries = welcomePluginEntries,
                                     onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
                                     onboardingStep = if (onboardingUiState.active) onboardingUiState.step else null,
@@ -1307,6 +1319,11 @@ fun AppNavigation(
                 CodeEditorScreen(
                     path = entry.arguments?.getString("path").orEmpty(),
                     initialLine = entry.arguments?.getInt("line") ?: 0,
+                    pluginEntries = editorPluginEntries,
+                    pluginLanguageTag = pluginLanguageTag,
+                    onPluginEntry = { pluginEntry, entryContext ->
+                        runPluginEntry(pluginEntry, entryContext)
+                    },
                     onBack = {
                         navController.popBackStack()
                         if (openDrawerOnBack && !expanded) scope.launch { drawerState.open() }

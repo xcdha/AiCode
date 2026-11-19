@@ -478,6 +478,14 @@ fun SettingsScreen(
                 }
             }
     }
+    // 备份页「选择导出数据」组末尾的插件数据选项。
+    val backupDataEntries: List<PluginUiEntry> = remember(plugins, pluginLanguageTag) {
+        plugins.filter { it.isActive }
+            .sortedBy { it.displayName(pluginLanguageTag) }
+            .flatMap { plugin ->
+                plugin.content.uiEntries.filter { it.slot == PluginUiSlots.BACKUP_DATA }
+            }
+    }
     var activePluginPage by remember { mutableStateOf<com.bysqh.guru.feature.plugin.domain.PluginPage?>(null) }
     // 进入设置后预热最近打开的插件页：提前创建 WebView，打开入口时直接 attach。
     // 设置页首帧之后再执行，避免 Chromium 拉起阻塞进入动画。
@@ -829,6 +837,9 @@ fun SettingsScreen(
             current == SettingsSection.Backup ->
                 BackupScreen(
                     viewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+                    pluginDataEntries = backupDataEntries,
+                    backupGrantedPluginIds = backupGrantedPluginIds,
+                    languageTag = pluginLanguageTag,
                     onNavigateBack = { section = SettingsSection.Menu }
                 )
 
