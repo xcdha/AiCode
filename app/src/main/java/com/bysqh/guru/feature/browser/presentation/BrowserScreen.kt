@@ -110,6 +110,7 @@ import compose.icons.feathericons.X
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 private const val TAG = "BrowserScreen"
 
@@ -951,7 +952,7 @@ private fun BrowserCustomUaDialog(
 ) {
     var uaText by rememberSaveable { mutableStateOf(initialValue) }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(text = stringResource(R.string.browser_ua_custom_dialog_title))
@@ -1086,7 +1087,7 @@ private fun BrowserJsDialog(
         else -> stringResource(R.string.browser_dialog_alert_title)
     }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = { },
         title = { Text(text = title) },
         text = {

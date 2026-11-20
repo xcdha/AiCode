@@ -54,6 +54,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Edit2
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.User
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 角色页：选中哪个角色，对话就用哪份身份提示词。
@@ -150,7 +151,7 @@ internal fun RolesSection(
     }
 
     if (creating) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { creating = false },
             title = { Text(stringResource(R.string.role_new)) },
             text = {
@@ -177,7 +178,7 @@ internal fun RolesSection(
     }
 
     if (deleteBlocked) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deleteBlocked = false },
             title = { Text(stringResource(R.string.role_cannot_delete_title)) },
             text = { Text(stringResource(R.string.role_cannot_delete_message)) },
@@ -318,7 +319,7 @@ private fun RoleEditorDialog(
         }.getOrNull()?.let { identity = it }
     }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.role_edit_title)) },
         text = {

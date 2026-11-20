@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.feature.settings.presentation.UpdateCheckUiState
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 检查更新结果弹窗（全局宿主渲染，自动/手动共用）。
@@ -42,19 +43,19 @@ internal fun UpdateCheckDialog(
     onDownload: () -> Unit
 ) {
     when (state) {
-        UpdateCheckUiState.Checking -> AlertDialog(
+        UpdateCheckUiState.Checking -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_check_update)) },
             text = { Text(stringResource(R.string.about_checking_update)) },
             confirmButton = {}
         )
-        UpdateCheckUiState.UpToDate -> AlertDialog(
+        UpdateCheckUiState.UpToDate -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_up_to_date)) },
             text = { Text(stringResource(R.string.about_up_to_date_detail, currentVersion)) },
             confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
         )
-        is UpdateCheckUiState.NewVersion -> AlertDialog(
+        is UpdateCheckUiState.NewVersion -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_new_version_found)) },
             text = { ChangelogText(state.changelog) },
@@ -73,7 +74,7 @@ internal fun UpdateCheckDialog(
             },
             dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
         )
-        is UpdateCheckUiState.Downloading -> AlertDialog(
+        is UpdateCheckUiState.Downloading -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_new_version_found)) },
             text = {
@@ -102,7 +103,7 @@ internal fun UpdateCheckDialog(
             confirmButton = {},
             dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_update_background)) } }
         )
-        is UpdateCheckUiState.ReadyToInstall -> AlertDialog(
+        is UpdateCheckUiState.ReadyToInstall -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_new_version_found)) },
             text = {
@@ -118,7 +119,7 @@ internal fun UpdateCheckDialog(
             },
             dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
         )
-        is UpdateCheckUiState.DownloadFailed -> AlertDialog(
+        is UpdateCheckUiState.DownloadFailed -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_update_download_failed)) },
             text = {
@@ -142,7 +143,7 @@ internal fun UpdateCheckDialog(
                 }
             }
         )
-        is UpdateCheckUiState.Error -> AlertDialog(
+        is UpdateCheckUiState.Error -> AppAlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_check_failed)) },
             text = { Text(state.message) },

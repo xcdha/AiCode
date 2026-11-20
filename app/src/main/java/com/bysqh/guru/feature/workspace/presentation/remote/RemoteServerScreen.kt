@@ -73,6 +73,7 @@ import compose.icons.feathericons.UploadCloud
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -328,7 +329,7 @@ fun RemoteServerScreen(
     }
 
     pendingDeleteConnection?.let { conn ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDeleteConnection = null },
             title = { Text(stringResource(R.string.common_delete)) },
             text = { Text(stringResource(R.string.remote_delete_connection_confirm, conn.name)) },
@@ -345,7 +346,7 @@ fun RemoteServerScreen(
     }
 
     pendingDeleteMount?.let { mount ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDeleteMount = null },
             title = { Text(stringResource(R.string.common_delete)) },
             text = {
@@ -393,7 +394,7 @@ fun RemoteServerScreen(
 
     if (showAddMountDialog) {
         if (uiState.connections.isEmpty()) {
-            AlertDialog(
+            AppAlertDialog(
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp,
                 onDismissRequest = { showAddMountDialog = false },

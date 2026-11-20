@@ -96,6 +96,7 @@ import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlin.math.abs
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 待确认的离开动作：确认保存后执行。
@@ -443,7 +444,7 @@ fun CodeEditorScreen(
     }
 
     if (showUnsavedDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = {
                 // 取消：丢掉待执行的离开动作，留在当前文件。
                 showUnsavedDialog = false
@@ -470,7 +471,7 @@ fun CodeEditorScreen(
     }
 
     saveConflictDiskContent?.let { diskContent ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { saveConflictDiskContent = null },
             title = { Text(stringResource(R.string.editor_save_conflict_title)) },
             text = {

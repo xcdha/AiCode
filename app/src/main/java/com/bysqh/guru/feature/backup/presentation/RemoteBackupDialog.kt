@@ -29,6 +29,7 @@ import com.bysqh.guru.feature.backup.domain.remote.RemoteBackup
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 云端备份列表弹窗：展示远端备份（名称/大小/时间），支持恢复与二次确认删除。 */
 @Composable
@@ -41,7 +42,7 @@ fun RemoteBackupDialog(
 ) {
     var pendingDelete by remember { mutableStateOf<RemoteBackup?>(null) }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("${stringResource(R.string.backup_net_remote_list_title)} · $targetName") },
         text = {
@@ -96,7 +97,7 @@ fun RemoteBackupDialog(
     )
 
     pendingDelete?.let { target ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(stringResource(R.string.backup_net_remote_delete)) },
             text = { Text(stringResource(R.string.backup_net_remote_delete_confirm, target.name)) },

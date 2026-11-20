@@ -172,6 +172,7 @@ import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1120,7 +1121,7 @@ fun ProviderEditorScreen(
     }
 
     if (showBatchDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showBatchDeleteConfirm = false },
             title = { Text(stringResource(R.string.provider_models_batch_delete_title)) },
             text = {
@@ -1842,7 +1843,7 @@ private fun FetchModelsDialog(
     }
 
     if (showAddAllConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showAddAllConfirm = false },
             title = { Text(stringResource(R.string.provider_add_all_models_title)) },
             text = {

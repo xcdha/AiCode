@@ -89,6 +89,7 @@ import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.X
 import compose.icons.feathericons.Zap
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -324,7 +325,7 @@ fun GitScreen(
     }
 
     if (showPullConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showPullConfirm = false },
             title = { Text(stringResource(R.string.git_pull)) },
             text = { Text(stringResource(R.string.git_pull_dirty_confirm)) },
@@ -343,7 +344,7 @@ fun GitScreen(
     }
 
     if (showMasterRenameConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showMasterRenameConfirm = false },
             title = { Text(stringResource(R.string.git_push_master_confirm_title)) },
             text = { Text(stringResource(R.string.git_push_master_confirm_desc)) },
@@ -668,7 +669,7 @@ private fun CloneRepoDialog(
 ) {
     var url by remember { mutableStateOf("") }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -727,7 +728,7 @@ private fun CommitDialog(
         listOf("feat", "fix", "refactor", "chore", "docs", "style", "perf", "test")
     }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(

@@ -44,6 +44,7 @@ import com.bysqh.guru.feature.settings.presentation.MemoryViewModel
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.FileText
 import compose.icons.feathericons.Plus
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 编辑目标：null 表示新建，非 null 为编辑既有记忆。 */
 private data class MemoryEditorTarget(
@@ -141,7 +142,7 @@ internal fun MemorySection(viewModel: MemoryViewModel) {
     }
 
     deleteTarget?.let { memory ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deleteTarget = null },
             title = { Text(stringResource(R.string.memory_delete_confirm_title)) },
             text = { Text(stringResource(R.string.memory_delete_confirm_message, memory.name)) },
@@ -224,7 +225,7 @@ private fun MemoryEditorDialog(
         mutableStateOf(editing?.scope ?: target.scope)
     }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(

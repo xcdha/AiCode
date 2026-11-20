@@ -48,6 +48,7 @@ import java.io.ByteArrayOutputStream
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 头像裁剪：拖动 + 双指缩放，方框内的内容就是最终头像。
@@ -69,7 +70,7 @@ internal fun AvatarCropDialog(
     var boxSizePx by remember { mutableStateOf(0) }
 
     if (bitmap == null) {
-        androidx.compose.material3.AlertDialog(
+        AppAlertDialog(
             onDismissRequest = onCancel,
             title = { Text(stringResource(R.string.crop_decode_failed_title)) },
             text = { Text(stringResource(R.string.crop_decode_failed_message)) },

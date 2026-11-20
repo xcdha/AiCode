@@ -1,7 +1,10 @@
 package com.bysqh.guru.core.theme
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import top.yukonga.miuix.kmp.theme.Colors
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -71,8 +74,12 @@ private fun ColorScheme.toMiuixColors(dark: Boolean): Colors {
 }
 
 /**
- * [二开] Miuix 界面的主题外壳：只在「界面样式 = Miuix」时挂上 [MiuixTheme]，
- * 标准样式直接透传，Miuix 的组件仍能拿到我们算好的配色。
+ * [二开] Miuix 界面的主题外壳。
+ *
+ * 两套样式都挂 [MiuixTheme]，结构保持完全一致：切「界面样式」时不能重建子树，
+ * 否则主题下面 remember 的导航控制器会丢，表现就是一切样式就跳回对话首页。
+ * 标准样式把 Compose 默认的点击反馈与拉伸效果换回去；
+ * Miuix 自己的本地变量（LocalColors / LocalTextStyles）不影响 Material 组件。
  */
 @Composable
 fun MiuixStyleScope(
@@ -81,10 +88,14 @@ fun MiuixStyleScope(
     scheme: ColorScheme,
     content: @Composable () -> Unit
 ) {
-    if (!enabled) {
-        content()
-        return
-    }
     val colors = remember(dark, scheme) { scheme.toMiuixColors(dark) }
-    MiuixTheme(colors = colors, content = content)
+    val outerIndication = LocalIndication.current
+    val outerOverscroll = LocalOverscrollFactory.current
+    MiuixTheme(colors = colors) {
+        CompositionLocalProvider(
+            LocalIndication provides if (enabled) LocalIndication.current else outerIndication,
+            LocalOverscrollFactory provides if (enabled) LocalOverscrollFactory.current else outerOverscroll,
+            content = content
+        )
+    }
 }

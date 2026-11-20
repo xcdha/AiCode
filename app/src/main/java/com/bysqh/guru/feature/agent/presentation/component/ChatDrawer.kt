@@ -162,6 +162,7 @@ import compose.icons.feathericons.Upload
 import compose.icons.feathericons.UploadCloud
 import com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper
 import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 private fun DrawerProgressIndicator(
@@ -533,7 +534,7 @@ fun ChatDrawerContent(
     }
 
     pasteConflict?.let { (_, targetPath) ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = onCancelPasteOverwrite,
             title = { Text(stringResource(R.string.file_browser_paste_conflict_title)) },
             text = {
@@ -554,7 +555,7 @@ fun ChatDrawerContent(
     }
 
     pendingDelete?.let { session ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(stringResource(R.string.chat_delete_session)) },
             text = { Text(stringResource(R.string.chat_delete_session_confirm, session.title)) },
@@ -603,7 +604,7 @@ fun ChatDrawerContent(
     }
 
     if (showBatchDeleteConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showBatchDeleteConfirm = false },
             title = { Text(stringResource(R.string.chat_batch_delete_title)) },
             text = {
@@ -636,7 +637,7 @@ fun ChatDrawerContent(
 
     pendingRename?.let { session ->
         var renameText by remember(session.id) { mutableStateOf(session.title) }
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingRename = null },
             title = { Text(stringResource(R.string.chat_rename_session)) },
             text = {
@@ -1448,7 +1449,7 @@ private fun FileBrowserTab(
     }
 
     pendingDelete?.let { node ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(stringResource(R.string.common_delete)) },
             text = {
@@ -1492,7 +1493,7 @@ private fun FileNameInputDialog(
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initialName) }
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

@@ -70,6 +70,7 @@ import compose.icons.feathericons.Github
 import compose.icons.feathericons.Key
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.User
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 凭据与署名独立页：底部悬浮 tab 切换「署名」与「凭据」两个标签页。
@@ -278,7 +279,7 @@ fun CredentialScreen(
 
     // 远程模式下首次进入该服务器：询问是否需要 guru 自动注入凭证
     if (state.showAutoInjectPrompt) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { viewModel.dismissAutoInjectPrompt(false) },
             title = { Text(stringResource(R.string.credential_auto_inject_prompt_title)) },
             text = { Text(stringResource(R.string.credential_auto_inject_prompt_body)) },

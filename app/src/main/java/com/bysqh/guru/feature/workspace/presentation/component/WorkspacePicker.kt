@@ -62,6 +62,7 @@ import compose.icons.feathericons.Trash2
 import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -251,7 +252,7 @@ private fun WorkspaceSelectionHost(
     }
 
     if (showExternalWarning) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showExternalWarning = false },
             title = { Text(stringResource(R.string.workspace_external_warning_title)) },
             text = {
@@ -289,7 +290,7 @@ private fun WorkspaceSelectionHost(
     }
 
     pendingWorkspaceSelect?.let { ws ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingWorkspaceSelect = null },
             title = { Text(stringResource(R.string.workspace_switch)) },
             text = { Text(stringResource(R.string.workspace_switch_confirm)) },
@@ -403,7 +404,7 @@ private fun WorkspaceSheet(
     }
 
     pendingDelete?.let { ws ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(stringResource(R.string.workspace_delete)) },
             text = {
@@ -527,7 +528,7 @@ private fun CreateWorkspaceDialog(
     val duplicate = existingNames.any { it.equals(trimmed, ignoreCase = true) }
     val canConfirm = trimmed.isNotEmpty() && !duplicate
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {

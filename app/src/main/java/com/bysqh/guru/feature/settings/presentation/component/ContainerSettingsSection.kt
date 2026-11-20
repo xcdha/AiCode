@@ -110,6 +110,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 容器镜像二级页：所有容器（含内置 Alpine）统一管理——列表单选切换、编辑、重置、左滑删除；
@@ -289,7 +290,7 @@ internal fun ContainerSection(
     }
 
     deletingProfile?.let { deleting ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deletingProfile = null },
             title = { Text(stringResource(R.string.container_delete_config)) },
             text = { Text(stringResource(R.string.container_delete_confirm, deleting.name, deleteHint(context, deleting))) },
@@ -305,7 +306,7 @@ internal fun ContainerSection(
     }
 
     pendingSwitch?.let { target ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingSwitch = null },
             title = { Text(stringResource(R.string.container_switch_image)) },
             text = { Text(stringResource(R.string.container_switch_confirm, target.name)) },
@@ -321,7 +322,7 @@ internal fun ContainerSection(
     }
 
     pendingReset?.let { target ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingReset = null },
             title = { Text(stringResource(R.string.container_reset_title)) },
             text = { Text(stringResource(R.string.container_reset_confirm, target.name)) },
@@ -338,7 +339,7 @@ internal fun ContainerSection(
 
     // 大容器删一遍要几十秒：删完前用不可取消的进度框占住界面，避免用户以为卡住或重复点。
     resetState?.let { state ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = {},
             title = { Text(stringResource(R.string.container_resetting_title)) },
             text = {

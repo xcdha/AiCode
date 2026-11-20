@@ -40,6 +40,7 @@ import com.bysqh.guru.feature.plugin.domain.PluginErrorCode
 import com.bysqh.guru.feature.settings.presentation.component.SettingsGroup
 import com.bysqh.guru.feature.settings.presentation.component.SettingsGroupHeader
 import java.net.URI
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 单次最多逐条列出的导入问题数，其余折叠成「还有 N 个问题」。 */
 private const val MAX_LISTED_ERRORS = 5
@@ -71,7 +72,7 @@ internal fun PluginImportHost(viewModel: PluginsViewModel) {
 
 @Composable
 private fun ProgressDialog(@StringRes titleRes: Int) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = {},
         title = { Text(stringResource(titleRes)) },
         text = { CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp) },
@@ -81,7 +82,7 @@ private fun ProgressDialog(@StringRes titleRes: Int) {
 
 @Composable
 private fun ImportFailedDialog(errors: List<PluginError>, onDismiss: () -> Unit) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.plugins_import_failed_title)) },
         text = {

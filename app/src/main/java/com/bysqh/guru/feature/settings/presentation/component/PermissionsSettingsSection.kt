@@ -48,6 +48,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Shield
 import compose.icons.feathericons.XCircle
 import kotlinx.coroutines.delay
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 「工具授权」二级页：与设置页其它二级页一致的 iOS 分组列表。
@@ -174,7 +175,7 @@ private fun SafetyConfirmDialog(
             secondsLeft--
         }
     }
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.perm_safety_confirm_title)) },
         text = { Text(stringResource(R.string.perm_safety_confirm_message)) },

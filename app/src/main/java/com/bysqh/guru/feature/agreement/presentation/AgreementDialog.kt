@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.semanticColors
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 fun AgreementDialog(onAccept: () -> Unit, onDecline: () -> Unit) {
@@ -46,7 +47,7 @@ fun AgreementDialog(onAccept: () -> Unit, onDecline: () -> Unit) {
         }
         append(stringResource(R.string.agreement_notice_suffix))
     }
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = {},
         title = { Text(stringResource(R.string.agreement_title)) },
         text = {

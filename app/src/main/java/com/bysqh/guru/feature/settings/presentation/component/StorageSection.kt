@@ -57,6 +57,7 @@ import com.bysqh.guru.feature.settings.domain.model.StorageEntry
 import com.bysqh.guru.feature.settings.domain.model.formatStorageSize
 import com.bysqh.guru.feature.settings.presentation.StorageUiState
 import com.bysqh.guru.feature.settings.presentation.StorageViewModel
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 分类色点缩进宽度：色点 10dp + 与标题的间距，明细行据此与标题左对齐。 */
 private val DetailIndent = 10.dp + Spacing.md
@@ -171,7 +172,7 @@ internal fun StorageSection(
     }
 
     pendingCleanup?.let { kinds ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingCleanup = null },
             title = { Text(stringResource(R.string.storage_clean_confirm_title)) },
             text = {

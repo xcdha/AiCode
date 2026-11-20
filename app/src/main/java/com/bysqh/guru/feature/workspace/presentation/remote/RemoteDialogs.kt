@@ -73,6 +73,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.Folder
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 弹窗内统一输入框：使用全局 AppTextField 组件。 */
 @Composable
@@ -406,7 +407,7 @@ fun AddRemoteConnectionDialog(
 
             // 主机密钥确认：独立弹窗，覆盖在编辑弹窗之上（首次连接/指纹变化时由测试连通性触发）
             pendingHostKey?.let { pending ->
-                AlertDialog(
+                AppAlertDialog(
                     onDismissRequest = onRejectHostKey,
                     containerColor = MaterialTheme.colorScheme.surface,
                     title = {
@@ -665,7 +666,7 @@ fun RemoteDirectoryBrowserDialog(
         }
     }
 
-    AlertDialog(
+    AppAlertDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         tonalElevation = 0.dp,
         onDismissRequest = onDismiss,

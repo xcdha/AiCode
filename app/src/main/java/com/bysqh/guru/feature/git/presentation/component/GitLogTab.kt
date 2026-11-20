@@ -86,6 +86,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.core.ui.dialogTextFieldColors
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 internal fun LogTab(
@@ -711,7 +712,7 @@ private fun CommitDetailSheet(
     var resetMode by remember { mutableStateOf("mixed") }
 
     if (showCreateBranchDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showCreateBranchDialog = false },
             title = { Text(stringResource(R.string.git_create_branch_from_commit)) },
             text = {
@@ -747,7 +748,7 @@ private fun CommitDetailSheet(
     }
 
     if (showCreateTagDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showCreateTagDialog = false },
             title = { Text(stringResource(R.string.git_create_tag_at_commit)) },
             text = {
@@ -782,7 +783,7 @@ private fun CommitDetailSheet(
     }
 
     if (showResetDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text(stringResource(R.string.git_reset_to_commit)) },
             text = {

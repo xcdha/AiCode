@@ -158,6 +158,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -1450,7 +1451,7 @@ fun AppNavigation(
     }
 
     pendingPluginAction?.let { (entry, actionContext) ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingPluginAction = null },
             title = { Text(stringResource(R.string.plugins_action_confirm_title)) },
             text = {

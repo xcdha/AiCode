@@ -72,6 +72,7 @@ import compose.icons.feathericons.HardDrive
 import compose.icons.feathericons.Trash2
 import java.io.File
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 字节数转可读体积；容器镜像下载与更新包下载共用（同包内 internal，避免各写一份）。 */
 internal fun formatBytes(bytes: Long): String = when {
@@ -241,7 +242,7 @@ internal fun ContainerImageDownloadSection(
     }
 
     deleteEntry?.let { entry ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { deleteEntry = null },
             title = { Text(stringResource(R.string.container_download_delete_title)) },
             text = { Text(stringResource(R.string.container_download_delete_confirm, entry.displayLabel(imageVersions[entry.id]))) },

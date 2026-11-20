@@ -21,6 +21,7 @@ import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.core.ui.dialogTextFieldColors
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 粘贴标准 mcpServers JSON 批量导入 MCP 服务器的对话框。 */
 @Composable
@@ -32,7 +33,7 @@ internal fun McpJsonImportDialog(
 ) {
     var text by remember { mutableStateOf("") }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(text = stringResource(R.string.mcp_json_import_title))

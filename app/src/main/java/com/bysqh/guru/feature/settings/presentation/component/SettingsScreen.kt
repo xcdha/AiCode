@@ -156,6 +156,7 @@ import com.bysqh.guru.feature.plugin.presentation.displayName
 import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.delay
 import com.bysqh.guru.core.util.FileLogger
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** 使用手册在线文档站地址。 */
 private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
@@ -1269,7 +1270,7 @@ fun SettingsScreen(
                         onToggleEnabled = promptsViewModel::setFragmentEnabled
                     )
                     if (showResetPrompts) {
-                        AlertDialog(
+                        AppAlertDialog(
                             onDismissRequest = { showResetPrompts = false },
                             title = { Text(stringResource(R.string.prompts_reset_custom)) },
                             text = { Text(stringResource(R.string.prompts_reset_confirm)) },
@@ -1733,7 +1734,7 @@ fun SettingsScreen(
     }
 
     if (showResetTokenStats) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showResetTokenStats = false },
             title = { Text(stringResource(R.string.settings_token_stats_reset_title)) },
             text = { Text(stringResource(R.string.settings_token_stats_reset_confirm)) },
@@ -1756,7 +1757,7 @@ fun SettingsScreen(
         LaunchedEffect(deleteStarted, deleting) {
             if (deleteStarted && !deleting) skillToDelete = null
         }
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { if (!deleting) skillToDelete = null },
             title = { Text(stringResource(R.string.skills_delete_confirm_title)) },
             text = { Text(stringResource(R.string.skills_delete_confirm_message, target.name)) },
@@ -1789,7 +1790,7 @@ fun SettingsScreen(
 
     if (showPluginUninstallConfirm) {
         selectedPlugin?.let { plugin ->
-            AlertDialog(
+            AppAlertDialog(
                 onDismissRequest = { showPluginUninstallConfirm = false },
                 title = { Text(stringResource(R.string.plugins_uninstall_confirm_title)) },
                 text = {
@@ -1834,7 +1835,7 @@ fun SettingsScreen(
         LaunchedEffect(deleteStarted, deleting) {
             if (deleteStarted && !deleting) subAgentToDelete = null
         }
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { if (!deleting) subAgentToDelete = null },
             title = { Text(stringResource(R.string.subagents_delete_confirm_title)) },
             text = { Text(stringResource(R.string.subagents_delete_confirm_message, target.name)) },
@@ -2299,7 +2300,7 @@ private fun PluginSettingsRows(
 private fun SkillImportResultDialog(state: SkillImportState, onDismiss: () -> Unit) {
     when (state) {
         SkillImportState.Idle -> Unit
-        SkillImportState.Running -> AlertDialog(
+        SkillImportState.Running -> AppAlertDialog(
             onDismissRequest = {},
             title = { Text(stringResource(R.string.skills_import_running)) },
             text = {
@@ -2311,7 +2312,7 @@ private fun SkillImportResultDialog(state: SkillImportState, onDismiss: () -> Un
         )
         is SkillImportState.Done -> {
             val report = state.report
-            AlertDialog(
+            AppAlertDialog(
                 onDismissRequest = onDismiss,
                 title = { Text(stringResource(R.string.skills_import_result_title)) },
                 text = {

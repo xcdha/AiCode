@@ -87,6 +87,7 @@ import compose.icons.feathericons.UploadCloud
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 备份与还原整页：底部悬浮 tab 分「本地备份 / 网络备份」两页。
@@ -317,7 +318,7 @@ internal fun BackupScreen(
 
     // 目标删除确认
     targetToDelete?.let { target ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { targetToDelete = null },
             title = { Text(stringResource(R.string.common_delete)) },
             text = { Text(stringResource(R.string.backup_net_delete_target_confirm, target.name)) },
@@ -803,7 +804,7 @@ private fun WorkspaceRestoreDialog(
     val anyChecked = checked.values.any { it }
     val allChecked = workspaces.isNotEmpty() && checked.values.all { it }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.backup_restore_workspaces_title)) },
         text = {
@@ -878,7 +879,7 @@ private fun PasswordDialog(
     onDismiss: () -> Unit,
     confirmEnabled: Boolean = true
 ) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -909,7 +910,7 @@ private fun PasswordDialog(
 
 @Composable
 private fun ProgressDialog() {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = {},
         title = { Text(stringResource(R.string.backup_processing)) },
         text = {
@@ -927,7 +928,7 @@ private fun ProgressDialog() {
 
 @Composable
 private fun NetworkProgressDialog(messageRes: Int) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = {},
         title = { Text(stringResource(R.string.backup_processing)) },
         text = {
@@ -952,7 +953,7 @@ private fun targetSubtitle(target: BackupTarget): String = when (target.type) {
 
 @Composable
 private fun ResultDialog(title: String, message: String, onDismiss: () -> Unit) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(message) },

@@ -49,6 +49,7 @@ import compose.icons.feathericons.Shield
 import compose.icons.feathericons.Sun
 import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Zap
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 「软件权限」二级页：集中展示并管理系统级权限。
@@ -390,7 +391,7 @@ private fun PermissionDeniedDialog(
     onGoToSettings: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(message) },

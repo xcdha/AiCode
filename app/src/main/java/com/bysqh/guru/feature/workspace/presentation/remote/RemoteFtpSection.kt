@@ -50,6 +50,7 @@ import compose.icons.feathericons.Copy
 import compose.icons.feathericons.Info
 import compose.icons.feathericons.Share2
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 fun WiFiFtpServerSection(
@@ -279,7 +280,7 @@ fun WiFiFtpServerSection(
     }
 
     if (showAnonymousConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showAnonymousConfirm = false },
             title = { Text(stringResource(R.string.ftp_anonymous_confirm_title)) },
             text = { Text(stringResource(R.string.ftp_anonymous_confirm_message)) },

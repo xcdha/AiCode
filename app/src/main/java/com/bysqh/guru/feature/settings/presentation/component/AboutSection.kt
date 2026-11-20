@@ -61,6 +61,7 @@ import compose.icons.feathericons.Github
 import compose.icons.feathericons.Globe
 import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Tag
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 关于页：顶部应用信息、版本号（点击手动检查更新）、自动检查更新开关、更新通道、
@@ -384,7 +385,7 @@ private fun MirrorSourceDialog(
     val valid = isValidDownloadMirror(text)
     val trimmed = text.trim()
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.about_update_mirror)) },
         text = {

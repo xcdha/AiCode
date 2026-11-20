@@ -28,6 +28,7 @@ import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 拉取/推送缺 https 凭据时的登录弹窗。host 只读预填，用户填 username/token；填完确认回调回填，
@@ -52,7 +53,7 @@ fun CredentialPromptDialog(
     var tokenVisible by remember(host) { mutableStateOf(false) }
     val canSave = username.trim().isNotBlank() && token.isNotBlank()
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.credential_prompt_title, host)) },
         text = {

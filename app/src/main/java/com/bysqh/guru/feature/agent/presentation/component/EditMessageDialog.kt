@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.Spacing
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 internal fun EditMessageDialog(
@@ -30,7 +31,7 @@ internal fun EditMessageDialog(
 ) {
     var text by remember { mutableStateOf(initialText) }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(text = stringResource(R.string.chat_edit_dialog_title))

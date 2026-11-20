@@ -82,6 +82,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Trash2
 import compose.icons.feathericons.UploadCloud
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @Composable
 internal fun StatusTab(
@@ -476,7 +477,7 @@ internal fun StatusTab(
     }
 
     if (showAbortMergeConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showAbortMergeConfirm = false },
             title = { Text(stringResource(R.string.git_action_abort_merge)) },
             text = { Text(stringResource(R.string.git_abort_merge_confirm)) },
@@ -493,7 +494,7 @@ internal fun StatusTab(
     }
 
     pendingDropStash?.let { index ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDropStash = null },
             title = { Text(stringResource(R.string.git_stash_drop)) },
             text = { Text(stringResource(R.string.git_stash_drop_confirm, index)) },
@@ -510,7 +511,7 @@ internal fun StatusTab(
     }
 
     if (showClearStashConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showClearStashConfirm = false },
             title = { Text(stringResource(R.string.git_stash_clear)) },
             text = { Text(stringResource(R.string.git_stash_clear_confirm)) },
@@ -532,7 +533,7 @@ internal fun StatusTab(
 
     pendingRevert?.let { target ->
         val titleRes = if (target.deleted) R.string.git_action_restore_file else R.string.git_action_revert
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingRevert = null },
             title = { Text(stringResource(titleRes)) },
             text = {
@@ -563,7 +564,7 @@ internal fun StatusTab(
     }
 
     pendingDelete?.let { path ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = {
                 Text(
@@ -586,7 +587,7 @@ internal fun StatusTab(
     }
 
     if (showRevertAllConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showRevertAllConfirm = false },
             title = { Text(stringResource(R.string.git_action_revert_all)) },
             text = { Text(stringResource(R.string.git_revert_all_confirm, status?.unstaged?.size ?: 0)) },
@@ -605,7 +606,7 @@ internal fun StatusTab(
     }
 
     if (showUnstageAllConfirm) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showUnstageAllConfirm = false },
             title = { Text(stringResource(R.string.git_action_unstage_all)) },
             text = { Text(stringResource(R.string.git_unstage_all_confirm)) },

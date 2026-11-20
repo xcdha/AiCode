@@ -64,6 +64,7 @@ import compose.icons.feathericons.FileText
 import compose.icons.feathericons.Key
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Shield
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /** SSH 密钥设置独立页面：底部双 tab——「密钥」管理登录私钥库，「指纹」展示已保存的主机指纹。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -255,7 +256,7 @@ fun HostKeysScreen(
         val host = address.substring(0, separator.coerceAtLeast(0))
         val port = address.substring(separator + 1).toIntOrNull()
         if (port != null) {
-            AlertDialog(
+            AppAlertDialog(
                 onDismissRequest = { detailHostAddress = null },
                 containerColor = MaterialTheme.colorScheme.surface,
                 title = { Text(address) },

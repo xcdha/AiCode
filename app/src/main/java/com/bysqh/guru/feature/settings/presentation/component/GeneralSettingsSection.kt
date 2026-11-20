@@ -38,6 +38,7 @@ import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.feature.settings.data.repository.StartupSessionMode
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 /**
  * 偏好设置：集中放置不属于单个提供商配置、也不针对某个专用模型的全局偏好。
@@ -399,7 +400,7 @@ private fun NumberInputDialog(
     // 留空按 [minValue] 的语义处理：允许 0 的场景（超时/重试）视为不限制，否则视为未填。
     val isValid = if (text.isBlank()) minValue <= 0 else parsed != null && parsed in minValue..maxValue
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         title = { Text(title) },

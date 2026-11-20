@@ -240,7 +240,7 @@ fun BatchDeleteConfirmDialog(
     inProgress: Boolean = false,
     progressText: String? = null
 ) {
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = { if (!inProgress) onDismiss() },
         title = { Text(title) },
         text = {

@@ -76,6 +76,7 @@ import compose.icons.feathericons.GitMerge
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Tag
 import compose.icons.feathericons.Trash2
+import com.bysqh.guru.core.ui.AppAlertDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -141,7 +142,7 @@ internal fun BranchesTab(
 
     pendingCheckout?.let { (ref, isRemote) ->
         val isTag = tags.any { it.name == ref }
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingCheckout = null },
             title = { Text(stringResource(R.string.git_switch_branch)) },
             text = {
@@ -245,7 +246,7 @@ internal fun BranchesTab(
     }
 
     pendingDelete?.let { (name, isRemote) ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(if (isRemote) stringResource(R.string.git_delete_remote_branch) else stringResource(R.string.git_delete_branch)) },
             text = {
@@ -268,7 +269,7 @@ internal fun BranchesTab(
 
     pendingRename?.let { oldName ->
         var newName by remember(oldName) { mutableStateOf(oldName) }
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingRename = null },
             title = { Text(stringResource(R.string.git_rename_branch)) },
             text = {
@@ -357,7 +358,7 @@ internal fun BranchesTab(
     }
 
     pendingDeleteTag?.let { name ->
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingDeleteTag = null },
             title = { Text(stringResource(R.string.git_delete_tag)) },
             text = { Text(stringResource(R.string.git_delete_tag_confirm, name)) },
@@ -375,7 +376,7 @@ internal fun BranchesTab(
 
     pendingMerge?.let { targetBranch ->
         val currentBranch = branches.firstOrNull { it.current }?.name ?: "HEAD"
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { pendingMerge = null },
             title = { Text(stringResource(R.string.git_action_merge)) },
             text = {
