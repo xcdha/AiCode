@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -103,12 +104,23 @@ internal fun settingsPageBackground(): Color =
 /** 分组小标题：卡片上方灰色小字，左对齐。 */
 @Composable
 internal fun SettingsGroupHeader(text: String) {
+    val miuix = LocalUiStyle.current == UiStyle.MIUIX
+    val modifier = Modifier.padding(start = Spacing.md, top = Spacing.lg, bottom = Spacing.sm)
+    if (miuix) {
+        top.yukonga.miuix.kmp.basic.Text(
+            text = text,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = modifier
+        )
+        return
+    }
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
         fontWeight = FontWeight.Normal,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = Spacing.md, top = Spacing.lg, bottom = Spacing.sm)
+        modifier = modifier
     )
 }
 
@@ -118,11 +130,24 @@ internal fun SettingsGroup(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    // [二开] Miuix：卡片圆角更大（22dp），标准样式保持 14dp
     val miuix = LocalUiStyle.current == UiStyle.MIUIX
+    if (miuix) {
+        // [二开] Miuix 界面样式走组件库自己的 Card（squircle 圆角 + 自己的容器色）
+        top.yukonga.miuix.kmp.basic.Card(
+            modifier = modifier.fillMaxWidth(),
+            cornerRadius = 22.dp,
+            insideMargin = PaddingValues(0.dp),
+            colors = top.yukonga.miuix.kmp.basic.CardDefaults.defaultColors(
+                color = MaterialTheme.semanticColors.cardSurface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            content = content
+        )
+        return
+    }
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(if (miuix) 22.dp else 14.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.semanticColors.cardSurface,
         shadowElevation = 0.dp
     ) {
@@ -228,6 +253,14 @@ internal fun SettingsRow(
 /** 分组内行间分隔线：左右两端均缩进对齐行内容，末行不显示。 */
 @Composable
 internal fun SettingsDivider() {
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        top.yukonga.miuix.kmp.basic.HorizontalDivider(
+            modifier = Modifier.padding(horizontal = Spacing.lg),
+            thickness = 0.5.dp,
+            color = MaterialTheme.semanticColors.subtleBorder
+        )
+        return
+    }
     HorizontalDivider(
         modifier = Modifier.padding(horizontal = Spacing.lg),
         thickness = 0.5.dp,

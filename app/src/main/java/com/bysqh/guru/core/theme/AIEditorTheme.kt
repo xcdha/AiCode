@@ -437,9 +437,17 @@ fun AIEditorTheme(
                 } else {
                     AppTypography
                 },
-                shapes = shapes,
-                content = content
-            )
+                shapes = shapes
+            ) {
+                // [二开] Miuix 界面样式：在 Material3 外层再挂 MiuixTheme，
+                // 让 miuix 组件拿到同一套配色（强调色 / 配色方案 / Monet 继续生效）。
+                MiuixStyleScope(
+                    enabled = appearance.uiStyle == UiStyle.MIUIX,
+                    dark = darkTheme,
+                    scheme = layeredScheme,
+                    content = content
+                )
+            }
         }
     }
 }

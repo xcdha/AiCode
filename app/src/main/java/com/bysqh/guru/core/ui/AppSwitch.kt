@@ -27,6 +27,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.bysqh.guru.core.theme.LocalUiStyle
+import com.bysqh.guru.core.theme.UiStyle
 
 /**
  * 全局统一的精致紧凑型开关组件：
@@ -42,6 +44,16 @@ fun AppSwitch(
     enabled: Boolean = true,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
 ) {
+    // [二开] Miuix 界面样式直接用组件库的 Switch（自带拖拽与按压反馈）。
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        top.yukonga.miuix.kmp.basic.Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = modifier,
+            enabled = enabled
+        )
+        return
+    }
     val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
 
     // 轨道颜色

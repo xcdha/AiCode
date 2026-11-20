@@ -30,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.bysqh.guru.core.theme.LocalUiStyle
+import com.bysqh.guru.core.theme.UiStyle
 import com.bysqh.guru.core.theme.semanticColors
 
 /**
@@ -49,6 +51,18 @@ fun SegmentedTabs(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
+    // [二开] Miuix 界面样式用组件库的 TabRow（自带滑块动画与触摸反馈）。
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        top.yukonga.miuix.kmp.basic.TabRow(
+            tabs = labels,
+            selectedTabIndex = selected,
+            onTabSelected = { if (enabled) onSelect(it) },
+            modifier = modifier,
+            height = 42.dp,
+            cornerRadius = 12.dp
+        )
+        return
+    }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val trackColor = MaterialTheme.semanticColors.mutedSurface
     val thumbColor = if (dark) MaterialTheme.semanticColors.capsuleSurface else MaterialTheme.semanticColors.cardSurface

@@ -287,6 +287,10 @@ dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.01.00")
     implementation(composeBom)
     implementation("androidx.compose.material3:material3")
+    // [二开] Miuix 组件库与导航库：供「界面样式 = Miuix」使用。
+    // 只引 ui / nav；miuix-blur 要求 minSdk 33，不引。
+    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.4")
+    implementation("top.yukonga.miuix.kmp:miuix-nav-android:0.9.4")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
