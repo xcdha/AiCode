@@ -95,6 +95,8 @@ class PluginWebBridge(
     @Volatile private var theme: () -> String,
     @Volatile private var onClosePage: () -> Unit,
     @Volatile private var post: (String) -> Unit,
+    /** 插件页自报的背景色（CSS 颜色串），用于宿主给状态栏区域上同色底。 */
+    @Volatile private var onPageBackground: (String) -> Unit = {},
     /** 页面绑定的入口上下文；缓存复用时由页面宿主刷新。 */
     @Volatile private var pageContext: () -> PluginEntryContext = { PluginEntryContext() },
     @Volatile private var lastPageContext: PluginEntryContext? = null
@@ -320,11 +322,13 @@ class PluginWebBridge(
         theme: () -> String,
         onClosePage: () -> Unit,
         post: (String) -> Unit,
-        pageContext: () -> PluginEntryContext = { PluginEntryContext() }
+        pageContext: () -> PluginEntryContext = { PluginEntryContext() },
+        onPageBackground: (String) -> Unit = {}
     ) {
         this.theme = theme
         this.onClosePage = onClosePage
         this.post = post
+        this.onPageBackground = onPageBackground
         this.pageContext = pageContext
         val next = pageContext()
         if (lastPageContext != null && lastPageContext != next) postLifecycle("contextChanged")
@@ -491,6 +495,11 @@ class PluginWebBridge(
             PluginHostPaths.requireString(params, "url")
         )
         "app.info" -> systemService.appInfo(page.pluginId)
+        // 插件页自报背景色（宿主内部使用，不属于插件可调的公开接口）。
+        "ui.pageBackground" -> {
+            (params["color"] as? JsonPrimitive)?.contentOrNull?.let(onPageBackground)
+            JsonNull
+        }
         "log.write" -> systemService.log(
             page.pluginId,
             PluginHostPaths.requireString(params, "level"),

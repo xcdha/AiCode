@@ -56,7 +56,29 @@
     document.addEventListener('DOMContentLoaded', fitAll);
   })();
 
+  // 把页面实际背景色报给宿主：状态栏那条区域由宿主绘制，
+  // 页面即使硬编码了自己的背景色，宿主也能和它对齐，不会出现色差。
+  function reportPageBackground() {
+    try {
+      var node = document.body || document.documentElement;
+      var color = '';
+      while (node) {
+        color = getComputedStyle(node).backgroundColor;
+        if (color && color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') break;
+        node = node.parentElement;
+      }
+      if (!color || color === 'transparent' || color === 'rgba(0, 0, 0, 0)') return;
+      var result = call('ui.pageBackground', { color: color });
+      if (result && typeof result.catch === 'function') result.catch(function () {});
+    } catch (e) {
+      // 背景色只是装饰信息，取不到就算了。
+    }
+  }
+
   var pending = {};
+
+  document.addEventListener('DOMContentLoaded', reportPageBackground);
+  window.addEventListener('load', reportPageBackground);
   var nextId = 1;
 
   // 页面内返回处理器栈：后注册的优先执行，返回 true 的处理器消费本次返回。
@@ -684,6 +706,7 @@
       } catch (e) {
         // 旧 WebView 不支持 CustomEvent 时忽略。
       }
+      reportPageBackground();
     }
   };
 })();

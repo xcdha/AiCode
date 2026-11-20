@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
@@ -92,6 +93,8 @@ fun PluginWebPanelScreen(
     }
     var failed by remember(page.cacheKey) { mutableStateOf(false) }
     var viewportReady by remember(page.cacheKey) { mutableStateOf(false) }
+    // 插件页自报的背景色：状态栏那条区域由宿主绘制，颜色跟页面一致才不会出色差。
+    var pageBackground by remember(page.cacheKey) { mutableStateOf<Color?>(null) }
     // WebView 在窗口中的位置与尺寸；布局线程更新，桥线程读取，用原子引用避免跨线程直接访问 View。
     val webViewOrigin = remember(page.cacheKey) { AtomicReference(Offset.Zero) }
     val webViewSize = remember(page.cacheKey) { AtomicReference(IntSize.Zero) }
@@ -134,7 +137,11 @@ fun PluginWebPanelScreen(
             post = { script ->
                 runCatching { webView.evaluateJavascript(script, null) }
             },
-            pageContext = entryContext
+            pageContext = entryContext,
+            onPageBackground = { raw ->
+                val parsed = parsePageBackground(raw)
+                if (parsed != null) pageBackground = parsed
+            }
         )
     }
 
@@ -236,10 +243,13 @@ fun PluginWebPanelScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            // 背景先于系统栏内边距绘制，所以能盖住状态栏那条区域；
+            // 色值由页面自报，页面硬编码背景色也能对齐。
+            .background(if (applySystemBarInsets) pageBackground ?: Color.Transparent else Color.Transparent)
             .drawBehind {
                 if (fillNavigationBar) {
                     drawRect(
-                        color = colorScheme.surface,
+                        color = pageBackground ?: colorScheme.surface,
                         topLeft = Offset(0f, size.height - navigationBarHeight),
                         size = Size(size.width, navigationBarHeight.toFloat())
                     )
@@ -297,3 +307,27 @@ fun PluginWebPanelScreen(
 
 private const val BACK_DISPATCH_SCRIPT =
     "(function(){try{return window.__aicodeBack&&window.__aicodeBack()===true}catch(e){return false}})()"
+
+/**
+ * 解析插件页自报的 CSS 背景色，支持 #rrggbb / #aarrggbb / rgb() / rgba()。
+ * 全透明视为未上报，避免把状态栏区域涂成空白。
+ */
+private fun parsePageBackground(raw: String): Color? {
+    val text = raw.trim().lowercase()
+    if (text.isEmpty() || text == "transparent") return null
+    if (text.startsWith("#")) {
+        return runCatching { Color(android.graphics.Color.parseColor(text)) }
+            .getOrNull()
+            ?.takeIf { it.alpha > 0.01f }
+    }
+    if (!text.startsWith("rgb")) return null
+    val parts = text.substringAfter('(').substringBefore(')').split(',').map { it.trim() }
+    if (parts.size < 3) return null
+    return runCatching {
+        val r = parts[0].toFloat() / 255f
+        val g = parts[1].toFloat() / 255f
+        val b = parts[2].toFloat() / 255f
+        val a = if (parts.size >= 4) parts[3].toFloat() else 1f
+        Color(r, g, b, a)
+    }.getOrNull()?.takeIf { it.alpha > 0.01f }
+}
