@@ -56,8 +56,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import top.yukonga.miuix.kmp.basic.NavigationBarItem
+import com.bysqh.guru.core.theme.LocalUiStyle
 import com.bysqh.guru.core.theme.Radius
 import com.bysqh.guru.core.theme.Spacing
+import com.bysqh.guru.core.theme.UiStyle
 import com.bysqh.guru.core.theme.semanticColors
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -83,6 +86,25 @@ fun FloatingTabBar(
     modifier: Modifier = Modifier,
     isScrolling: Boolean = false
 ) {
+    // [二开] Miuix 界面样式用组件库的 NavigationBar（选中态、按压反馈、底部内边距都由它处理）。
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        val scope = rememberCoroutineScope()
+        top.yukonga.miuix.kmp.basic.NavigationBar(
+            modifier = modifier,
+            color = MaterialTheme.semanticColors.cardSurface,
+            defaultWindowInsetsPadding = false
+        ) {
+            items.forEachIndexed { index, item ->
+                NavigationBarItem(
+                    selected = pagerState.currentPage == index,
+                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                    icon = item.icon,
+                    label = item.label
+                )
+            }
+        }
+        return
+    }
     val coroutineScope = rememberCoroutineScope()
     val isLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
 
@@ -369,6 +391,24 @@ fun FloatingTabBar(
     modifier: Modifier = Modifier,
     isScrolling: Boolean = false
 ) {
+    // [二开] Miuix 界面样式用组件库的 NavigationBar。
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        top.yukonga.miuix.kmp.basic.NavigationBar(
+            modifier = modifier,
+            color = MaterialTheme.semanticColors.cardSurface,
+            defaultWindowInsetsPadding = false
+        ) {
+            items.forEachIndexed { index, item ->
+                NavigationBarItem(
+                    selected = selected == index,
+                    onClick = { onSelect(index) },
+                    icon = item.icon,
+                    label = item.label
+                )
+            }
+        }
+        return
+    }
     val contentAlpha by animateFloatAsState(
         targetValue = if (isScrolling) 0.35f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
