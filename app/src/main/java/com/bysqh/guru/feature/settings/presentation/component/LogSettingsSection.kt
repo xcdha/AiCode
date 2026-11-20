@@ -74,6 +74,7 @@ import compose.icons.feathericons.MessageSquare
 import compose.icons.feathericons.X
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 日志合并页：日志等级（点击弹底部面板）+ 日志文件切换 + 搜索/复制 + 结构化彩色日志列表。
@@ -181,7 +182,7 @@ internal fun LogSection(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    IconButton(
+                    AppIconButton(
                         onClick = onClearFilter,
                         modifier = Modifier.size(24.dp)
                     ) {

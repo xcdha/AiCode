@@ -67,6 +67,7 @@ import compose.icons.feathericons.Folder
 import compose.icons.feathericons.MoreHorizontal
 import compose.icons.feathericons.Play
 import compose.icons.feathericons.Server
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 同步设置底部弹窗（右上角齿轮打开）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,7 +171,7 @@ fun SyncSettingsSheet(
 /** 行内通用编辑箭头：与 MCP/设置列表一致的大于号，整行点击进入编辑。 */
 @Composable
 private fun EditRowButton(onEdit: () -> Unit) {
-    IconButton(onClick = onEdit) {
+    AppIconButton(onClick = onEdit) {
         Icon(
             imageVector = FeatherIcons.ChevronRight,
             contentDescription = stringResource(R.string.common_edit),
@@ -392,7 +393,7 @@ fun RemoteMountCard(
                         )
                     }
                     Box {
-                        IconButton(
+                        AppIconButton(
                             onClick = { actionsExpanded = true },
                             modifier = Modifier.size(32.dp)
                         ) {

@@ -173,6 +173,7 @@ import com.bysqh.guru.R
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -429,7 +430,7 @@ fun ProviderEditorScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = {
+                    AppIconButton(onClick = {
                         if (isSelectionMode) {
                             isSelectionMode = false
                             selectedModels.clear()
@@ -442,7 +443,7 @@ fun ProviderEditorScreen(
                 },
                 actions = {
                     if (pagerState.currentPage == 1 && models.isNotEmpty()) {
-                        IconButton(onClick = {
+                        AppIconButton(onClick = {
                             isSelectionMode = !isSelectionMode
                             if (!isSelectionMode) selectedModels.clear()
                         }) {
@@ -453,7 +454,7 @@ fun ProviderEditorScreen(
                             )
                         }
                     }
-                    IconButton(onClick = {
+                    AppIconButton(onClick = {
                         scope.launch { pagerState.animateScrollToPage(1) }
                         showAddModelSheet = true
                     }) {
@@ -664,7 +665,7 @@ fun ProviderEditorScreen(
                             trailing = {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     if (dashboardScriptPath.isNotBlank()) {
-                                        IconButton(
+                                        AppIconButton(
                                             onClick = { dashboardScriptPath = "" },
                                             modifier = Modifier.size(32.dp)
                                         ) {
@@ -676,7 +677,7 @@ fun ProviderEditorScreen(
                                             )
                                         }
                                     }
-                                    IconButton(
+                                    AppIconButton(
                                         onClick = {
                                             showScriptPickerSheet = true
                                             viewModel.loadDashboardScripts()
@@ -714,7 +715,7 @@ fun ProviderEditorScreen(
                                 )
                             }
                             Spacer(Modifier.width(Spacing.sm))
-                            IconButton(
+                            AppIconButton(
                                 onClick = {
                                     focusManager.clearFocus()
                                     viewModel.testDashboardScript(currentConfig(), dashboardScriptPath)
@@ -2029,7 +2030,7 @@ private fun ProviderProxyPage(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
@@ -2182,12 +2183,12 @@ private fun ProviderKeysPage(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
-                    IconButton(onClick = { addKey() }) {
+                    AppIconButton(onClick = { addKey() }) {
                         Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.provider_multi_key_add))
                     }
                 }
@@ -2460,7 +2461,7 @@ private fun StepperRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
+        AppIconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
             Icon(
                 imageVector = FeatherIcons.Minus,
                 contentDescription = null,
@@ -2474,7 +2475,7 @@ private fun StepperRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = Spacing.xs)
         )
-        IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
+        AppIconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
             Icon(
                 imageVector = FeatherIcons.Plus,
                 contentDescription = null,
@@ -2602,7 +2603,7 @@ private fun RawOutputBottomSheet(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                IconButton(
+                AppIconButton(
                     onClick = {
                         scope.launch {
                             clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("rawOutput", rawOutput)))
@@ -2728,7 +2729,7 @@ private fun DashboardTestResultBox(
                             )
                         }
                         if (lastRawOutput.isNotBlank()) {
-                            IconButton(
+                            AppIconButton(
                                 onClick = { showRawOutputSheet = true },
                                 modifier = Modifier.size(32.dp)
                             ) {
@@ -2740,7 +2741,7 @@ private fun DashboardTestResultBox(
                                 )
                             }
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = { isExpanded = true },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -2773,7 +2774,7 @@ private fun DashboardTestResultBox(
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (lastRawOutput.isNotBlank()) {
-                                    IconButton(
+                                    AppIconButton(
                                         onClick = { showRawOutputSheet = true },
                                         modifier = Modifier.size(32.dp)
                                     ) {
@@ -2785,7 +2786,7 @@ private fun DashboardTestResultBox(
                                         )
                                     }
                                 }
-                                IconButton(
+                                AppIconButton(
                                     onClick = { isExpanded = false },
                                     modifier = Modifier.size(32.dp)
                                 ) {
@@ -2846,7 +2847,7 @@ private fun DashboardTestResultBox(
                             }
                         }
                         if (lastRawOutput.isNotBlank()) {
-                            IconButton(
+                            AppIconButton(
                                 onClick = { showRawOutputSheet = true },
                                 modifier = Modifier.size(32.dp)
                             ) {
@@ -2927,7 +2928,7 @@ private fun ProviderHeadersSheet(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
+                AppIconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
                     Icon(
                         FeatherIcons.X,
                         contentDescription = stringResource(R.string.common_close),
@@ -2999,7 +3000,7 @@ private fun ProviderHeadersSheet(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
                                 ) {
-                                    IconButton(
+                                    AppIconButton(
                                         onClick = { headers.removeAt(index) },
                                         modifier = Modifier.size(32.dp)
                                     ) {
@@ -3106,7 +3107,7 @@ private fun ProviderScriptParamsSheet(
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
+                AppIconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
                     Icon(
                         FeatherIcons.X,
                         contentDescription = stringResource(R.string.common_close),
@@ -3178,7 +3179,7 @@ private fun ProviderScriptParamsSheet(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.End
                                 ) {
-                                    IconButton(
+                                    AppIconButton(
                                         onClick = { params.removeAt(index) },
                                         modifier = Modifier.size(32.dp)
                                     ) {

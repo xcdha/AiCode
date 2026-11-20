@@ -68,6 +68,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Copy
 import compose.icons.feathericons.Plus
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppIconButton
 
 private val ModelLogoSize = 40.dp
 private val ModelTestButtonWidth = 56.dp
@@ -422,7 +423,7 @@ internal fun ModelTestDetailBottomSheet(
                         }
                     }
                 }
-                IconButton(
+                AppIconButton(
                     onClick = {
                         scope.launch {
                             clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("debug_log", buildFullDebugLog())))
@@ -653,7 +654,7 @@ internal fun FetchModelRow(
                 ModelMetadataTags(metadata)
             }
         }
-        IconButton(onClick = onAdd, modifier = Modifier.size(32.dp)) {
+        AppIconButton(onClick = onAdd, modifier = Modifier.size(32.dp)) {
             Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.common_add), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

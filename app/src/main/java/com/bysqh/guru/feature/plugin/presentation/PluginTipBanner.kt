@@ -28,6 +28,7 @@ import com.bysqh.guru.core.theme.semanticColors
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Package
 import compose.icons.feathericons.X
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 对话内的插件提示条：显示插件来源、文本与可选动作按钮。
@@ -91,7 +92,7 @@ fun PluginTipBanner(
                     }
                 }
             }
-            IconButton(onClick = { viewModel.dismiss(tip.id) }, modifier = Modifier.size(32.dp)) {
+            AppIconButton(onClick = { viewModel.dismiss(tip.id) }, modifier = Modifier.size(32.dp)) {
                 Icon(
                     imageVector = FeatherIcons.X,
                     contentDescription = null,

@@ -57,6 +57,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 网络备份目标的新建/编辑底部弹窗：按类型（WebDAV / S3）切换字段，支持连通性测试与保存。
@@ -186,7 +187,7 @@ fun BackupTargetSheet(
                             else PasswordVisualTransformation(),
                             trailingIcon = {
                                 val image = if (passwordVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                AppIconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },
@@ -219,7 +220,7 @@ fun BackupTargetSheet(
                             else PasswordVisualTransformation(),
                             trailingIcon = {
                                 val image = if (secretVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
-                                IconButton(onClick = { secretVisible = !secretVisible }) {
+                                AppIconButton(onClick = { secretVisible = !secretVisible }) {
                                     Icon(image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             },

@@ -97,6 +97,7 @@ import io.github.rosemoe.sora.widget.component.EditorTextActionWindow
 import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlin.math.abs
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 待确认的离开动作：确认保存后执行。
@@ -293,7 +294,7 @@ fun CodeEditorScreen(
                         titleContentColor = MaterialTheme.colorScheme.onBackground
                     ),
                     navigationIcon = {
-                        IconButton(onClick = { handleBack() }) {
+                        AppIconButton(onClick = { handleBack() }) {
                             Icon(
                                 if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
                                 contentDescription = stringResource(
@@ -305,7 +306,7 @@ fun CodeEditorScreen(
                     actions = {
                         val editable = state is EditorUiState.Success
                         if (isMarkdown && editable) {
-                            IconButton(onClick = { previewMode = !previewMode }) {
+                            AppIconButton(onClick = { previewMode = !previewMode }) {
                                 Icon(
                                     if (previewMode) FeatherIcons.Code else FeatherIcons.Eye,
                                     contentDescription = stringResource(
@@ -315,7 +316,7 @@ fun CodeEditorScreen(
                                 )
                             }
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = { editorRef.value?.undo() },
                             enabled = editable && canUndo
                         ) {
@@ -324,7 +325,7 @@ fun CodeEditorScreen(
                                 contentDescription = stringResource(R.string.editor_undo)
                             )
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = { editorRef.value?.redo() },
                             enabled = editable && canRedo
                         ) {
@@ -333,7 +334,7 @@ fun CodeEditorScreen(
                                 contentDescription = stringResource(R.string.editor_redo)
                             )
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = { requestSave() },
                             enabled = editable && dirty && !saving
                         ) {
@@ -346,7 +347,7 @@ fun CodeEditorScreen(
                                 )
                             }
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = { showSettings = true },
                             enabled = editable
                         ) {

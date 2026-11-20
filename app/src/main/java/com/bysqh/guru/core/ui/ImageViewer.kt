@@ -199,7 +199,7 @@ fun ImageViewerHost(
                 )
             }
 
-            IconButton(
+            AppIconButton(
                 onClick = state::dismiss,
                 modifier = Modifier
                     .align(Alignment.TopEnd)

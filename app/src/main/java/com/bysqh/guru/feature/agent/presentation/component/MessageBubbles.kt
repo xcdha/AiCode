@@ -77,6 +77,7 @@ import compose.icons.feathericons.RotateCcw
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 工具卡片入场时长（ms）与上浮起点：略微下移再淡入到位，只走 draw 层不影响布局。 */
 private const val MESSAGE_ENTRY_ANIM_MS = 260
@@ -571,7 +572,7 @@ private fun MessageActionIconButton(
     tint: Color,
     onClick: () -> Unit
 ) {
-    IconButton(
+    AppIconButton(
         onClick = onClick,
         modifier = Modifier.size(24.dp),
         colors = IconButtonDefaults.iconButtonColors(contentColor = tint),

@@ -49,6 +49,7 @@ import compose.icons.feathericons.Shield
 import compose.icons.feathericons.XCircle
 import kotlinx.coroutines.delay
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 「工具授权」二级页：与设置页其它二级页一致的 iOS 分组列表。
@@ -250,7 +251,7 @@ internal fun RuleRow(
                 )
             }
             if (onPromote != null) {
-                IconButton(onClick = onPromote) {
+                AppIconButton(onClick = onPromote) {
                     Icon(
                         imageVector = FeatherIcons.Plus,
                         contentDescription = stringResource(R.string.perm_promote_to_global),

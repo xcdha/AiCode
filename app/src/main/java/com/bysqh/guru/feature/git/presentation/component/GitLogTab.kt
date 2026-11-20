@@ -87,6 +87,7 @@ import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.core.ui.dialogTextFieldColors
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @Composable
 internal fun LogTab(
@@ -162,7 +163,7 @@ internal fun LogTab(
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
-                        IconButton(onClick = { searchQuery = "" }) {
+                        AppIconButton(onClick = { searchQuery = "" }) {
                             Icon(FeatherIcons.X, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }

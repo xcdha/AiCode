@@ -88,6 +88,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 备份与还原整页：底部悬浮 tab 分「本地备份 / 网络备份」两页。
@@ -185,13 +186,13 @@ internal fun BackupScreen(
                 ),
                 title = { Text(stringResource(R.string.settings_backup)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 1) {
-                        IconButton(onClick = {
+                        AppIconButton(onClick = {
                             editingTarget = null
                             showTargetSheet = true
                         }) {
@@ -689,7 +690,7 @@ private fun BackupTargetCard(
                         maxLines = 1
                     )
                 }
-                IconButton(onClick = onEdit) {
+                AppIconButton(onClick = onEdit) {
                     Icon(
                         imageVector = FeatherIcons.ChevronRight,
                         contentDescription = stringResource(R.string.common_edit),

@@ -58,6 +58,7 @@ import dev.snipme.highlights.model.SyntaxLanguage
 import dev.snipme.highlights.model.SyntaxThemes
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * diff 视图所需的数据。由 [com.bysqh.guru.feature.git.presentation.GitViewModel] 在后台线程
@@ -132,13 +133,13 @@ fun DiffViewerScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (path != null && onOpenInEditor != null) {
-                        IconButton(onClick = {
+                        AppIconButton(onClick = {
                             onBack()
                             onOpenInEditor(path)
                         }) {

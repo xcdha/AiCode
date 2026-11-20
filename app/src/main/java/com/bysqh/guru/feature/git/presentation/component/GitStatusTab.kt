@@ -83,6 +83,7 @@ import compose.icons.feathericons.RotateCcw
 import compose.icons.feathericons.Trash2
 import compose.icons.feathericons.UploadCloud
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @Composable
 internal fun StatusTab(
@@ -835,7 +836,7 @@ private fun FileRow(
             }
         }
         Spacer(Modifier.width(Spacing.sm))
-        IconButton(onClick = onAction, enabled = enabled) {
+        AppIconButton(onClick = onAction, enabled = enabled) {
             Icon(
                 actionIcon,
                 contentDescription = actionDesc,
@@ -943,7 +944,7 @@ private fun UntrackedDirRow(
                 size = 16.dp
             )
         }
-        IconButton(onClick = onStage, enabled = enabled) {
+        AppIconButton(onClick = onStage, enabled = enabled) {
             Icon(
                 FeatherIcons.Plus,
                 contentDescription = stringResource(R.string.git_stage),
@@ -1247,7 +1248,7 @@ private fun StashItemRow(
                 ) {
                     Text(stringResource(R.string.git_stash_apply), style = MaterialTheme.typography.labelSmall)
                 }
-                IconButton(
+                AppIconButton(
                     onClick = onDrop,
                     enabled = !busy,
                     modifier = Modifier.size(28.dp)

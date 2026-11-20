@@ -90,6 +90,7 @@ import compose.icons.feathericons.X
 import compose.icons.feathericons.Zap
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,7 +180,7 @@ fun GitScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(
                             if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(
@@ -189,10 +190,10 @@ fun GitScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToCredentials) {
+                    AppIconButton(onClick = onNavigateToCredentials) {
                         Icon(FeatherIcons.Key, contentDescription = stringResource(R.string.git_credentials_and_identity))
                     }
-                    IconButton(onClick = { viewModel.refresh() }, enabled = !state.busy) {
+                    AppIconButton(onClick = { viewModel.refresh() }, enabled = !state.busy) {
                         Icon(FeatherIcons.RefreshCw, contentDescription = stringResource(R.string.git_refresh))
                     }
                 }

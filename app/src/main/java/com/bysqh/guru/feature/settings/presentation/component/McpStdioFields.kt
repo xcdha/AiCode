@@ -31,6 +31,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Trash2
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** stdio 形态字段：command + 参数列表 + 环境变量键值对（卡片排版）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,7 +91,7 @@ internal fun McpStdioFields(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { args.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -182,7 +183,7 @@ internal fun McpStdioFields(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { env.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {

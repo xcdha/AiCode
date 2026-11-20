@@ -77,6 +77,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Tag
 import compose.icons.feathericons.Trash2
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -621,7 +622,7 @@ private fun RefSectionHeader(
             modifier = Modifier.weight(1f)
         )
         if (onAdd != null) {
-            IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
+            AppIconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
                 Icon(
                     FeatherIcons.Plus,
                     contentDescription = stringResource(R.string.git_new),

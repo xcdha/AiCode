@@ -62,6 +62,7 @@ import com.bysqh.guru.feature.settings.domain.model.ModelMetadata
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.Check
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 子代理新建/编辑页：自带顶栏（与 [ProviderEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -146,7 +147,7 @@ internal fun SubAgentEditorScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },

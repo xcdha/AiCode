@@ -62,6 +62,7 @@ import compose.icons.feathericons.Menu
 import compose.icons.feathericons.MoreVertical
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Terminal
+import com.bysqh.guru.core.ui.AppIconButton
 
 @Composable
 internal fun ChatHeader(
@@ -101,7 +102,7 @@ internal fun ChatHeader(
             ) {
                 // 大屏常驻侧栏时隐掉汉堡键：侧栏已经摆在左边，再给个开关反而困惑。
                 if (showMenuButton) {
-                    IconButton(
+                    AppIconButton(
                         onClick = onOpenDrawer,
                         modifier = Modifier.onboardingTarget(OnboardingStep.OPEN_SIDEBAR)
                     ) {
@@ -137,7 +138,7 @@ internal fun ChatHeader(
                         )
                     }
                 }
-                IconButton(onClick = onNewChat) {
+                AppIconButton(onClick = onNewChat) {
                     Icon(
                         FeatherIcons.Plus,
                         contentDescription = stringResource(R.string.chat_new_session),
@@ -186,7 +187,7 @@ private fun WorkbenchMenuButton(
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { expanded = true }) {
+        AppIconButton(onClick = { expanded = true }) {
             Icon(
                 FeatherIcons.MoreVertical,
                 contentDescription = stringResource(R.string.common_more),

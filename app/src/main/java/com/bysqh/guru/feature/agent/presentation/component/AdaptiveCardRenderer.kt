@@ -119,6 +119,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Copy
 import compose.icons.feathericons.ExternalLink
 import compose.icons.feathericons.HelpCircle
+import com.bysqh.guru.core.ui.AppIconButton
 
 val LocalCardFormState = compositionLocalOf<MutableMap<String, Any>?> { null }
 val LocalCardOnSubmit = compositionLocalOf<((String, String?, Map<String, Any>) -> Unit)?> { null }
@@ -1467,7 +1468,7 @@ private fun RenderInputList(
                         stringResource(R.string.card_form_param_placeholder)
                     }
                 )
-                IconButton(
+                AppIconButton(
                     onClick = {
                         val updated = list.toMutableList()
                         updated.removeAt(index)

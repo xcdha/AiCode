@@ -69,6 +69,7 @@ import compose.icons.feathericons.Tool
 import kotlinx.serialization.json.JsonObject
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -205,7 +206,7 @@ fun McpServerEditDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (onOpenLogs != null) {
-                            IconButton(
+                            AppIconButton(
                                 onClick = onOpenLogs,
                                 modifier = Modifier.size(36.dp)
                             ) {
@@ -216,7 +217,7 @@ fun McpServerEditDialog(
                                 )
                             }
                         }
-                        IconButton(
+                        AppIconButton(
                             onClick = onRefreshTools,
                             modifier = Modifier.size(36.dp)
                         ) {

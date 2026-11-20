@@ -37,6 +37,7 @@ import com.bysqh.guru.feature.agent.domain.prompt.PromptFragment
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentSource
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 提示词片段新建/编辑页：自带顶栏（返回 + 右上角保存），与 [SubAgentEditorScreen] 一致，
@@ -85,7 +86,7 @@ internal fun PromptEditorScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },

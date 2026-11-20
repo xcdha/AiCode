@@ -61,6 +61,7 @@ import compose.icons.feathericons.X
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 全屏崩溃错误页：全局未捕获异常处理器捕获崩溃后拉起本页面，
@@ -235,7 +236,7 @@ private fun CrashScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onExit) {
+                    AppIconButton(onClick = onExit) {
                         Icon(
                             imageVector = FeatherIcons.X,
                             contentDescription = stringResource(R.string.crash_exit),
@@ -244,7 +245,7 @@ private fun CrashScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onCopy) {
+                    AppIconButton(onClick = onCopy) {
                         Icon(
                             imageVector = FeatherIcons.Copy,
                             contentDescription = stringResource(R.string.crash_copy),

@@ -163,6 +163,7 @@ import compose.icons.feathericons.UploadCloud
 import com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper
 import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @Composable
 private fun DrawerProgressIndicator(
@@ -330,7 +331,7 @@ fun ChatDrawerContent(
                             .padding(horizontal = Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = {
                                 isSelectionMode = false
                                 selectedSessionIds.clear()
@@ -378,7 +379,7 @@ fun ChatDrawerContent(
                             )
                         }
                         Spacer(Modifier.width(Spacing.xs))
-                        IconButton(
+                        AppIconButton(
                             onClick = { showBatchDeleteConfirm = true },
                             enabled = selectedSessionIds.isNotEmpty(),
                             modifier = Modifier.size(32.dp)
@@ -1012,7 +1013,7 @@ private fun ChatSearchField(
             },
         trailing = if (query.isEmpty()) null else {
             {
-                IconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {
+                AppIconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {
                     Icon(
                         imageVector = FeatherIcons.X,
                         contentDescription = stringResource(R.string.chat_search_clear),
@@ -1251,7 +1252,7 @@ private fun FileBrowserTab(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            IconButton(
+            AppIconButton(
                 onClick = { localFolderLauncher.launch(null) },
                 modifier = Modifier.size(32.dp)
             ) {
@@ -1262,7 +1263,7 @@ private fun FileBrowserTab(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(
+            AppIconButton(
                 onClick = onRefresh,
                 modifier = Modifier.size(32.dp)
             ) {
@@ -1525,7 +1526,7 @@ private fun ClipboardIndicator(
     onClear: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    IconButton(
+    AppIconButton(
         onClick = onClear,
         modifier = modifier.size(32.dp)
     ) {

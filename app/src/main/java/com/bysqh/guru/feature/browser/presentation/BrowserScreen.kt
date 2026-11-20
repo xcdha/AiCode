@@ -111,6 +111,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 private const val TAG = "BrowserScreen"
 
@@ -259,7 +260,7 @@ fun BrowserScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(Modifier.height(Spacing.sm))
-                        IconButton(onClick = { scope.launchBrowserOp { browserManager.reload() } }) {
+                        AppIconButton(onClick = { scope.launchBrowserOp { browserManager.reload() } }) {
                             Icon(
                                 FeatherIcons.RefreshCw,
                                 contentDescription = stringResource(R.string.browser_reload),
@@ -327,7 +328,7 @@ fun BrowserScreen(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    IconButton(
+                    AppIconButton(
                         onClick = {
                             scope.launchBrowserOp {
                                 browserManager.newTab()
@@ -487,7 +488,7 @@ private fun BrowserTopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 左侧：返回 / 取消编辑
-                IconButton(onClick = {
+                AppIconButton(onClick = {
                     if (isEditing) {
                         onEditingChange(false)
                     } else {
@@ -587,7 +588,7 @@ private fun BrowserTopBar(
                                 }
                             )
                             if (addressInput.text.isNotEmpty()) {
-                                IconButton(
+                                AppIconButton(
                                     onClick = { addressInput = TextFieldValue("") },
                                     modifier = Modifier.size(24.dp)
                                 ) {
@@ -604,7 +605,7 @@ private fun BrowserTopBar(
                 }
 
                 // 右侧：刷新按钮
-                IconButton(
+                AppIconButton(
                     onClick = onReload,
                     enabled = !loading,
                     modifier = Modifier.size(40.dp)
@@ -680,7 +681,7 @@ private fun BrowserBottomBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 1. 后退
-                IconButton(
+                AppIconButton(
                     onClick = onGoBack,
                     enabled = canGoBack
                 ) {
@@ -692,7 +693,7 @@ private fun BrowserBottomBar(
                 }
 
                 // 2. 前进
-                IconButton(
+                AppIconButton(
                     onClick = onGoForward,
                     enabled = canGoForward
                 ) {
@@ -704,7 +705,7 @@ private fun BrowserBottomBar(
                 }
 
                 // 3. 新建标签页
-                IconButton(onClick = onNewTab) {
+                AppIconButton(onClick = onNewTab) {
                     Icon(
                         FeatherIcons.Plus,
                         contentDescription = stringResource(R.string.browser_new_tab),
@@ -737,7 +738,7 @@ private fun BrowserBottomBar(
                 }
 
                 // 5. 更多更改菜单（三条杠图标）
-                IconButton(onClick = onOpenMenu) {
+                AppIconButton(onClick = onOpenMenu) {
                     Box {
                         Icon(
                             FeatherIcons.Menu,
@@ -795,7 +796,7 @@ private fun BrowserMenuSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (menuLevel == 1) {
-                    IconButton(
+                    AppIconButton(
                         onClick = { menuLevel = 0 },
                         modifier = Modifier.size(32.dp)
                     ) {
@@ -1055,7 +1056,7 @@ private fun BrowserTabItemRow(
                 )
             }
 
-            IconButton(
+            AppIconButton(
                 onClick = onClose,
                 modifier = Modifier.size(28.dp)
             ) {

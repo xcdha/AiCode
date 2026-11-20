@@ -43,6 +43,7 @@ import com.bysqh.guru.feature.settings.presentation.SkillSaveState
 import com.bysqh.guru.feature.settings.presentation.SkillUiEntry
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 技能新建/编辑页：自带顶栏（与 [SubAgentEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -95,7 +96,7 @@ internal fun SkillEditorScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },

@@ -52,6 +52,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.MoreVertical
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Search
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 界面 ③：全部配置 / 工具库（展示所有可用插件提供的工具，支持添加到当前项目）。
@@ -89,7 +90,7 @@ fun AllToolsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(
                             imageVector = FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back),
@@ -98,7 +99,7 @@ fun AllToolsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
+                    AppIconButton(onClick = {}) {
                         Icon(
                             imageVector = FeatherIcons.MoreVertical,
                             contentDescription = null,
@@ -289,7 +290,7 @@ private fun AllToolCard(
                     )
                 }
             } else {
-                IconButton(onClick = onAdd) {
+                AppIconButton(onClick = onAdd) {
                     Icon(
                         imageVector = FeatherIcons.Plus,
                         contentDescription = stringResource(R.string.plugins_tool_add),

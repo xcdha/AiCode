@@ -29,6 +29,7 @@ import compose.icons.feathericons.EyeOff
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 拉取/推送缺 https 凭据时的登录弹窗。host 只读预填，用户填 username/token；填完确认回调回填，
@@ -83,7 +84,7 @@ fun CredentialPromptDialog(
                     visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
-                        IconButton(onClick = { tokenVisible = !tokenVisible }) {
+                        AppIconButton(onClick = { tokenVisible = !tokenVisible }) {
                             Icon(
                                 if (tokenVisible) FeatherIcons.EyeOff else FeatherIcons.Eye,
                                 contentDescription = if (tokenVisible) stringResource(R.string.common_hide) else stringResource(R.string.common_show)

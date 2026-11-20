@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,21 +125,21 @@ fun RemoteServerScreen(
                 ),
                 title = { Text(stringResource(R.string.remote_workspace_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
-                        IconButton(onClick = { showHostKeysScreen = true }) {
+                        AppIconButton(onClick = { showHostKeysScreen = true }) {
                             Icon(FeatherIcons.Key, contentDescription = stringResource(R.string.ssh_host_key_settings_title))
                         }
-                        IconButton(onClick = { showSyncSettingsSheet = true }) {
+                        AppIconButton(onClick = { showSyncSettingsSheet = true }) {
                             Icon(FeatherIcons.Settings, contentDescription = stringResource(R.string.sync_settings_title))
                         }
                     }
                     if (pagerState.currentPage == 0 || pagerState.currentPage == 1) {
-                        IconButton(onClick = {
+                        AppIconButton(onClick = {
                             if (pagerState.currentPage == 0) {
                                 connectionToEdit = null
                                 showAddConnectionDialog = true

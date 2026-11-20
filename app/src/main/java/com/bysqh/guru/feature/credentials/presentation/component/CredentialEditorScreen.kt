@@ -42,6 +42,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 凭据编辑 BottomSheet 弹窗：从底部弹出编辑/新增 host、用户名、Token。
@@ -112,7 +113,7 @@ internal fun CredentialEditorSheet(
                 visualTransformation = if (tokenVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
-                    IconButton(onClick = { tokenVisible = !tokenVisible }) {
+                    AppIconButton(onClick = { tokenVisible = !tokenVisible }) {
                         Icon(if (tokenVisible) FeatherIcons.EyeOff else FeatherIcons.Eye, contentDescription = if (tokenVisible) stringResource(R.string.common_hide) else stringResource(R.string.common_show))
                     }
                 }

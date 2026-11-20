@@ -33,6 +33,7 @@ import com.bysqh.guru.feature.editor.data.MIN_EDITOR_FONT_SIZE_SP
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import kotlin.math.roundToInt
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 独立的编辑器设置页：字体大小、自动换行，以及缩进参考线 / 自动换行箭头 / 空白符号三个显示开关。
@@ -56,7 +57,7 @@ fun EditorSettingsScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(
                             FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back)

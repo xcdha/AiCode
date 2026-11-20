@@ -87,6 +87,7 @@ import compose.icons.feathericons.X
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,7 +142,7 @@ fun TerminalScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(
                             if (embedded) FeatherIcons.X else FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(
@@ -151,7 +152,7 @@ fun TerminalScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showToolsSheet = true }) {
+                    AppIconButton(onClick = { showToolsSheet = true }) {
                         Icon(FeatherIcons.Settings, contentDescription = stringResource(R.string.terminal_settings_title))
                     }
                 }
@@ -285,7 +286,7 @@ private fun TabBar(
                 )
             }
             // SSH 模式下新建需等服务器响应，等待期间显示转圈并禁用按钮，避免网络卡顿时重复点击连开多个标签。
-            IconButton(onClick = onNew, enabled = !creating, modifier = Modifier.size(32.dp)) {
+            AppIconButton(onClick = onNew, enabled = !creating, modifier = Modifier.size(32.dp)) {
                 if (creating) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),

@@ -55,6 +55,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
 import compose.icons.feathericons.Zap
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 输入区下行的模型切换图标按钮
@@ -74,7 +75,7 @@ internal fun ModelIconButton(
     var showSheet by remember { mutableStateOf(false) }
     val effectiveShowSheet = showSheet || forceOpenSheet
 
-    IconButton(onClick = { showSheet = true }, modifier = modifier.size(36.dp)) {
+    AppIconButton(onClick = { showSheet = true }, modifier = modifier.size(36.dp)) {
         ModelLogoIcon(modelName = provider?.effectiveModel.orEmpty(), size = 20.dp)
     }
 

@@ -55,6 +55,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.Shield
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 私钥内容隐藏时的掩码占位。 */
 private const val MASKED_KEY = "••••••••••••••••••••••••••••••••"
@@ -104,7 +105,7 @@ fun LoginKeyEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 }
@@ -144,7 +145,7 @@ fun LoginKeyEditorScreen(
                 visualTransformation = if (passphraseVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val image = if (passphraseVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
-                    IconButton(onClick = { passphraseVisible = !passphraseVisible }) {
+                    AppIconButton(onClick = { passphraseVisible = !passphraseVisible }) {
                         Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -176,7 +177,7 @@ fun LoginKeyEditorScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = { pemVisible = !pemVisible }) {
+                        AppIconButton(onClick = { pemVisible = !pemVisible }) {
                             val image = if (pemVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
                             Icon(image, stringResource(R.string.ssh_login_key_toggle_content), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }

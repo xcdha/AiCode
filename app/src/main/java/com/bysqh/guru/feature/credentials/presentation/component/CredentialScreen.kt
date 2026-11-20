@@ -71,6 +71,7 @@ import compose.icons.feathericons.Key
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.User
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 凭据与署名独立页：底部悬浮 tab 切换「署名」与「凭据」两个标签页。
@@ -124,12 +125,12 @@ fun CredentialScreen(
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showAddSheet = true }) {
+                    AppIconButton(onClick = { showAddSheet = true }) {
                         Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.credential_add))
                     }
                 }

@@ -111,6 +111,7 @@ import kotlinx.coroutines.withContext
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 容器镜像二级页：所有容器（含内置 Alpine）统一管理——列表单选切换、编辑、重置、左滑删除；
@@ -483,7 +484,7 @@ private fun ContainerRow(
             }
 
             // 编辑入口（所有容器）：行尾铅笔，点击进入编辑弹窗（行主体点击是切换）
-            IconButton(onClick = onEdit) {
+            AppIconButton(onClick = onEdit) {
                 Icon(
                     imageVector = FeatherIcons.Edit3,
                     contentDescription = stringResource(R.string.common_edit),
@@ -626,7 +627,7 @@ private fun ProfileEditSheet(
                     textAlign = TextAlign.Center
                 )
                 if (initial != null && onReset != null) {
-                    IconButton(
+                    AppIconButton(
                         onClick = onReset,
                         modifier = Modifier.size(36.dp)
                     ) {
@@ -930,7 +931,7 @@ private fun StringListEditor(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -1021,7 +1022,7 @@ private fun MountListEditor(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -1116,7 +1117,7 @@ private fun PairListEditor(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { items.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {

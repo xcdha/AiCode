@@ -82,6 +82,7 @@ import compose.icons.feathericons.Zap
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 待发送队列面板：AI 忙时排队的消息，风格与斜杠命令菜单一致。
@@ -225,7 +226,7 @@ internal fun QueuedRequestPanel(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            IconButton(
+                            AppIconButton(
                                 onClick = { onInterjectQueued(req.id) },
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -236,7 +237,7 @@ internal fun QueuedRequestPanel(
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
-                            IconButton(
+                            AppIconButton(
                                 onClick = { onEditQueued(req) },
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -247,7 +248,7 @@ internal fun QueuedRequestPanel(
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
-                            IconButton(
+                            AppIconButton(
                                 onClick = { onRemoveQueued(req.id) },
                                 modifier = Modifier.size(28.dp)
                             ) {
@@ -325,7 +326,7 @@ private fun PendingAttachmentPreviewItem(
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
             ) {
-                IconButton(
+                AppIconButton(
                     onClick = onRemove,
                     modifier = Modifier.size(24.dp)
                 ) {

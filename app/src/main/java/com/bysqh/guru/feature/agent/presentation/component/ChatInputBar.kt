@@ -131,6 +131,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Square
 import compose.icons.feathericons.Shield
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 输入框区域蒙版高度：盖住圆角容器，滚动内容滑入时被渐变遮罩；随键盘（IME）上移。 */
 private val INPUT_BAR_MASK_HEIGHT = 110.dp
@@ -534,7 +535,7 @@ internal fun ChatInputBar(
                     )
 
                     if (inputOverflows) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { showFullScreenInput = true },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -738,7 +739,7 @@ private fun FullScreenInputDialog(
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = onDismiss) {
+                    AppIconButton(onClick = onDismiss) {
                         Icon(
                             FeatherIcons.Minimize,
                             contentDescription = stringResource(R.string.common_collapse_action),
@@ -781,7 +782,7 @@ internal fun UploadIconButton(
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    IconButton(
+    AppIconButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.size(36.dp)
@@ -982,7 +983,7 @@ internal fun ToolPermissionPanel(
                         )
                     }
                 }
-                IconButton(
+                AppIconButton(
                     onClick = { expanded = !expanded },
                     modifier = Modifier.size(28.dp)
                 ) {
@@ -1133,7 +1134,7 @@ private fun ErrorBubble(message: String) {
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(onClick = {
+                AppIconButton(onClick = {
                     copyScope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("error", message)))
                         copied = true
@@ -1354,7 +1355,7 @@ private fun GoalBannerRow(
                 )
             }
             if (goal.status == GoalStatus.ACTIVE || goal.status == GoalStatus.PAUSED) {
-                IconButton(
+                AppIconButton(
                     onClick = { onSetPaused(goal.status == GoalStatus.ACTIVE) },
                     modifier = Modifier.size(30.dp)
                 ) {
@@ -1368,7 +1369,7 @@ private fun GoalBannerRow(
                     )
                 }
             }
-            IconButton(onClick = onClear, modifier = Modifier.size(30.dp)) {
+            AppIconButton(onClick = onClear, modifier = Modifier.size(30.dp)) {
                 Icon(
                     imageVector = FeatherIcons.X,
                     contentDescription = stringResource(R.string.chat_goal_clear),

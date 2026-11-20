@@ -74,6 +74,7 @@ import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.Folder
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 弹窗内统一输入框：使用全局 AppTextField 组件。 */
 @Composable
@@ -367,7 +368,7 @@ fun AddRemoteConnectionDialog(
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             trailingIcon = {
                                 val image = if (passwordVisible) FeatherIcons.Eye else FeatherIcons.EyeOff
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                AppIconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(image, stringResource(R.string.remote_toggle_password), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
@@ -546,7 +547,7 @@ fun AddRemoteMountDialog(
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
+                        AppIconButton(
                             onClick = { showBrowser = true },
                             enabled = selectedConnectionId.isNotEmpty()
                         ) {

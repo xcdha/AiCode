@@ -65,6 +65,7 @@ import compose.icons.feathericons.Key
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Shield
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** SSH 密钥设置独立页面：底部双 tab——「密钥」管理登录私钥库，「指纹」展示已保存的主机指纹。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,13 +134,13 @@ fun HostKeysScreen(
                 ),
                 title = { Text(stringResource(R.string.ssh_host_key_settings_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    AppIconButton(onClick = onNavigateBack) {
                         Icon(FeatherIcons.ArrowLeft, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     if (pagerState.currentPage == 0) {
-                        IconButton(onClick = { showAddKeySheet = true }) {
+                        AppIconButton(onClick = { showAddKeySheet = true }) {
                             Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.ssh_login_key_add))
                         }
                     }

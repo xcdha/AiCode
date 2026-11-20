@@ -54,6 +54,7 @@ import compose.icons.feathericons.Smartphone
 import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Tool
 import compose.icons.feathericons.Trash2
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 界面 ①：右侧抽屉（当前项目已启用的工具列表与快捷操作）。
@@ -169,7 +170,7 @@ private fun ProjectHeaderCard(
                 )
             }
 
-            IconButton(onClick = onOpenSettings) {
+            AppIconButton(onClick = onOpenSettings) {
                 Icon(
                     imageVector = FeatherIcons.Settings,
                     contentDescription = "全部配置",

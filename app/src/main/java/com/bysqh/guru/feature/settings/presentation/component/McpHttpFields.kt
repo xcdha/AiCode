@@ -31,6 +31,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Trash2
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** HTTP 形态字段：URL + 请求头键值对（按照卡片排版规范）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +99,7 @@ internal fun McpHttpFields(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        IconButton(
+                        AppIconButton(
                             onClick = { headers.removeAt(index) },
                             modifier = Modifier.size(32.dp)
                         ) {

@@ -27,6 +27,7 @@ import com.bysqh.guru.feature.plugin.presentation.PluginWebBridge
 import com.bysqh.guru.feature.plugin.presentation.PluginWebPanelScreen
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
+import com.bysqh.guru.core.ui.AppIconButton
 
 /**
  * 界面 ②：工具详情（全屏页面）。
@@ -72,7 +73,7 @@ fun ToolDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(
                             imageVector = FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back),
@@ -131,7 +132,7 @@ fun ToolUnavailableScreen(onBack: () -> Unit) {
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    AppIconButton(onClick = onBack) {
                         Icon(
                             imageVector = FeatherIcons.ArrowLeft,
                             contentDescription = stringResource(R.string.common_back),

@@ -106,7 +106,7 @@ fun rememberListSelectionState(): ListSelectionState = remember { ListSelectionS
  */
 @Composable
 fun SelectionToggleAction(selection: ListSelectionState, enabled: Boolean = true) {
-    IconButton(
+    AppIconButton(
         onClick = { if (selection.isActive) selection.exit() else selection.enter() },
         enabled = enabled
     ) {
@@ -166,7 +166,7 @@ fun SelectionActionBar(
             )
         }
         actions()
-        IconButton(onClick = onExit, modifier = Modifier.size(36.dp)) {
+        AppIconButton(onClick = onExit, modifier = Modifier.size(36.dp)) {
             Icon(
                 FeatherIcons.X,
                 contentDescription = stringResource(R.string.common_cancel),
@@ -217,7 +217,7 @@ fun SelectionActionIconButton(
     enabled: Boolean = true,
     tint: Color = MaterialTheme.colorScheme.primary
 ) {
-    IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp)) {
+    AppIconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(36.dp)) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,

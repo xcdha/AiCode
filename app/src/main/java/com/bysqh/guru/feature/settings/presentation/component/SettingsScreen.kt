@@ -157,6 +157,7 @@ import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.delay
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 /** 使用手册在线文档站地址。 */
 private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
@@ -701,7 +702,7 @@ fun SettingsScreen(
                         titleContentColor = MaterialTheme.colorScheme.onBackground
                     ),
                     navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
+                        AppIconButton(onClick = onNavigateBack) {
                             Icon(
                                 FeatherIcons.ArrowLeft,
                                 contentDescription = stringResource(R.string.common_back)
@@ -883,7 +884,7 @@ fun SettingsScreen(
                 navigationIcon = {
                     // 大屏一级分区页不给返回箭头：左栏菜单随时可切，退出设置的入口在左栏顶部。
                     if (!expanded || parentSection != null) {
-                        IconButton(onClick = {
+                        AppIconButton(onClick = {
                             val parent = parentSection
                             if (parent != null) section = parent else onNavigateBack()
                         }) {
@@ -897,7 +898,7 @@ fun SettingsScreen(
                             if (providers.isNotEmpty()) {
                                 SelectionToggleAction(selectionFor(SettingsSection.Providers))
                             }
-                            IconButton(
+                            AppIconButton(
                                 onClick = {
                                     providerPresetPrefill = null
                                     showAddProviderSheet = true
@@ -911,7 +912,7 @@ fun SettingsScreen(
                             if (mcpEntries.isNotEmpty()) {
                                 SelectionToggleAction(selectionFor(SettingsSection.Mcp))
                             }
-                            IconButton(onClick = { viewModel.reloadMcp() }) {
+                            AppIconButton(onClick = { viewModel.reloadMcp() }) {
                                 if (mcpReloading) {
                                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 } else {
@@ -923,7 +924,7 @@ fun SettingsScreen(
                                     )
                                 }
                             }
-                            IconButton(onClick = { showMcpAddSheet = true }) {
+                            AppIconButton(onClick = { showMcpAddSheet = true }) {
                                 Icon(
                                     FeatherIcons.Plus,
                                     contentDescription = stringResource(R.string.settings_add_mcp_server),
@@ -933,7 +934,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.Container -> {
-                            IconButton(onClick = { showContainerAnnouncement = true }) {
+                            AppIconButton(onClick = { showContainerAnnouncement = true }) {
                                 Icon(
                                     FeatherIcons.Info,
                                     contentDescription = stringResource(R.string.container_announcement_title),
@@ -941,7 +942,7 @@ fun SettingsScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
-                            IconButton(onClick = { section = SettingsSection.ContainerDownloads }) {
+                            AppIconButton(onClick = { section = SettingsSection.ContainerDownloads }) {
                                 Icon(
                                     FeatherIcons.Download,
                                     contentDescription = stringResource(R.string.container_download_image),
@@ -949,7 +950,7 @@ fun SettingsScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
-                            IconButton(onClick = { showContainerAddSheet = true }) {
+                            AppIconButton(onClick = { showContainerAddSheet = true }) {
                                 Icon(FeatherIcons.Plus, contentDescription = stringResource(R.string.container_add_image))
                             }
                         }
@@ -957,7 +958,7 @@ fun SettingsScreen(
                             if (downloadedImages.isNotEmpty()) {
                                 SelectionToggleAction(selectionFor(SettingsSection.ContainerDownloads))
                             }
-                            IconButton(onClick = { showImageSourceSheet = true }) {
+                            AppIconButton(onClick = { showImageSourceSheet = true }) {
                                 Icon(
                                     FeatherIcons.Globe,
                                     contentDescription = stringResource(R.string.container_download_current_source_title),
@@ -970,7 +971,7 @@ fun SettingsScreen(
                             if (skills.isNotEmpty()) {
                                 SelectionToggleAction(selectionFor(SettingsSection.Skills))
                             }
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 showSkillAddSheet = true
                             }) {
                                 Icon(
@@ -982,7 +983,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.SkillDetail -> selectedSkill?.let { entry ->
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 editingSkill = entry
                                 skillEditorReturn = SettingsSection.SkillDetail
                                 section = SettingsSection.SkillEditor
@@ -999,7 +1000,7 @@ fun SettingsScreen(
                             if (subAgents.isNotEmpty()) {
                                 SelectionToggleAction(selectionFor(SettingsSection.SubAgents))
                             }
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 editingSubAgent = null
                                 subAgentEditorReturn = SettingsSection.SubAgents
                                 section = SettingsSection.SubAgentEditor
@@ -1013,7 +1014,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.SubAgentDetail -> selectedSubAgent?.let { entry ->
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 editingSubAgent = entry
                                 subAgentEditorReturn = SettingsSection.SubAgentDetail
                                 section = SettingsSection.SubAgentEditor
@@ -1027,7 +1028,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.Plugins -> {
-                            IconButton(onClick = { showPluginSettingsSheet = true }) {
+                            AppIconButton(onClick = { showPluginSettingsSheet = true }) {
                                 Icon(
                                     FeatherIcons.Settings,
                                     contentDescription = stringResource(R.string.plugins_settings_title),
@@ -1035,7 +1036,7 @@ fun SettingsScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
-                            IconButton(onClick = { pluginZipLauncher.launch(PluginPackageMimeTypes) }) {
+                            AppIconButton(onClick = { pluginZipLauncher.launch(PluginPackageMimeTypes) }) {
                                 Icon(
                                     FeatherIcons.Plus,
                                     contentDescription = stringResource(R.string.plugins_import),
@@ -1045,7 +1046,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.PluginDetail -> selectedPlugin?.let {
-                            IconButton(onClick = { showPluginUninstallConfirm = true }) {
+                            AppIconButton(onClick = { showPluginUninstallConfirm = true }) {
                                 Icon(
                                     FeatherIcons.Trash2,
                                     contentDescription = stringResource(R.string.plugins_uninstall),
@@ -1055,12 +1056,12 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.Log -> {
-                            IconButton(onClick = { viewModel.refreshLogs() }) {
+                            AppIconButton(onClick = { viewModel.refreshLogs() }) {
                                 Icon(FeatherIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
                             }
                         }
                         SettingsSection.TokenStats -> {
-                            IconButton(onClick = { showResetTokenStats = true }) {
+                            AppIconButton(onClick = { showResetTokenStats = true }) {
                                 Icon(
                                     FeatherIcons.Trash2,
                                     contentDescription = stringResource(R.string.settings_token_stats_reset),
@@ -1080,7 +1081,7 @@ fun SettingsScreen(
                                 enabled = promptsState.fragments.any { it.editable }
                             )
                             // 帮助入口只保留这一个：原来「+」弹层里的帮助项与它重复，弹层已去掉。
-                            IconButton(onClick = { showPromptsAnnouncement = true }) {
+                            AppIconButton(onClick = { showPromptsAnnouncement = true }) {
                                 Icon(
                                     FeatherIcons.Info,
                                     contentDescription = stringResource(R.string.prompts_help),
@@ -1089,7 +1090,7 @@ fun SettingsScreen(
                                 )
                             }
                             // 重置：清空自定义提示词，各编号回落到内置（排在「+」左侧）。
-                            IconButton(onClick = { showResetPrompts = true }) {
+                            AppIconButton(onClick = { showResetPrompts = true }) {
                                 Icon(
                                     FeatherIcons.RotateCcw,
                                     contentDescription = stringResource(R.string.prompts_reset_custom),
@@ -1098,7 +1099,7 @@ fun SettingsScreen(
                                 )
                             }
                             // 「+」直接进新建页，不再弹方式选择。
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 promptEditTarget = PromptEditTarget(null)
                                 promptEditorReturn = SettingsSection.Prompts
                                 section = SettingsSection.PromptEditor
@@ -1112,7 +1113,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.PromptDetail -> selectedPrompt?.let { fragment ->
-                            IconButton(onClick = {
+                            AppIconButton(onClick = {
                                 promptEditTarget = PromptEditTarget(fragment.number)
                                 promptEditorReturn = SettingsSection.PromptDetail
                                 section = SettingsSection.PromptEditor
@@ -1126,7 +1127,7 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.Storage -> {
-                            IconButton(onClick = { storageViewModel?.refresh() }) {
+                            AppIconButton(onClick = { storageViewModel?.refresh() }) {
                                 Icon(
                                     FeatherIcons.RefreshCw,
                                     contentDescription = stringResource(R.string.storage_refresh),

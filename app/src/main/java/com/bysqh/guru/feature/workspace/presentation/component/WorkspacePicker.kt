@@ -63,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,7 +128,7 @@ fun WorkspaceIconButton(
 ) {
     var showSheet by remember { mutableStateOf(false) }
 
-    IconButton(
+    AppIconButton(
         onClick = { showSheet = true },
         modifier = modifier
     ) {
