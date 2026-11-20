@@ -1,6 +1,50 @@
 (function () {
   'use strict';
 
+  // Android WebView 里 <dialog> 内部按 vh 写的 max-height 会在首帧被固化成极小值，
+  // 表现为弹窗只显示标题、正文展不开。这里在 showModal/show 之后按窗口高度换算成像素兜底，
+  // 只调 max-height，内容本来就矮的弹窗不受影响。
+  (function () {
+    var proto = window.HTMLDialogElement && HTMLDialogElement.prototype;
+    if (!proto) return;
+
+    function viewportHeight() {
+      return window.innerHeight || document.documentElement.clientHeight || 0;
+    }
+
+    function fit(dialog) {
+      if (!dialog || !dialog.open) return;
+      var inner = dialog.firstElementChild;
+      if (!inner) return;
+      var height = Math.round(viewportHeight() * 0.78);
+      if (height < 200) return;
+      inner.style.maxHeight = height + 'px';
+      inner.style.overflowY = 'auto';
+    }
+
+    function fitAll() {
+      var list = document.querySelectorAll('dialog[open]');
+      for (var i = 0; i < list.length; i++) fit(list[i]);
+    }
+
+    ['showModal', 'show'].forEach(function (name) {
+      var original = proto[name];
+      if (typeof original !== 'function') return;
+      proto[name] = function () {
+        var result = original.apply(this, arguments);
+        var self = this;
+        fit(self);
+        if (window.requestAnimationFrame) requestAnimationFrame(function () { fit(self); });
+        setTimeout(function () { fit(self); }, 120);
+        return result;
+      };
+    });
+
+    window.addEventListener('resize', fitAll);
+    window.addEventListener('orientationchange', function () { setTimeout(fitAll, 120); });
+    document.addEventListener('DOMContentLoaded', fitAll);
+  })();
+
   var pending = {};
   var nextId = 1;
 
