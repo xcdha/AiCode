@@ -70,6 +70,7 @@ import compose.icons.feathericons.Plus
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppIconButton
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppCheckbox
 
 private val ModelLogoSize = 40.dp
 private val ModelTestButtonWidth = 56.dp
@@ -208,7 +209,7 @@ internal fun ProviderModelRow(
                             contentAlignment = Alignment.Center
                         ) {
                             if (selectionMode) {
-                                Checkbox(
+                                AppCheckbox(
                                     checked = selected,
                                     onCheckedChange = { onToggleSelect() },
                                     colors = CheckboxDefaults.colors(

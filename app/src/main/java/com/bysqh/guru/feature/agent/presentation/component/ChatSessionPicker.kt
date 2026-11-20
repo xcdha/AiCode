@@ -36,6 +36,7 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.feature.agent.domain.model.ChatSession
 import compose.icons.FeatherIcons
+import com.bysqh.guru.core.ui.AppCheckbox
 
 /**
  * 单条会话行：短按选中，长按弹出功能菜单（置顶/重命名/导出/删除）。供侧边栏历史记录列表复用。
@@ -74,7 +75,7 @@ fun ChatSessionRow(
             CompositionLocalProvider(
                 LocalMinimumInteractiveComponentSize provides 0.dp
             ) {
-                Checkbox(
+                AppCheckbox(
                     checked = checked,
                     onCheckedChange = onCheckedChange,
                     colors = CheckboxDefaults.colors(

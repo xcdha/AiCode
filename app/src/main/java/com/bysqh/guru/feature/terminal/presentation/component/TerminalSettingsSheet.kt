@@ -68,6 +68,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.roundToInt
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppSlider
 
 /**
  * 终端设置底部抽屉面板：配色主题、字号大小、字体与光标样式，提供即时预览。
@@ -187,7 +188,7 @@ fun TerminalSettingsSheet(
                     fontFamily = FontFamily.Monospace
                 )
             }
-            Slider(
+            AppSlider(
                 value = sliderFontSize,
                 onValueChange = { sliderFontSize = it },
                 onValueChangeFinished = { onChangeFontSize(sliderFontSize.roundToInt()) },

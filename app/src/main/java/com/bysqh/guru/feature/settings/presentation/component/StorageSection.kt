@@ -60,6 +60,7 @@ import com.bysqh.guru.feature.settings.presentation.StorageViewModel
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppButton
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppCheckbox
 
 /** 分类色点缩进宽度：色点 10dp + 与标题的间距，明细行据此与标题左对齐。 */
 private val DetailIndent = 10.dp + Spacing.md
@@ -337,7 +338,7 @@ private fun CategoryRow(
             color = MaterialTheme.semanticColors.subtleText
         )
         if (cleanupKind != null) {
-            Checkbox(
+            AppCheckbox(
                 checked = selected && (entry?.bytes ?: 0L) > 0L,
                 onCheckedChange = { onSelect() },
                 enabled = (entry?.bytes ?: 0L) > 0L && !cleaning
@@ -385,7 +386,7 @@ private fun DetailRow(
                 color = MaterialTheme.semanticColors.subtleText
             )
             if (cleanupKind != null) {
-                Checkbox(
+                AppCheckbox(
                     checked = selected && detail.bytes > 0L,
                     onCheckedChange = { onSelect() },
                     enabled = detail.bytes > 0L && !cleaning

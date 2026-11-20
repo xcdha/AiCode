@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppRadioButton
 
 @Composable
 internal fun LogTab(
@@ -797,7 +798,7 @@ private fun CommitDetailSheet(
                             .clickable { resetMode = "soft" },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        androidx.compose.material3.RadioButton(
+                        AppRadioButton(
                             selected = resetMode == "soft",
                             onClick = { resetMode = "soft" }
                         )
@@ -810,7 +811,7 @@ private fun CommitDetailSheet(
                             .clickable { resetMode = "mixed" },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        androidx.compose.material3.RadioButton(
+                        AppRadioButton(
                             selected = resetMode == "mixed",
                             onClick = { resetMode = "mixed" }
                         )

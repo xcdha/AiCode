@@ -45,6 +45,7 @@ import com.bysqh.guru.feature.settings.data.repository.BackgroundSettingsReposit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppSlider
 
 /**
  * [二开] 取视频首帧作为预览缩略图，失败返回 null。
@@ -184,7 +185,7 @@ internal fun BackgroundImageSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Slider(
+            AppSlider(
                 value = sliderPercent,
                 onValueChange = { percent ->
                     sliderPercent = percent

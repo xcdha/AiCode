@@ -60,6 +60,7 @@ import com.bysqh.guru.feature.settings.data.repository.AppThemeMode
 import com.bysqh.guru.feature.settings.presentation.SettingsViewModel
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
+import com.bysqh.guru.core.ui.AppSlider
 
 @Composable
 internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
@@ -187,7 +188,7 @@ internal fun AppearanceSettingsSection(viewModel: SettingsViewModel) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Slider(
+                AppSlider(
                     value = scalePercent,
                     onValueChange = {
                         // 以 5% 为步进，避免每 0.01 都写一次 DataStore

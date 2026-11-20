@@ -58,6 +58,8 @@ import com.bysqh.guru.core.ui.ExpandableChevronIcon
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronDown
 import compose.icons.feathericons.ChevronUp
+import com.bysqh.guru.core.ui.AppRadioButton
+import com.bysqh.guru.core.ui.AppCheckbox
 
 
 /** 「其他」选项在选中集合内的内部哨兵：用 AI 不可能传出的控制字符前缀，避免与预设选项 label 撞车。 */
@@ -271,7 +273,7 @@ private fun QuestionCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (item.multiSelect) {
-                    Checkbox(
+                    AppCheckbox(
                         checked = isSelected,
                         onCheckedChange = { checked ->
                             val newSelection = if (checked) selected + label else selected - label
@@ -280,7 +282,7 @@ private fun QuestionCard(
                         modifier = Modifier.size(20.dp)
                     )
                 } else {
-                    RadioButton(
+                    AppRadioButton(
                         selected = isSelected,
                         onClick = { onSelectionChanged(listOf(label)) },
                         modifier = Modifier.size(20.dp)

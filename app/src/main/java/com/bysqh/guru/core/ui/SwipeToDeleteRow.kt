@@ -93,7 +93,7 @@ fun SwipeToDeleteRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-                Checkbox(
+                AppCheckbox(
                     checked = selected,
                     onCheckedChange = { onToggleSelect() },
                     enabled = selectable,

@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.bysqh.guru.core.theme.LocalUiStyle
 import com.bysqh.guru.core.theme.Spacing
+import com.bysqh.guru.core.theme.UiStyle
 
 /**
  * 修复 Material3 ModalBottomSheet 已知 bug（issuetracker 486562294）：
@@ -96,6 +98,20 @@ fun AdaptiveModalBottomSheet(
     dialogMaxWidth: Dp = 560.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    // [二开] Miuix 界面样式：用组件库的窗口级弹层（不依赖 miuix Scaffold，
+    // 它的 OverlayBottomSheet 需要 Scaffold 才会渲染）。
+    // 调用方传入的 sheetState 在这条路径下不会被使用——全仓没有调用点调用它的方法。
+    if (LocalUiStyle.current == UiStyle.MIUIX) {
+        top.yukonga.miuix.kmp.window.WindowBottomSheet(
+            show = true,
+            modifier = modifier,
+            backgroundColor = containerColor,
+            onDismissRequest = onDismissRequest
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) { content() }
+        }
+        return
+    }
     if (isCompactWidth()) {
         val flingFix = rememberSheetFlingFix(sheetState)
         ModalBottomSheet(

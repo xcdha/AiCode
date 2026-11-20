@@ -65,6 +65,7 @@ import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppCheckbox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -267,7 +268,7 @@ private fun WorkspaceSelectionHost(
                             .clickable { dontShowExternalWarningAgain = !dontShowExternalWarningAgain },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(
+                        AppCheckbox(
                             checked = dontShowExternalWarningAgain,
                             onCheckedChange = { dontShowExternalWarningAgain = it }
                         )

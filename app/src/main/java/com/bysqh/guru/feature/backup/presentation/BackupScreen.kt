@@ -90,6 +90,7 @@ import kotlinx.coroutines.withContext
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
 import com.bysqh.guru.core.ui.AppTextButton
+import com.bysqh.guru.core.ui.AppCheckbox
 
 /**
  * 备份与还原整页：底部悬浮 tab 分「本地备份 / 网络备份」两页。
@@ -822,7 +823,7 @@ private fun WorkspaceRestoreDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Checkbox(
+                    AppCheckbox(
                         checked = allChecked,
                         onCheckedChange = { v -> checked = workspaces.associate { it.name to v } }
                     )
@@ -837,7 +838,7 @@ private fun WorkspaceRestoreDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Checkbox(
+                        AppCheckbox(
                             checked = checked[ws.name] ?: false,
                             onCheckedChange = { v -> checked = checked + (ws.name to v) }
                         )
