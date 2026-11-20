@@ -43,6 +43,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * 凭据编辑 BottomSheet 弹窗：从底部弹出编辑/新增 host、用户名、Token。
@@ -119,7 +120,7 @@ internal fun CredentialEditorSheet(
                 }
             )
 
-            Button(
+            AppButton(
                 onClick = {
                     current()?.let {
                         onSave(it)

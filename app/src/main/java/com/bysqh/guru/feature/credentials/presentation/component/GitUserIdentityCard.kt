@@ -30,6 +30,7 @@ import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.feature.settings.presentation.component.SettingsGroupHeader
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * git 提交署名(user.name / user.email)与仓库地址配置：
@@ -71,7 +72,7 @@ internal fun GitUserIdentityCard(
 
         Spacer(Modifier.height(Spacing.xs))
 
-        Button(
+        AppButton(
             onClick = { onSave(name.trim(), email.trim(), repoUrl.trim()) },
             modifier = Modifier
                 .fillMaxWidth()

@@ -45,6 +45,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.FileText
 import compose.icons.feathericons.Plus
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 编辑目标：null 表示新建，非 null 为编辑既有记忆。 */
 private data class MemoryEditorTarget(
@@ -147,7 +148,7 @@ internal fun MemorySection(viewModel: MemoryViewModel) {
             title = { Text(stringResource(R.string.memory_delete_confirm_title)) },
             text = { Text(stringResource(R.string.memory_delete_confirm_message, memory.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     deleteTarget = null
                     viewModel.delete(memory) { ok ->
                         editorTarget = null
@@ -162,7 +163,7 @@ internal fun MemorySection(viewModel: MemoryViewModel) {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) {
+                AppTextButton(onClick = { deleteTarget = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -293,7 +294,7 @@ private fun MemoryEditorDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onSave(name.trim(), description.trim(), content, scope) },
                 enabled = name.isNotBlank()
             ) {
@@ -303,14 +304,14 @@ private fun MemoryEditorDialog(
         dismissButton = {
             Row {
                 if (editing != null) {
-                    TextButton(onClick = { onDelete(editing) }) {
+                    AppTextButton(onClick = { onDelete(editing) }) {
                         Text(
                             text = stringResource(R.string.common_delete),
                             color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
-                TextButton(onClick = onDismiss) {
+                AppTextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

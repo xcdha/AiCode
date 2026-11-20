@@ -55,6 +55,7 @@ import compose.icons.feathericons.Edit2
 import compose.icons.feathericons.Plus
 import compose.icons.feathericons.User
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 角色页：选中哪个角色，对话就用哪份身份提示词。
@@ -164,7 +165,7 @@ internal fun RolesSection(
                 )
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         val role = onCreate(newName.trim().ifBlank { defaultRoleName })
                         onSelect(role.id)
@@ -173,7 +174,7 @@ internal fun RolesSection(
                     }
                 ) { Text(stringResource(R.string.common_create)) }
             },
-            dismissButton = { TextButton(onClick = { creating = false }) { Text(stringResource(R.string.common_cancel)) } }
+            dismissButton = { AppTextButton(onClick = { creating = false }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
@@ -182,7 +183,7 @@ internal fun RolesSection(
             onDismissRequest = { deleteBlocked = false },
             title = { Text(stringResource(R.string.role_cannot_delete_title)) },
             text = { Text(stringResource(R.string.role_cannot_delete_message)) },
-            confirmButton = { TextButton(onClick = { deleteBlocked = false }) { Text(stringResource(R.string.common_got_it)) } }
+            confirmButton = { AppTextButton(onClick = { deleteBlocked = false }) { Text(stringResource(R.string.common_got_it)) } }
         )
     }
 
@@ -334,11 +335,11 @@ private fun RoleEditorDialog(
                     RoleAvatar(role = role, size = 56)
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        TextButton(onClick = { avatarPicker.launch("image/*") }) {
+                        AppTextButton(onClick = { avatarPicker.launch("image/*") }) {
                             Text(stringResource(R.string.role_change_avatar))
                         }
                         if (role.avatarPath != null) {
-                            TextButton(onClick = onRemoveAvatar) {
+                            AppTextButton(onClick = onRemoveAvatar) {
                                 Text(stringResource(R.string.role_remove_avatar), color = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -361,11 +362,11 @@ private fun RoleEditorDialog(
                     maxLines = 12
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { identityImporter.launch("*/*") }) {
+                    AppTextButton(onClick = { identityImporter.launch("*/*") }) {
                         Text(stringResource(R.string.role_import_prompt))
                     }
                     if (canDelete) {
-                        TextButton(onClick = onDelete) {
+                        AppTextButton(onClick = onDelete) {
                             Text(stringResource(R.string.role_delete), color = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -373,12 +374,12 @@ private fun RoleEditorDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     onSave(role.copy(name = name.trim().ifBlank { role.name }, identity = identity))
                 }
             ) { Text(stringResource(R.string.common_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }

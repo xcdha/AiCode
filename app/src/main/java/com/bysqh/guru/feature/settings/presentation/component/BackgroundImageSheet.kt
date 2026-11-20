@@ -44,6 +44,7 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.feature.settings.data.repository.BackgroundSettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * [二开] 取视频首帧作为预览缩略图，失败返回 null。
@@ -200,7 +201,7 @@ internal fun BackgroundImageSheet(
                     .padding(top = Spacing.sm),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
-                Button(
+                AppButton(
                     onClick = {
                         imagePicker.launch(
                             // [二开] 放开视频选择，GIF 属于图片由系统分类，MP4 属于视频。

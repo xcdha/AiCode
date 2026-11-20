@@ -159,6 +159,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -1463,13 +1464,13 @@ fun AppNavigation(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingPluginAction = null
                     pluginsViewModel.runUiAction(entry, actionContext, showPluginActionResult)
                 }) { Text(stringResource(R.string.common_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingPluginAction = null }) {
+                AppTextButton(onClick = { pendingPluginAction = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

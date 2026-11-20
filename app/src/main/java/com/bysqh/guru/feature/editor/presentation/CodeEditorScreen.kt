@@ -98,6 +98,7 @@ import io.github.rosemoe.sora.widget.schemes.EditorColorScheme
 import kotlin.math.abs
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 待确认的离开动作：确认保存后执行。
@@ -454,13 +455,13 @@ fun CodeEditorScreen(
             title = { Text(stringResource(R.string.editor_unsaved_title)) },
             text = { Text(stringResource(R.string.editor_unsaved_message)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showUnsavedDialog = false
                     requestSave()
                 }) { Text(stringResource(pendingLeave?.confirmLabelRes ?: R.string.editor_save_and_exit)) }
             },
             dismissButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showUnsavedDialog = false
                     pendingLeave?.let { leave ->
                         pendingLeave = null
@@ -495,17 +496,17 @@ fun CodeEditorScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     saveConflictDiskContent = null
                     viewModel.saveForce(pendingSaveText)
                 }) { Text(stringResource(R.string.editor_save_conflict_overwrite)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { saveConflictDiskContent = null }) {
+                    AppTextButton(onClick = { saveConflictDiskContent = null }) {
                         Text(stringResource(R.string.editor_save_conflict_cancel))
                     }
-                    TextButton(onClick = {
+                    AppTextButton(onClick = {
                         saveConflictDiskContent = null
                         viewModel.reloadFromDisk()
                         Toast.makeText(context, conflictDiscardedText, Toast.LENGTH_SHORT).show()

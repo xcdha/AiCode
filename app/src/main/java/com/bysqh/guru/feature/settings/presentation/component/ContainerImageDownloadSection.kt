@@ -73,6 +73,8 @@ import compose.icons.feathericons.Trash2
 import java.io.File
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 字节数转可读体积；容器镜像下载与更新包下载共用（同包内 internal，避免各写一份）。 */
 internal fun formatBytes(bytes: Long): String = when {
@@ -247,13 +249,13 @@ internal fun ContainerImageDownloadSection(
             title = { Text(stringResource(R.string.container_download_delete_title)) },
             text = { Text(stringResource(R.string.container_download_delete_confirm, entry.displayLabel(imageVersions[entry.id]))) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onDelete(entry.id)
                     deleteEntry = null
                 }) { Text(stringResource(R.string.common_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { deleteEntry = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { deleteEntry = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -580,7 +582,7 @@ private fun ImageDetailSheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
-                            TextButton(onClick = onCancel) {
+                            AppTextButton(onClick = onCancel) {
                                 Text(stringResource(R.string.container_download_cancel))
                             }
                         }
@@ -605,7 +607,7 @@ private fun ImageDetailSheet(
                         ) {
                             Text(stringResource(R.string.container_download_redownload))
                         }
-                        Button(
+                        AppButton(
                             onClick = { onImport(record!!.fileUri) },
                             modifier = Modifier.weight(1f).height(44.dp),
                             shape = RoundedCornerShape(12.dp)
@@ -622,7 +624,7 @@ private fun ImageDetailSheet(
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        Button(
+                        AppButton(
                             onClick = onDownload,
                             modifier = Modifier.fillMaxWidth().height(44.dp),
                             shape = RoundedCornerShape(12.dp)
@@ -640,7 +642,7 @@ private fun ImageDetailSheet(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-                    Button(
+                    AppButton(
                         onClick = onDownload,
                         enabled = !sourceUnavailable,
                         modifier = Modifier.fillMaxWidth().height(44.dp),

@@ -112,6 +112,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 private const val TAG = "BrowserScreen"
 
@@ -975,7 +976,7 @@ private fun BrowserCustomUaDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(uaText.trim()) },
                 enabled = uaText.isNotBlank()
             ) {
@@ -983,7 +984,7 @@ private fun BrowserCustomUaDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }
@@ -1111,7 +1112,7 @@ private fun BrowserJsDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onResolve(true, text) }) {
+            AppTextButton(onClick = { onResolve(true, text) }) {
                 Text(stringResource(R.string.common_confirm))
             }
         },
@@ -1119,7 +1120,7 @@ private fun BrowserJsDialog(
             null
         } else {
             {
-                TextButton(onClick = { onResolve(false, null) }) {
+                AppTextButton(onClick = { onResolve(false, null) }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

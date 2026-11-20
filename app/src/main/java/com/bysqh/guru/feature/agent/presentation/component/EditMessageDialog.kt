@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 internal fun EditMessageDialog(
@@ -53,7 +54,7 @@ internal fun EditMessageDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     onConfirm(text)
                 },
@@ -63,7 +64,7 @@ internal fun EditMessageDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

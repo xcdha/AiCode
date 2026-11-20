@@ -71,6 +71,7 @@ import compose.icons.feathericons.Minimize2
 import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.Type
 import compose.icons.feathericons.Zap
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 默认模型二级页：集中管理应用中的默认/特定用途模型设置（如识图模型、压缩模型）。
@@ -552,7 +553,7 @@ private fun ModelSelectionRow(
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                     }
                 } else {
-                    TextButton(
+                    AppTextButton(
                         onClick = onTest,
                         contentPadding = PaddingValues(horizontal = Spacing.xs, vertical = 0.dp),
                         modifier = Modifier.width(56.dp).height(32.dp)

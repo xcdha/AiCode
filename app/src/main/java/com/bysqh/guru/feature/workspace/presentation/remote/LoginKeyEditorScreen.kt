@@ -56,6 +56,7 @@ import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.Shield
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /** 私钥内容隐藏时的掩码占位。 */
 private const val MASKED_KEY = "••••••••••••••••••••••••••••••••"
@@ -202,7 +203,7 @@ fun LoginKeyEditorScreen(
                     }
                 }
             }
-            Button(
+            AppButton(
                 enabled = if (isCreate) content.isNotBlank() && !contentInvalid else name.isNotBlank(),
                 onClick = { onSave(name, passphrase, content) },
                 modifier = Modifier

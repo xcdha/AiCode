@@ -23,6 +23,7 @@ import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.feature.settings.presentation.UpdateCheckUiState
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 检查更新结果弹窗（全局宿主渲染，自动/手动共用）。
@@ -53,7 +54,7 @@ internal fun UpdateCheckDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_up_to_date)) },
             text = { Text(stringResource(R.string.about_up_to_date_detail, currentVersion)) },
-            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
+            confirmButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
         )
         is UpdateCheckUiState.NewVersion -> AppAlertDialog(
             onDismissRequest = onDismiss,
@@ -61,18 +62,18 @@ internal fun UpdateCheckDialog(
             text = { ChangelogText(state.changelog) },
             confirmButton = {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    TextButton(onClick = { onOpenRelease(state.latestTag) }) {
+                    AppTextButton(onClick = { onOpenRelease(state.latestTag) }) {
                         Text(stringResource(R.string.about_update_browser))
                     }
                     // 只有正式包才给应用内安装：beta/debug 变体的包名带后缀，装正式包会变成第二个 App
                     if (canInstallInApp) {
-                        TextButton(onClick = onDownload) {
+                        AppTextButton(onClick = onDownload) {
                             Text(stringResource(R.string.about_update_download_install))
                         }
                     }
                 }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
+            dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
         )
         is UpdateCheckUiState.Downloading -> AppAlertDialog(
             onDismissRequest = onDismiss,
@@ -101,7 +102,7 @@ internal fun UpdateCheckDialog(
             },
             // 关掉弹窗不打断下载：状态留在 ViewModel 里，再点「版本」行即可回到这个进度
             confirmButton = {},
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_update_background)) } }
+            dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.about_update_background)) } }
         )
         is UpdateCheckUiState.ReadyToInstall -> AppAlertDialog(
             onDismissRequest = onDismiss,
@@ -115,9 +116,9 @@ internal fun UpdateCheckDialog(
                 )
             },
             confirmButton = {
-                TextButton(onClick = onDownload) { Text(stringResource(R.string.about_update_install)) }
+                AppTextButton(onClick = onDownload) { Text(stringResource(R.string.about_update_install)) }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
+            dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.about_later)) } }
         )
         is UpdateCheckUiState.DownloadFailed -> AppAlertDialog(
             onDismissRequest = onDismiss,
@@ -135,10 +136,10 @@ internal fun UpdateCheckDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = onDownload) { Text(stringResource(R.string.about_update_retry)) }
+                AppTextButton(onClick = onDownload) { Text(stringResource(R.string.about_update_retry)) }
             },
             dismissButton = {
-                TextButton(onClick = { onOpenRelease(state.previous.latestTag) }) {
+                AppTextButton(onClick = { onOpenRelease(state.previous.latestTag) }) {
                     Text(stringResource(R.string.about_update_browser))
                 }
             }
@@ -147,7 +148,7 @@ internal fun UpdateCheckDialog(
             onDismissRequest = onDismiss,
             title = { Text(stringResource(R.string.about_check_failed)) },
             text = { Text(state.message) },
-            confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.about_ok)) } }
+            confirmButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.about_ok)) } }
         )
         UpdateCheckUiState.Idle -> {}
     }

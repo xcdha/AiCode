@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.roundToInt
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 终端设置底部抽屉面板：配色主题、字号大小、字体与光标样式，提供即时预览。
@@ -271,7 +272,7 @@ private fun TerminalFontSection(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
-        TextButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
+        AppTextButton(onClick = { importLauncher.launch(arrayOf("*/*")) }) {
             Icon(
                 imageVector = Icons.Outlined.FileUpload,
                 contentDescription = null,

@@ -75,6 +75,8 @@ import compose.icons.feathericons.EyeOff
 import compose.icons.feathericons.Folder
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 弹窗内统一输入框：使用全局 AppTextField 组件。 */
 @Composable
@@ -184,7 +186,7 @@ private fun SheetSaveButton(
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Button(
+        AppButton(
             enabled = enabled,
             onClick = onClick,
             modifier = Modifier
@@ -426,7 +428,7 @@ fun AddRemoteConnectionDialog(
                         )
                     },
                     confirmButton = {
-                        TextButton(
+                        AppTextButton(
                             onClick = {
                                 onConfirmHostKey()
                                 // 确认后立即重测：指纹已保存，此次应直接连通
@@ -441,7 +443,7 @@ fun AddRemoteConnectionDialog(
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = onRejectHostKey) {
+                        AppTextButton(onClick = onRejectHostKey) {
                             Text(stringResource(R.string.ssh_host_key_reject))
                         }
                     }
@@ -685,7 +687,7 @@ fun RemoteDirectoryBrowserDialog(
                     LazyColumn {
                         if (currentPath != "/") {
                             item {
-                                TextButton(onClick = {
+                                AppTextButton(onClick = {
                                     val parent = currentPath.trimEnd('/').substringBeforeLast('/')
                                     currentPath = if (parent.isEmpty()) "/" else "$parent/"
                                 }) {
@@ -696,7 +698,7 @@ fun RemoteDirectoryBrowserDialog(
                             }
                         }
                         items(directories) { dir ->
-                            TextButton(onClick = {
+                            AppTextButton(onClick = {
                                 currentPath = if (currentPath == "/") "/$dir/" else "$currentPath$dir/"
                             }) {
                                 Icon(FeatherIcons.Folder, contentDescription = null)
@@ -709,12 +711,12 @@ fun RemoteDirectoryBrowserDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onPathSelected(currentPath) }) {
+            AppButton(onClick = { onPathSelected(currentPath) }) {
                 Text(stringResource(R.string.remote_confirm_select))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

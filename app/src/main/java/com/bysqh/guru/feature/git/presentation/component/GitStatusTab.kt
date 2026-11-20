@@ -84,6 +84,7 @@ import compose.icons.feathericons.Trash2
 import compose.icons.feathericons.UploadCloud
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 internal fun StatusTab(
@@ -352,7 +353,7 @@ internal fun StatusTab(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            TextButton(onClick = { showAbortMergeConfirm = true }, enabled = !busy) {
+                            AppTextButton(onClick = { showAbortMergeConfirm = true }, enabled = !busy) {
                                 Text(stringResource(R.string.git_action_abort_merge), color = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -483,13 +484,13 @@ internal fun StatusTab(
             title = { Text(stringResource(R.string.git_action_abort_merge)) },
             text = { Text(stringResource(R.string.git_abort_merge_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showAbortMergeConfirm = false
                     onAbortMerge()
                 }) { Text(stringResource(R.string.git_action_abort_merge), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showAbortMergeConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { showAbortMergeConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -500,13 +501,13 @@ internal fun StatusTab(
             title = { Text(stringResource(R.string.git_stash_drop)) },
             text = { Text(stringResource(R.string.git_stash_drop_confirm, index)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingDropStash = null
                     onStashDrop(index)
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDropStash = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDropStash = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -517,13 +518,13 @@ internal fun StatusTab(
             title = { Text(stringResource(R.string.git_stash_clear)) },
             text = { Text(stringResource(R.string.git_stash_clear_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showClearStashConfirm = false
                     onStashClear()
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearStashConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { showClearStashConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -547,7 +548,7 @@ internal fun StatusTab(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingRevert = null
                     onRevert(target.path, target.staged)
                 }) {
@@ -559,7 +560,7 @@ internal fun StatusTab(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRevert = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingRevert = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -576,13 +577,13 @@ internal fun StatusTab(
             },
             text = { Text(stringResource(R.string.git_delete_untracked_confirm, path)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingDelete = null
                     onDeleteUntracked(path)
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -593,7 +594,7 @@ internal fun StatusTab(
             title = { Text(stringResource(R.string.git_action_revert_all)) },
             text = { Text(stringResource(R.string.git_revert_all_confirm, status?.unstaged?.size ?: 0)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showRevertAllConfirm = false
                     onRevertAll()
                 }) {
@@ -601,7 +602,7 @@ internal fun StatusTab(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showRevertAllConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { showRevertAllConfirm = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -612,13 +613,13 @@ internal fun StatusTab(
             title = { Text(stringResource(R.string.git_action_unstage_all)) },
             text = { Text(stringResource(R.string.git_unstage_all_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showUnstageAllConfirm = false
                     onUnstageAll()
                 }) { Text(stringResource(R.string.git_action_unstage_all)) }
             },
             dismissButton = {
-                TextButton(onClick = { showUnstageAllConfirm = false }) {
+                AppTextButton(onClick = { showUnstageAllConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -745,7 +746,7 @@ private fun GroupHeaderWithAction(
             color = MaterialTheme.semanticColors.subtleText,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
+        AppTextButton(
             onClick = onAction,
             enabled = actionEnabled,
             contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 4.dp)
@@ -1089,7 +1090,7 @@ private fun StashBottomSheet(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (stashes.isNotEmpty()) {
-                    TextButton(onClick = onClear, enabled = !busy) {
+                    AppTextButton(onClick = onClear, enabled = !busy) {
                         Text(
                             stringResource(R.string.git_stash_clear),
                             color = MaterialTheme.colorScheme.error,
@@ -1234,14 +1235,14 @@ private fun StashItemRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(
+                AppTextButton(
                     onClick = onPop,
                     enabled = !busy,
                     contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 2.dp)
                 ) {
                     Text(stringResource(R.string.git_stash_pop), style = MaterialTheme.typography.labelSmall)
                 }
-                TextButton(
+                AppTextButton(
                     onClick = onApply,
                     enabled = !busy,
                     contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 2.dp)

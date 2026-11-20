@@ -44,6 +44,7 @@ import com.bysqh.guru.feature.settings.presentation.SkillUiEntry
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 技能新建/编辑页：自带顶栏（与 [SubAgentEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -101,7 +102,7 @@ internal fun SkillEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(
+                    AppTextButton(
                         enabled = canSave && saveState !is SkillSaveState.Saving,
                         onClick = {
                             onSave(

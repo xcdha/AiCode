@@ -38,6 +38,7 @@ import com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentSource
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 提示词片段新建/编辑页：自带顶栏（返回 + 右上角保存），与 [SubAgentEditorScreen] 一致，
@@ -91,7 +92,7 @@ internal fun PromptEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(
+                    AppTextButton(
                         enabled = canSave,
                         onClick = {
                             onSave(

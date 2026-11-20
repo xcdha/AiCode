@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 云端备份列表弹窗：展示远端备份（名称/大小/时间），支持恢复与二次确认删除。 */
 @Composable
@@ -74,10 +75,10 @@ fun RemoteBackupDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            TextButton(onClick = { onRestore(item) }) {
+                            AppTextButton(onClick = { onRestore(item) }) {
                                 Text(stringResource(R.string.backup_net_remote_restore))
                             }
-                            TextButton(onClick = { pendingDelete = item }) {
+                            AppTextButton(onClick = { pendingDelete = item }) {
                                 Text(
                                     text = stringResource(R.string.backup_net_remote_delete),
                                     color = MaterialTheme.colorScheme.error
@@ -92,7 +93,7 @@ fun RemoteBackupDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 
@@ -102,7 +103,7 @@ fun RemoteBackupDialog(
             title = { Text(stringResource(R.string.backup_net_remote_delete)) },
             text = { Text(stringResource(R.string.backup_net_remote_delete_confirm, target.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingDelete = null
                     onDelete(target)
                 }) {
@@ -110,7 +111,7 @@ fun RemoteBackupDialog(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }

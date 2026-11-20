@@ -69,6 +69,8 @@ import compose.icons.feathericons.ExternalLink
 import compose.icons.feathericons.Github
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * GitHub OAuth 设备码授权弹层：采用 Apple HIG 风格设计，
@@ -393,7 +395,7 @@ private fun AwaitingContent(
         }
 
         // 主操作：复制并前往授权
-        Button(
+        AppButton(
             onClick = onAuthorizeAndOpen,
             modifier = Modifier
                 .fillMaxWidth()
@@ -539,7 +541,7 @@ private fun SuccessContent(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                     ) {
-                        Button(
+                        AppButton(
                             onClick = {
                                 runCatching {
                                     context.startActivity(
@@ -553,7 +555,7 @@ private fun SuccessContent(
                             Text(stringResource(R.string.credential_device_install_now))
                         }
 
-                        TextButton(
+                        AppTextButton(
                             onClick = onSuccessDismiss,
                             modifier = Modifier.weight(1f)
                         ) {
@@ -622,7 +624,7 @@ private fun FailedContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
             ) {
-                Button(
+                AppButton(
                     onClick = onRetry,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(Radius.mdLarge)

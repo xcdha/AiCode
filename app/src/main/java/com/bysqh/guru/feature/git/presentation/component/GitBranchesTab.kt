@@ -78,6 +78,8 @@ import compose.icons.feathericons.Tag
 import compose.icons.feathericons.Trash2
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -154,13 +156,13 @@ internal fun BranchesTab(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingCheckout = null
                     onCheckout(ref, isRemote)
                 }) { Text(stringResource(R.string.common_switch)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingCheckout = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingCheckout = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -231,7 +233,7 @@ internal fun BranchesTab(
                     Text(stringResource(R.string.git_create_and_switch))
                     AppSwitch(checked = checkout, onCheckedChange = { checkout = it })
                 }
-                Button(
+                AppButton(
                     onClick = {
                         onCreateBranch(newName.trim(), startPoint, checkout)
                         showCreateDialog = false
@@ -257,13 +259,13 @@ internal fun BranchesTab(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingDelete = null
                     if (isRemote) onDeleteRemoteBranch(name) else onDeleteBranch(name)
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -287,7 +289,7 @@ internal fun BranchesTab(
                 }
             },
             confirmButton = {
-                Button(
+                AppButton(
                     onClick = {
                         val trimmed = newName.trim()
                         if (trimmed.isNotBlank() && trimmed != oldName) {
@@ -299,7 +301,7 @@ internal fun BranchesTab(
                 ) { Text(stringResource(R.string.common_rename)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRename = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingRename = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -341,9 +343,9 @@ internal fun BranchesTab(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = { showCreateTagDialog = false }) { Text(stringResource(R.string.common_cancel)) }
+                    AppTextButton(onClick = { showCreateTagDialog = false }) { Text(stringResource(R.string.common_cancel)) }
                     Spacer(Modifier.width(Spacing.sm))
-                    Button(
+                    AppButton(
                         onClick = {
                             val trimmed = tagName.trim()
                             if (trimmed.isNotBlank()) {
@@ -364,13 +366,13 @@ internal fun BranchesTab(
             title = { Text(stringResource(R.string.git_delete_tag)) },
             text = { Text(stringResource(R.string.git_delete_tag_confirm, name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     pendingDeleteTag = null
                     onDeleteTag(name)
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDeleteTag = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDeleteTag = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -400,7 +402,7 @@ internal fun BranchesTab(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     val b = targetBranch
                     pendingMerge = null
                     onMergeBranch(b, mergeNoFf)
@@ -409,7 +411,7 @@ internal fun BranchesTab(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingMerge = null }) {
+                AppTextButton(onClick = { pendingMerge = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

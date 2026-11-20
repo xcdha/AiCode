@@ -29,6 +29,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Package
 import compose.icons.feathericons.X
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 对话内的插件提示条：显示插件来源、文本与可选动作按钮。
@@ -84,7 +85,7 @@ fun PluginTipBanner(
                     color = MaterialTheme.semanticColors.subtleText
                 )
                 if (tip.actionLabel != null) {
-                    TextButton(
+                    AppTextButton(
                         onClick = { viewModel.invokeAction(tip.id) },
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 0.dp, vertical = 2.dp)
                     ) {

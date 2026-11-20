@@ -63,6 +63,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.ArrowLeft
 import compose.icons.feathericons.Check
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 子代理新建/编辑页：自带顶栏（与 [ProviderEditorScreen] 一致，不能嵌进设置页的 Scaffold）。
@@ -152,7 +153,7 @@ internal fun SubAgentEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(
+                    AppTextButton(
                         enabled = canSave && saveState !is SubAgentSaveState.Saving,
                         onClick = {
                             onSave(
@@ -546,10 +547,10 @@ private fun ToolPickerSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                TextButton(onClick = { picked = emptySet() }) {
+                AppTextButton(onClick = { picked = emptySet() }) {
                     Text(stringResource(R.string.subagent_editor_clear))
                 }
-                TextButton(onClick = { onConfirm(picked.toList().sorted()) }) {
+                AppTextButton(onClick = { onConfirm(picked.toList().sorted()) }) {
                     Text(stringResource(R.string.common_save))
                 }
             }

@@ -56,6 +56,7 @@ import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Shield
 import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.X
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * HTTP 形态的 OAuth 认证区块：
@@ -358,7 +359,7 @@ internal fun McpAuthFields(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                Button(
+                                AppButton(
                                     onClick = { onAuthorize(serverName) },
                                     modifier = Modifier
                                         .weight(1f)

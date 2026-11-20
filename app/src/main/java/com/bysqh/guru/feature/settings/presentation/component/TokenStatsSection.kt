@@ -83,6 +83,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.min
+import com.bysqh.guru.core.ui.AppTextButton
 
 private val INPUT_COLOR = TokenStatsPalette.Input
 private val OUTPUT_COLOR = TokenStatsPalette.Output
@@ -862,7 +863,7 @@ private fun StatsPaginationBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(onClick = { onSelectPage(page - 1) }, enabled = page > 0) {
+        AppTextButton(onClick = { onSelectPage(page - 1) }, enabled = page > 0) {
             Text(stringResource(R.string.common_prev))
         }
         Text(
@@ -870,7 +871,7 @@ private fun StatsPaginationBar(
             style = MaterialTheme.typography.bodySmall,
             color = mutedColor
         )
-        TextButton(onClick = { onSelectPage(page + 1) }, enabled = page < pageCount - 1) {
+        AppTextButton(onClick = { onSelectPage(page + 1) }, enabled = page < pageCount - 1) {
             Text(stringResource(R.string.common_next))
         }
     }

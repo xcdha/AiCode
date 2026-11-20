@@ -50,6 +50,7 @@ import compose.icons.feathericons.Sun
 import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Zap
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 「软件权限」二级页：集中展示并管理系统级权限。
@@ -396,7 +397,7 @@ private fun PermissionDeniedDialog(
         title = { Text(title) },
         text = { Text(message) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     onDismiss()
                     onGoToSettings()
@@ -406,7 +407,7 @@ private fun PermissionDeniedDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

@@ -69,6 +69,7 @@ import compose.icons.feathericons.Copy
 import compose.icons.feathericons.Plus
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 private val ModelLogoSize = 40.dp
 private val ModelTestButtonWidth = 56.dp
@@ -218,7 +219,7 @@ internal fun ProviderModelRow(
                             } else if (testing) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                             } else {
-                                TextButton(
+                                AppTextButton(
                                     onClick = onTest,
                                     contentPadding = PaddingValues(horizontal = Spacing.xs, vertical = 0.dp),
                                     modifier = Modifier

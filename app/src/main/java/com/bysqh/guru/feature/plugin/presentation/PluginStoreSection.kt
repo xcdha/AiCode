@@ -70,6 +70,8 @@ import compose.icons.feathericons.Package
 import compose.icons.feathericons.Server
 import compose.icons.feathericons.ShoppingBag
 import compose.icons.feathericons.Tag
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 非官方徽标固定用黄色，与主题主色区分开。 */
 private val UnofficialBadgeBackground = Color(0xFFFFE082)
@@ -349,7 +351,7 @@ internal fun PluginStoreDetailSection(
             }
         }
 
-        Button(
+        AppButton(
             onClick = { viewModel.install(latest) },
             enabled = latest.compatible && !installing &&
                 (latest.installedVersion == null || latest.updateAvailable),
@@ -492,7 +494,7 @@ private fun StoreErrorState(
         title = storeErrorMessage(error),
         hint = error.detail?.takeIf { it.isNotBlank() },
         actions = {
-            TextButton(onClick = onRetry) {
+            AppTextButton(onClick = onRetry) {
                 Text(stringResource(R.string.plugins_store_retry))
             }
         },

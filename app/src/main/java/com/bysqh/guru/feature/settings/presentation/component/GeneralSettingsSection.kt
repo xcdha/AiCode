@@ -39,6 +39,7 @@ import com.bysqh.guru.feature.settings.data.repository.StartupSessionMode
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 偏好设置：集中放置不属于单个提供商配置、也不针对某个专用模型的全局偏好。
@@ -414,7 +415,7 @@ private fun NumberInputDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(parsed ?: 0) },
                 enabled = isValid
             ) {
@@ -422,7 +423,7 @@ private fun NumberInputDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

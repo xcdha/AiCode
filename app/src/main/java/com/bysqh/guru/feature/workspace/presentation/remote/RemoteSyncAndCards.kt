@@ -68,6 +68,7 @@ import compose.icons.feathericons.MoreHorizontal
 import compose.icons.feathericons.Play
 import compose.icons.feathericons.Server
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /** 同步设置底部弹窗（右上角齿轮打开）。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -150,7 +151,7 @@ fun SyncSettingsSheet(
                 }
             }
             Spacer(modifier = Modifier.height(Spacing.md))
-            Button(
+            AppButton(
                 onClick = {
                     onUseGitIgnoreChange(editUseGitIgnore)
                     onMaxSyncBatchSizeChange(maxBatchSizeText.toIntOrNull() ?: 50)
@@ -425,7 +426,7 @@ fun RemoteMountCard(
                         }
                     }
                 } else {
-                    Button(
+                    AppButton(
                         onClick = { onConnect(mount) },
                         modifier = Modifier
                             .fillMaxWidth()

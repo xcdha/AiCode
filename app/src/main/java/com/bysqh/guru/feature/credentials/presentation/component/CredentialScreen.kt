@@ -72,6 +72,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.User
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 凭据与署名独立页：底部悬浮 tab 切换「署名」与「凭据」两个标签页。
@@ -285,12 +286,12 @@ fun CredentialScreen(
             title = { Text(stringResource(R.string.credential_auto_inject_prompt_title)) },
             text = { Text(stringResource(R.string.credential_auto_inject_prompt_body)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.dismissAutoInjectPrompt(true) }) {
+                AppTextButton(onClick = { viewModel.dismissAutoInjectPrompt(true) }) {
                     Text(stringResource(R.string.credential_auto_inject_enable))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissAutoInjectPrompt(false) }) {
+                AppTextButton(onClick = { viewModel.dismissAutoInjectPrompt(false) }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

@@ -75,6 +75,8 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -293,7 +295,7 @@ fun RemoteServerScreen(
                 Snackbar(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
                     action = {
-                        TextButton(onClick = { viewModel.clearError() }) {
+                        AppTextButton(onClick = { viewModel.clearError() }) {
                             Text(stringResource(R.string.common_close))
                         }
                     }
@@ -335,13 +337,13 @@ fun RemoteServerScreen(
             title = { Text(stringResource(R.string.common_delete)) },
             text = { Text(stringResource(R.string.remote_delete_connection_confirm, conn.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     viewModel.deleteConnection(conn.id)
                     pendingDeleteConnection = null
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDeleteConnection = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDeleteConnection = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -359,13 +361,13 @@ fun RemoteServerScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     viewModel.deleteMount(mount.id)
                     pendingDeleteMount = null
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDeleteMount = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDeleteMount = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -402,7 +404,7 @@ fun RemoteServerScreen(
                 title = { Text(stringResource(R.string.remote_hint_title)) },
                 text = { Text(stringResource(R.string.remote_add_channel_first)) },
                 confirmButton = {
-                    TextButton(onClick = {
+                    AppTextButton(onClick = {
                         showAddMountDialog = false
                         coroutineScope.launch { pagerState.animateScrollToPage(0) }
                     }) {
@@ -459,7 +461,7 @@ private fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.lg)
         )
-        Button(onClick = onAdd) {
+        AppButton(onClick = onAdd) {
             Text(stringResource(R.string.common_add))
         }
     }

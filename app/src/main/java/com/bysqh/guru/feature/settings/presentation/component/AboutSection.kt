@@ -62,6 +62,7 @@ import compose.icons.feathericons.Globe
 import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Tag
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 关于页：顶部应用信息、版本号（点击手动检查更新）、自动检查更新开关、更新通道、
@@ -442,16 +443,16 @@ private fun MirrorSourceDialog(
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                TextButton(onClick = { text = DEFAULT_DOWNLOAD_MIRROR }) {
+                AppTextButton(onClick = { text = DEFAULT_DOWNLOAD_MIRROR }) {
                     Text(stringResource(R.string.about_update_mirror_default))
                 }
-                TextButton(onClick = { onConfirm(trimmed) }, enabled = valid) {
+                AppTextButton(onClick = { onConfirm(trimmed) }, enabled = valid) {
                     Text(stringResource(R.string.common_save))
                 }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

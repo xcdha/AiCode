@@ -41,6 +41,8 @@ import com.bysqh.guru.feature.settings.presentation.component.SettingsGroup
 import com.bysqh.guru.feature.settings.presentation.component.SettingsGroupHeader
 import java.net.URI
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 单次最多逐条列出的导入问题数，其余折叠成「还有 N 个问题」。 */
 private const val MAX_LISTED_ERRORS = 5
@@ -100,7 +102,7 @@ private fun ImportFailedDialog(errors: List<PluginError>, onDismiss: () -> Unit)
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
+        confirmButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
     )
 }
 
@@ -228,11 +230,11 @@ private fun PluginPreviewSheet(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss, enabled = !state.installing) {
+                AppTextButton(onClick = onDismiss, enabled = !state.installing) {
                     Text(stringResource(R.string.common_cancel))
                 }
                 Spacer(Modifier.width(Spacing.sm))
-                Button(onClick = onInstall, enabled = !state.installing && repositoryMatches) {
+                AppButton(onClick = onInstall, enabled = !state.installing && repositoryMatches) {
                     if (state.installing) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     } else {

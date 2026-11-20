@@ -91,6 +91,7 @@ import compose.icons.feathericons.Zap
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -331,13 +332,13 @@ fun GitScreen(
             title = { Text(stringResource(R.string.git_pull)) },
             text = { Text(stringResource(R.string.git_pull_dirty_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showPullConfirm = false
                     viewModel.pull()
                 }) { Text(stringResource(R.string.git_pull_continue)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPullConfirm = false }) {
+                AppTextButton(onClick = { showPullConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -350,17 +351,17 @@ fun GitScreen(
             title = { Text(stringResource(R.string.git_push_master_confirm_title)) },
             text = { Text(stringResource(R.string.git_push_master_confirm_desc)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showMasterRenameConfirm = false
                     viewModel.pushRenameMasterToMain()
                 }) { Text(stringResource(R.string.git_push_rename_to_main)) }
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { showMasterRenameConfirm = false }) {
+                    AppTextButton(onClick = { showMasterRenameConfirm = false }) {
                         Text(stringResource(R.string.common_cancel))
                     }
-                    TextButton(onClick = {
+                    AppTextButton(onClick = {
                         showMasterRenameConfirm = false
                         viewModel.pushDirectly()
                     }) { Text(stringResource(R.string.git_push_keep_master)) }
@@ -698,7 +699,7 @@ private fun CloneRepoDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     val trimmed = url.trim()
                     if (trimmed.isNotEmpty()) onConfirm(trimmed)
@@ -709,7 +710,7 @@ private fun CloneRepoDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }
@@ -872,11 +873,11 @@ private fun CommitDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { if (message.isNotBlank()) onConfirm(message.trim(), amend) },
                 enabled = message.isNotBlank() && !isGenerating
             ) { Text(stringResource(R.string.git_action_commit)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }

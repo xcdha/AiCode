@@ -89,6 +89,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 备份与还原整页：底部悬浮 tab 分「本地备份 / 网络备份」两页。
@@ -324,14 +325,14 @@ internal fun BackupScreen(
             title = { Text(stringResource(R.string.common_delete)) },
             text = { Text(stringResource(R.string.backup_net_delete_target_confirm, target.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     viewModel.deleteTarget(target.id)
                     targetToDelete = null
                 }) {
                     Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { targetToDelete = null }) { Text(stringResource(R.string.common_cancel)) } }
+            dismissButton = { AppTextButton(onClick = { targetToDelete = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
@@ -858,14 +859,14 @@ private fun WorkspaceRestoreDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(checked.filterValues { it }.keys) },
                 enabled = anyChecked
             ) {
                 Text(stringResource(R.string.backup_restore_workspaces_confirm))
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 
@@ -903,9 +904,9 @@ private fun PasswordDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmText) }
+            AppTextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }
 
@@ -958,7 +959,7 @@ private fun ResultDialog(title: String, message: String, onDismiss: () -> Unit) 
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(message) },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
+        confirmButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) } }
     )
 }
 

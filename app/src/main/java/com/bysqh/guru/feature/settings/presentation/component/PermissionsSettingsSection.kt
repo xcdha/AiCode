@@ -50,6 +50,7 @@ import compose.icons.feathericons.XCircle
 import kotlinx.coroutines.delay
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 「工具授权」二级页：与设置页其它二级页一致的 iOS 分组列表。
@@ -181,7 +182,7 @@ private fun SafetyConfirmDialog(
         title = { Text(stringResource(R.string.perm_safety_confirm_title)) },
         text = { Text(stringResource(R.string.perm_safety_confirm_message)) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onConfirm,
                 enabled = secondsLeft == 0
             ) {
@@ -195,7 +196,7 @@ private fun SafetyConfirmDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

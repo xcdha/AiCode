@@ -174,6 +174,8 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -790,7 +792,7 @@ fun ProviderEditorScreen(
                                 modifier = Modifier.weight(1f)
                             )
                             val allSelected = models.isNotEmpty() && selectedModels.size == models.size
-                            TextButton(
+                            AppTextButton(
                                 onClick = {
                                     if (allSelected) {
                                         selectedModels.clear()
@@ -805,7 +807,7 @@ fun ProviderEditorScreen(
                             ) {
                                 Text(stringResource(if (allSelected) R.string.provider_models_deselect_all else R.string.provider_models_select_all))
                             }
-                            TextButton(
+                            AppTextButton(
                                 onClick = {
                                     selectedModels.forEach { m -> viewModel.testModel(currentConfig(), m) }
                                 },
@@ -818,7 +820,7 @@ fun ProviderEditorScreen(
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_test))
                             }
-                            TextButton(
+                            AppTextButton(
                                 onClick = { showBatchDeleteConfirm = true },
                                 enabled = selectedModels.isNotEmpty(),
                                 colors = ButtonDefaults.textButtonColors(
@@ -829,7 +831,7 @@ fun ProviderEditorScreen(
                                 Spacer(Modifier.width(Spacing.xs))
                                 Text(stringResource(R.string.provider_models_batch_delete))
                             }
-                            TextButton(
+                            AppTextButton(
                                 onClick = {
                                     isSelectionMode = false
                                     selectedModels.clear()
@@ -847,7 +849,7 @@ fun ProviderEditorScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f)
                             )
-                            TextButton(
+                            AppTextButton(
                                 onClick = {
                                     fetchDialogKey++
                                     showFetchDialog = true
@@ -1129,7 +1131,7 @@ fun ProviderEditorScreen(
                 Text(stringResource(R.string.provider_models_batch_delete_confirm, selectedModels.size))
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         showBatchDeleteConfirm = false
                         val toDelete = selectedModels.toList()
@@ -1147,7 +1149,7 @@ fun ProviderEditorScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBatchDeleteConfirm = false }) {
+                AppTextButton(onClick = { showBatchDeleteConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -1414,7 +1416,7 @@ private fun AddModelSheet(
                     .padding(top = 12.dp, bottom = Spacing.xl)
                     .navigationBarsPadding()
             ) {
-                Button(
+                AppButton(
                     enabled = canSave,
                     onClick = {
                         val input = inputTokens.trim().toIntOrNull()
@@ -1642,7 +1644,7 @@ private fun FetchModelsDialog(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (availableNewModels.isNotEmpty()) {
-                    TextButton(
+                    AppTextButton(
                         onClick = { showAddAllConfirm = true },
                         contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp)
                     ) {
@@ -1851,7 +1853,7 @@ private fun FetchModelsDialog(
                 Text(stringResource(R.string.provider_add_all_models_confirm, availableNewModels.size))
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         showAddAllConfirm = false
                         onAddModels(availableNewModels)
@@ -1865,7 +1867,7 @@ private fun FetchModelsDialog(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAddAllConfirm = false }) {
+                AppTextButton(onClick = { showAddAllConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -3053,7 +3055,7 @@ private fun ProviderHeadersSheet(
                         )
                     }
                 }
-                Button(
+                AppButton(
                     onClick = onDismiss,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -3232,7 +3234,7 @@ private fun ProviderScriptParamsSheet(
                         )
                     }
                 }
-                Button(
+                AppButton(
                     onClick = onDismiss,
                     modifier = Modifier
                         .fillMaxWidth()

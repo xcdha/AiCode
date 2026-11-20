@@ -120,6 +120,7 @@ import compose.icons.feathericons.Copy
 import compose.icons.feathericons.ExternalLink
 import compose.icons.feathericons.HelpCircle
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 val LocalCardFormState = compositionLocalOf<MutableMap<String, Any>?> { null }
 val LocalCardOnSubmit = compositionLocalOf<((String, String?, Map<String, Any>) -> Unit)?> { null }
@@ -1629,7 +1630,7 @@ private fun RenderActionSubmit(
 ) {
     val formState = LocalCardFormState.current
     val onSubmit = LocalCardOnSubmit.current
-    Button(
+    AppButton(
         onClick = {
             onSubmit?.invoke(element.id, element.commandTemplate, formState?.toMap() ?: emptyMap())
         },

@@ -58,6 +58,7 @@ import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * 网络备份目标的新建/编辑底部弹窗：按类型（WebDAV / S3）切换字段，支持连通性测试与保存。
@@ -274,7 +275,7 @@ fun BackupTargetSheet(
                     .padding(top = 12.dp, bottom = 24.dp)
                     .navigationBarsPadding()
             ) {
-                Button(
+                AppButton(
                     enabled = valid,
                     onClick = { onSave(currentTarget()) },
                     modifier = Modifier.fillMaxWidth().height(44.dp),

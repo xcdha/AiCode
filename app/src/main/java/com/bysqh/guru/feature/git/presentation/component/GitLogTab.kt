@@ -88,6 +88,7 @@ import com.bysqh.guru.core.ui.dialogTextFieldColors
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 internal fun LogTab(
@@ -727,7 +728,7 @@ private fun CommitDetailSheet(
                 )
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         val name = newBranchName.trim()
                         if (name.isNotBlank()) {
@@ -741,7 +742,7 @@ private fun CommitDetailSheet(
                 ) { Text(stringResource(R.string.git_action_create_branch)) }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateBranchDialog = false }) {
+                AppTextButton(onClick = { showCreateBranchDialog = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -763,7 +764,7 @@ private fun CommitDetailSheet(
                 )
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         val name = newTagName.trim()
                         if (name.isNotBlank()) {
@@ -776,7 +777,7 @@ private fun CommitDetailSheet(
                 ) { Text(stringResource(R.string.git_action_create_tag)) }
             },
             dismissButton = {
-                TextButton(onClick = { showCreateTagDialog = false }) {
+                AppTextButton(onClick = { showCreateTagDialog = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -819,7 +820,7 @@ private fun CommitDetailSheet(
                 }
             },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         showResetDialog = false
                         onReset(resetMode)
@@ -828,7 +829,7 @@ private fun CommitDetailSheet(
                 ) { Text(stringResource(R.string.git_reset_to_commit), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
+                AppTextButton(onClick = { showResetDialog = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -876,14 +877,14 @@ private fun CommitDetailSheet(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("commit-short", commit.shortHash)))
                     }
                 }) {
                     Text(stringResource(R.string.git_copy_short_hash), style = MaterialTheme.typography.labelMedium)
                 }
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("commit-full", commit.hash)))
                     }

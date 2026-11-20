@@ -16,6 +16,7 @@ import androidx.compose.ui.text.withLink
 import com.bysqh.guru.R
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 fun AgreementDialog(onAccept: () -> Unit, onDecline: () -> Unit) {
@@ -58,12 +59,12 @@ fun AgreementDialog(onAccept: () -> Unit, onDecline: () -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(onClick = onAccept) {
+            AppTextButton(onClick = onAccept) {
                 Text(stringResource(R.string.agreement_accept))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDecline) {
+            AppTextButton(onClick = onDecline) {
                 Text(stringResource(R.string.agreement_decline))
             }
         }

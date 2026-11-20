@@ -112,6 +112,8 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 容器镜像二级页：所有容器（含内置 Alpine）统一管理——列表单选切换、编辑、重置、左滑删除；
@@ -171,7 +173,7 @@ internal fun ContainerSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = Spacing.xs, bottom = Spacing.lg)
             )
-            Button(onClick = onRestoreBuiltin) {
+            AppButton(onClick = onRestoreBuiltin) {
                 Text(stringResource(R.string.container_restore_builtin))
             }
         }
@@ -296,13 +298,13 @@ internal fun ContainerSection(
             title = { Text(stringResource(R.string.container_delete_config)) },
             text = { Text(stringResource(R.string.container_delete_confirm, deleting.name, deleteHint(context, deleting))) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     deleteImageCopy(deleting)
                     onDeleteProfile(deleting)
                     deletingProfile = null
                 }) { Text(stringResource(R.string.common_delete)) }
             },
-            dismissButton = { TextButton(onClick = { deletingProfile = null }) { Text(stringResource(R.string.common_cancel)) } }
+            dismissButton = { AppTextButton(onClick = { deletingProfile = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
@@ -312,13 +314,13 @@ internal fun ContainerSection(
             title = { Text(stringResource(R.string.container_switch_image)) },
             text = { Text(stringResource(R.string.container_switch_confirm, target.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onSwitchConfirmed()
                     onSelect(target.id)
                     pendingSwitch = null
                 }) { Text(stringResource(R.string.common_switch)) }
             },
-            dismissButton = { TextButton(onClick = { pendingSwitch = null }) { Text(stringResource(R.string.common_cancel)) } }
+            dismissButton = { AppTextButton(onClick = { pendingSwitch = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
@@ -328,13 +330,13 @@ internal fun ContainerSection(
             title = { Text(stringResource(R.string.container_reset_title)) },
             text = { Text(stringResource(R.string.container_reset_confirm, target.name)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onResetProfile(target)
                     pendingReset = null
                     if (editingProfile?.id == target.id) editingProfile = null
                 }) { Text(stringResource(R.string.container_reset)) }
             },
-            dismissButton = { TextButton(onClick = { pendingReset = null }) { Text(stringResource(R.string.common_cancel)) } }
+            dismissButton = { AppTextButton(onClick = { pendingReset = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 
@@ -833,7 +835,7 @@ private fun ProfileEditSheet(
             }
 
             Spacer(modifier = Modifier.size(Spacing.xs))
-            Button(
+            AppButton(
                 onClick = {
                     importing = true
                     scope.launch {

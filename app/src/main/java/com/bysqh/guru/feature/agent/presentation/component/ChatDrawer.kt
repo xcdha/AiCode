@@ -164,6 +164,8 @@ import com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper
 import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 private fun DrawerProgressIndicator(
@@ -361,7 +363,7 @@ fun ChatDrawerContent(
                             ids
                         }
                         val allSelected = allSessionIds.isNotEmpty() && selectedSessionIds.size == allSessionIds.size
-                        TextButton(
+                        AppTextButton(
                             onClick = {
                                 if (allSelected) {
                                     selectedSessionIds.clear()
@@ -547,10 +549,10 @@ fun ChatDrawerContent(
                 )
             },
             confirmButton = {
-                TextButton(onClick = onPasteOverwrite) { Text(stringResource(R.string.common_overwrite)) }
+                AppTextButton(onClick = onPasteOverwrite) { Text(stringResource(R.string.common_overwrite)) }
             },
             dismissButton = {
-                TextButton(onClick = onCancelPasteOverwrite) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = onCancelPasteOverwrite) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -561,13 +563,13 @@ fun ChatDrawerContent(
             title = { Text(stringResource(R.string.chat_delete_session)) },
             text = { Text(stringResource(R.string.chat_delete_session_confirm, session.title)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onDelete(session)
                     pendingDelete = null
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -612,7 +614,7 @@ fun ChatDrawerContent(
                 Text(stringResource(R.string.chat_batch_delete_confirm, selectedSessionIds.size))
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     showBatchDeleteConfirm = false
                     val toDelete = selectedSessionIds.toSet()
                     selectedSessionIds.clear()
@@ -629,7 +631,7 @@ fun ChatDrawerContent(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showBatchDeleteConfirm = false }) {
+                AppTextButton(onClick = { showBatchDeleteConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -652,7 +654,7 @@ fun ChatDrawerContent(
                 )
             },
             confirmButton = {
-                Button(
+                AppButton(
                     onClick = {
                         onRename(session, renameText)
                         pendingRename = null
@@ -661,7 +663,7 @@ fun ChatDrawerContent(
                 ) { Text(stringResource(R.string.common_rename)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingRename = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingRename = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -1466,13 +1468,13 @@ private fun FileBrowserTab(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onDeleteEntry(node.path)
                     pendingDelete = null
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -1508,13 +1510,13 @@ private fun FileNameInputDialog(
             )
         },
         confirmButton = {
-            Button(
+            AppButton(
                 onClick = { onConfirm(name) },
                 enabled = isValidFileEntryName(name) && name.trim() != initialName
             ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

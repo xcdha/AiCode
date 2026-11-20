@@ -50,6 +50,7 @@ import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
 import compose.icons.feathericons.Eye
 import compose.icons.feathericons.EyeOff
+import com.bysqh.guru.core.ui.AppButton
 
 /** 默认测试目标：返回 204 的连通性端点，不依赖响应体格式。 */
 private const val DEFAULT_TEST_URL = "https://www.google.com"
@@ -211,7 +212,7 @@ internal fun ProxySection(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(Spacing.sm))
-                    Button(
+                    AppButton(
                         onClick = { onTestProxy(testUrl) },
                         enabled = testState !is ProxyTestUiState.Testing,
                         modifier = Modifier.fillMaxWidth()

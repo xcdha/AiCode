@@ -66,6 +66,7 @@ import compose.icons.feathericons.Plus
 import compose.icons.feathericons.Shield
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** SSH 密钥设置独立页面：底部双 tab——「密钥」管理登录私钥库，「指纹」展示已保存的主机指纹。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -270,7 +271,7 @@ fun HostKeysScreen(
                     )
                 },
                 confirmButton = {
-                    TextButton(onClick = { detailHostAddress = null }) {
+                    AppTextButton(onClick = { detailHostAddress = null }) {
                         Text(stringResource(R.string.common_close))
                     }
                 }

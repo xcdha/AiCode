@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 拉取/推送缺 https 凭据时的登录弹窗。host 只读预填，用户填 username/token；填完确认回调回填，
@@ -102,11 +103,11 @@ fun CredentialPromptDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { if (canSave) onConfirm(username.trim(), token) },
                 enabled = canSave
             ) { Text(stringResource(R.string.credential_save_and_retry)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
+        dismissButton = { AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } }
     )
 }

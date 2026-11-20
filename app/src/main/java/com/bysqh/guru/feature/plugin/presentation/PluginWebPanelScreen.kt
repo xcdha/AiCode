@@ -50,6 +50,7 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.feature.plugin.domain.PluginPage
 import java.util.concurrent.atomic.AtomicReference
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 插件 HTML 页面宿主。
@@ -284,7 +285,7 @@ fun PluginWebPanelScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     failed = false
                     webView.loadUrl(pageUrl)
                 }) {

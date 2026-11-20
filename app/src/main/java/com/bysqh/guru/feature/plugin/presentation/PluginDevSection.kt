@@ -55,6 +55,7 @@ import compose.icons.feathericons.Folder
 import compose.icons.feathericons.Package
 import compose.icons.feathericons.Power
 import compose.icons.feathericons.Tag
+import com.bysqh.guru.core.ui.AppButton
 
 /** 开发者侧载目录里的插件项目：列表版式与已安装一致，点击进入独立详情页。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -277,7 +278,7 @@ internal fun PluginDevDetailSection(
             )
         }
 
-        Button(
+        AppButton(
             onClick = onInstall,
             enabled = project.error == null,
             modifier = Modifier

@@ -49,6 +49,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 头像裁剪：拖动 + 双指缩放，方框内的内容就是最终头像。
@@ -74,7 +75,7 @@ internal fun AvatarCropDialog(
             onDismissRequest = onCancel,
             title = { Text(stringResource(R.string.crop_decode_failed_title)) },
             text = { Text(stringResource(R.string.crop_decode_failed_message)) },
-            confirmButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.common_got_it)) } }
+            confirmButton = { AppTextButton(onClick = onCancel) { Text(stringResource(R.string.common_got_it)) } }
         )
         return
     }
@@ -152,8 +153,8 @@ internal fun AvatarCropDialog(
 
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
-                TextButton(
+                AppTextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(
                     onClick = {
                         val cropped = renderCroppedAvatar(bitmap, boxSizePx, scale, offset)
                         if (cropped != null) onConfirm(cropped) else onCancel()

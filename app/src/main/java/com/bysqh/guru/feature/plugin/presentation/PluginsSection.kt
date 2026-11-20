@@ -108,6 +108,7 @@ import compose.icons.feathericons.Tool
 import compose.icons.feathericons.User
 import compose.icons.feathericons.Users
 import compose.icons.feathericons.Zap
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 当前界面语言标签，用于挑选插件自带的多语言文本。 */
 @Composable
@@ -806,7 +807,7 @@ private fun PluginNativeConfigContent(
                             )
                         }
                     }
-                    TextButton(
+                    AppTextButton(
                         onClick = onPrepareDependencies,
                         enabled = dependencyState?.running != true
                     ) {

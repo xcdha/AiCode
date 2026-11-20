@@ -73,6 +73,8 @@ import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /**
  * 全屏聚光灯新手引导遮罩层（Spotlight Overlay）。
@@ -387,7 +389,7 @@ private fun SpotlightCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                AppTextButton(
                     onClick = onSkip,
                     contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp)
                 ) {
@@ -398,7 +400,7 @@ private fun SpotlightCard(
                     )
                 }
 
-                Button(
+                AppButton(
                     onClick = onNext,
                     shape = RoundedCornerShape(Radius.md),
                     colors = ButtonDefaults.buttonColors(

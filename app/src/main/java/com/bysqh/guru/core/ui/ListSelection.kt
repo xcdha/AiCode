@@ -152,7 +152,7 @@ fun SelectionActionBar(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        TextButton(
+        AppTextButton(
             onClick = onToggleSelectAll,
             contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp),
             modifier = Modifier.height(36.dp)
@@ -190,7 +190,7 @@ fun SelectionActionButton(
     tint: Color = MaterialTheme.colorScheme.primary,
     icon: ImageVector? = null
 ) {
-    TextButton(
+    AppTextButton(
         onClick = onClick,
         enabled = enabled,
         contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp),
@@ -257,7 +257,7 @@ fun BatchDeleteConfirmDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm, enabled = !inProgress) {
+            AppTextButton(onClick = onConfirm, enabled = !inProgress) {
                 if (inProgress) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
@@ -266,7 +266,7 @@ fun BatchDeleteConfirmDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !inProgress) {
+            AppTextButton(onClick = onDismiss, enabled = !inProgress) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

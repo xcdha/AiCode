@@ -22,6 +22,7 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.ui.AppTextField
 import com.bysqh.guru.core.ui.dialogTextFieldColors
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 粘贴标准 mcpServers JSON 批量导入 MCP 服务器的对话框。 */
 @Composable
@@ -63,7 +64,7 @@ internal fun McpJsonImportDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(text) },
                 enabled = text.isNotBlank() && !inProgress
             ) {
@@ -71,7 +72,7 @@ internal fun McpJsonImportDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.common_cancel))
             }
         }

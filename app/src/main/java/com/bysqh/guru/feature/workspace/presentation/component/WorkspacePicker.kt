@@ -64,6 +64,7 @@ import android.widget.Toast
 import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -276,14 +277,14 @@ private fun WorkspaceSelectionHost(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     if (dontShowExternalWarningAgain) viewModel.setExternalWarningDismissed(true)
                     showExternalWarning = false
                     folderLauncher.launch(null)
                 }) { Text(stringResource(R.string.workspace_external_warning_continue)) }
             },
             dismissButton = {
-                TextButton(onClick = { showExternalWarning = false }) {
+                AppTextButton(onClick = { showExternalWarning = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -296,7 +297,7 @@ private fun WorkspaceSelectionHost(
             title = { Text(stringResource(R.string.workspace_switch)) },
             text = { Text(stringResource(R.string.workspace_switch_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     onSwitchConfirmed()
                     viewModel.selectWorkspace(ws.name)
                     pendingWorkspaceSelect = null
@@ -304,7 +305,7 @@ private fun WorkspaceSelectionHost(
                 }) { Text(stringResource(R.string.workspace_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingWorkspaceSelect = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingWorkspaceSelect = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -353,13 +354,13 @@ private fun WorkspaceSheet(
                     modifier = Modifier.weight(1f)
                 )
                 if (isLocalMode) {
-                    TextButton(onClick = onAddExternal) {
+                    AppTextButton(onClick = onAddExternal) {
                         Icon(FeatherIcons.HardDrive, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.workspace_add_external))
                     }
                 }
-                TextButton(onClick = { showCreateDialog = true }) {
+                AppTextButton(onClick = { showCreateDialog = true }) {
                     Icon(FeatherIcons.Plus, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(Spacing.xs))
                     Text(createWorkspaceLabel)
@@ -422,14 +423,14 @@ private fun WorkspaceSheet(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     if (ws.name == current?.name) onStopCurrentSessions()
                     onDelete(ws)
                     pendingDelete = null
                 }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -554,10 +555,10 @@ private fun CreateWorkspaceDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = canConfirm, onClick = { onConfirm(trimmed) }) { Text(stringResource(R.string.common_create)) }
+            AppTextButton(enabled = canConfirm, onClick = { onConfirm(trimmed) }) { Text(stringResource(R.string.common_create)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }

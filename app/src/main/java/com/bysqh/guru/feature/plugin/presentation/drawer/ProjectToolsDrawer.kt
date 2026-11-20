@@ -55,6 +55,7 @@ import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Tool
 import compose.icons.feathericons.Trash2
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * 界面 ①：右侧抽屉（当前项目已启用的工具列表与快捷操作）。
@@ -277,7 +278,7 @@ private fun EmptyToolsView(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(
+            AppButton(
                 onClick = onAddTools,
                 shape = RoundedCornerShape(Radius.mdLarge),
                 colors = ButtonDefaults.buttonColors(

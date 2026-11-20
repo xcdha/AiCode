@@ -51,6 +51,8 @@ import compose.icons.feathericons.Info
 import compose.icons.feathericons.Share2
 import kotlinx.coroutines.launch
 import com.bysqh.guru.core.ui.AppAlertDialog
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 @Composable
 fun WiFiFtpServerSection(
@@ -262,7 +264,7 @@ fun WiFiFtpServerSection(
                     AppSwitch(checked = editAutoStart, onCheckedChange = { editAutoStart = it })
                 }
 
-                Button(
+                AppButton(
                     onClick = {
                         val p = editPort.toIntOrNull() ?: 2121
                         viewModel.saveFtpServerConfig(p, editUsername, editPassword, editAnonymous, editAutoStart)
@@ -285,7 +287,7 @@ fun WiFiFtpServerSection(
             title = { Text(stringResource(R.string.ftp_anonymous_confirm_title)) },
             text = { Text(stringResource(R.string.ftp_anonymous_confirm_message)) },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     onClick = {
                         editAnonymous = true
                         showAnonymousConfirm = false
@@ -293,7 +295,7 @@ fun WiFiFtpServerSection(
                 ) { Text(stringResource(R.string.common_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showAnonymousConfirm = false }) {
+                AppTextButton(onClick = { showAnonymousConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }

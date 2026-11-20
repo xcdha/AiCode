@@ -88,6 +88,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -508,7 +509,7 @@ private fun StatusView(
         )
         if (actionLabel != null && onAction != null) {
             Spacer(Modifier.height(Spacing.lg))
-            Button(onClick = onAction) { Text(actionLabel) }
+            AppButton(onClick = onAction) { Text(actionLabel) }
         }
     }
 }

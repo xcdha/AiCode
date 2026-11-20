@@ -62,6 +62,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 /**
  * 全屏崩溃错误页：全局未捕获异常处理器捕获崩溃后拉起本页面，
@@ -282,7 +283,7 @@ private fun CrashScreen(
                         Spacer(Modifier.width(Spacing.xs))
                         Text(stringResource(R.string.crash_copy), maxLines = 1)
                     }
-                    Button(
+                    AppButton(
                         onClick = onRestart,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp)

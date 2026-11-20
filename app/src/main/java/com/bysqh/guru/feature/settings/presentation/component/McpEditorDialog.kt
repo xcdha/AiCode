@@ -70,6 +70,7 @@ import kotlinx.serialization.json.JsonObject
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -587,7 +588,7 @@ fun McpServerEditDialog(
                         .navigationBarsPadding(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    AppButton(
                         enabled = canSave,
                         onClick = {
                             onSave(currentConfig(), scope)

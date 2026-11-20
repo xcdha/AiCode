@@ -158,6 +158,8 @@ import kotlinx.coroutines.delay
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.core.ui.AppAlertDialog
 import com.bysqh.guru.core.ui.AppIconButton
+import com.bysqh.guru.core.ui.AppButton
+import com.bysqh.guru.core.ui.AppTextButton
 
 /** 使用手册在线文档站地址。 */
 private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
@@ -1276,13 +1278,13 @@ fun SettingsScreen(
                             title = { Text(stringResource(R.string.prompts_reset_custom)) },
                             text = { Text(stringResource(R.string.prompts_reset_confirm)) },
                             confirmButton = {
-                                TextButton(onClick = {
+                                AppTextButton(onClick = {
                                     promptsViewModel.resetCustomFragments()
                                     showResetPrompts = false
                                 }) { Text(stringResource(R.string.common_reset)) }
                             },
                             dismissButton = {
-                                TextButton(onClick = { showResetPrompts = false }) {
+                                AppTextButton(onClick = { showResetPrompts = false }) {
                                     Text(stringResource(R.string.common_cancel))
                                 }
                             }
@@ -1740,13 +1742,13 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.settings_token_stats_reset_title)) },
             text = { Text(stringResource(R.string.settings_token_stats_reset_confirm)) },
             confirmButton = {
-                TextButton(onClick = {
+                AppTextButton(onClick = {
                     viewModel.resetTokenStats()
                     showResetTokenStats = false
                 }) { Text(stringResource(R.string.settings_token_stats_reset)) }
             },
             dismissButton = {
-                TextButton(onClick = { showResetTokenStats = false }) { Text(stringResource(R.string.common_cancel)) }
+                AppTextButton(onClick = { showResetTokenStats = false }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -1763,7 +1765,7 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.skills_delete_confirm_title)) },
             text = { Text(stringResource(R.string.skills_delete_confirm_message, target.name)) },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     enabled = !deleting,
                     onClick = {
                         deleteStarted = true
@@ -1778,7 +1780,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(enabled = !deleting, onClick = { skillToDelete = null }) {
+                AppTextButton(enabled = !deleting, onClick = { skillToDelete = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -1798,7 +1800,7 @@ fun SettingsScreen(
                     Text(stringResource(R.string.plugins_uninstall_confirm_message, plugin.displayName(pluginLanguageTag)))
                 },
                 confirmButton = {
-                    TextButton(
+                    AppTextButton(
                         onClick = {
                             showPluginUninstallConfirm = false
                             pluginsViewModel.uninstall(plugin.id)
@@ -1806,7 +1808,7 @@ fun SettingsScreen(
                     ) { Text(stringResource(R.string.common_delete)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showPluginUninstallConfirm = false }) {
+                    AppTextButton(onClick = { showPluginUninstallConfirm = false }) {
                         Text(stringResource(R.string.common_cancel))
                     }
                 }
@@ -1841,7 +1843,7 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.subagents_delete_confirm_title)) },
             text = { Text(stringResource(R.string.subagents_delete_confirm_message, target.name)) },
             confirmButton = {
-                TextButton(
+                AppTextButton(
                     enabled = !deleting,
                     onClick = {
                         deleteStarted = true
@@ -1856,7 +1858,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(enabled = !deleting, onClick = { subAgentToDelete = null }) {
+                AppTextButton(enabled = !deleting, onClick = { subAgentToDelete = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             }
@@ -1913,7 +1915,7 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    Button(
+                    AppButton(
                         onClick = dismiss,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1978,7 +1980,7 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    Button(
+                    AppButton(
                         onClick = dismiss,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2345,7 +2347,7 @@ private fun SkillImportResultDialog(state: SkillImportState, onDismiss: () -> Un
                     }
                 },
                 confirmButton = {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) }
+                    AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_got_it)) }
                 }
             )
         }
