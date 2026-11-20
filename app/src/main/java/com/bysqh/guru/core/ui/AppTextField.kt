@@ -1,7 +1,10 @@
 package com.bysqh.guru.core.ui
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,15 +14,23 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.bysqh.guru.core.theme.LocalUiStyle
 import com.bysqh.guru.core.theme.Radius
+import com.bysqh.guru.core.theme.UiStyle
 import com.bysqh.guru.core.theme.semanticColors
 
 /**
@@ -98,6 +109,48 @@ fun AppTextField(
 ) {
     val actualLabel: (@Composable () -> Unit)? = labelComposable ?: label?.let { { Text(it) } }
     val actualPlaceholder: (@Composable () -> Unit)? = placeholderComposable ?: placeholder?.let { { Text(it) } }
+
+    // [二开] Miuix 界面样式：用组件库的 TextField。它的 label 只能传纯文本，
+    // 所以标签排在字段上方，placeholder 交给组件当占位提示（MIUI 表单的常见形态）。
+    if (LocalUiStyle.current == UiStyle.MIUIX && placeholderComposable == null) {
+        var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
+        LaunchedEffect(value) {
+            if (fieldValue.text != value) {
+                fieldValue = fieldValue.copy(text = value, selection = TextRange(value.length))
+            }
+        }
+        Column(modifier = modifier) {
+            actualLabel?.let { labelContent ->
+                Box(modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)) { labelContent() }
+            }
+            top.yukonga.miuix.kmp.basic.TextField(
+                value = fieldValue,
+                onValueChange = { next ->
+                    fieldValue = next
+                    if (next.text != value) onValueChange(next.text)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = if (label == null) placeholder.orEmpty() else "",
+                useLabelAsPlaceholder = label == null && placeholder != null,
+                enabled = enabled,
+                readOnly = readOnly,
+                textStyle = textStyle,
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
+                leadingIcon = leadingIcon,
+                trailingIcon = trailingIcon,
+                singleLine = singleLine,
+                maxLines = maxLines,
+                minLines = minLines,
+                visualTransformation = visualTransformation,
+                interactionSource = interactionSource
+            )
+            supportingText?.let { support ->
+                Column(modifier = Modifier.padding(start = 4.dp, top = 6.dp)) { support() }
+            }
+        }
+        return
+    }
 
     OutlinedTextField(
         value = value,
