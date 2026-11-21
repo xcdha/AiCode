@@ -61,6 +61,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import android.graphics.SurfaceTexture
+import android.media.MediaPlayer
+import android.view.Surface
+import android.view.TextureView
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -138,6 +142,7 @@ import com.bysqh.guru.feature.settings.presentation.SettingsViewModel
 import com.bysqh.guru.feature.settings.presentation.FetchState
 import com.bysqh.guru.feature.settings.presentation.UpdateCheckUiState
 import com.bysqh.guru.feature.settings.presentation.component.githubReleaseUrl
+import com.bysqh.guru.feature.settings.presentation.component.GifBackgroundView
 import com.bysqh.guru.feature.settings.presentation.component.SettingsScreen
 import com.bysqh.guru.feature.settings.presentation.component.UpdateCheckDialog
 import com.bysqh.guru.feature.settings.presentation.component.decodeBackgroundBitmap
@@ -171,6 +176,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var backgroundSettings: BackgroundSettingsRepository
+    // [二开] MP4 壁纸：window 层 TextureView + MediaPlayer
+    private var wallpaperView: TextureView? = null
+    private var wallpaperPlayer: MediaPlayer? = null
+    private var wallpaperSurface: Surface? = null
+    private var wallpaperPath: String? = null
+
 
     /** 屏幕常亮开关：只在 App 前台约束屏幕，切后台由系统自动失效。 */
     @Inject
@@ -309,13 +320,18 @@ class MainActivity : ComponentActivity() {
                 darkTheme = darkTheme,
                 preset = AppThemePreset.findById(themePresetId),
                 dynamicColor = dynamicColor,
-                appearance = com.bysqh.guru.core.theme.AppearanceOptions(
-                    accent = accentColor,
-                    paletteStyle = paletteStyle,
-                    uiStyle = uiStyle,
-                    pureBlack = pureBlack,
-                    interfaceScale = interfaceScale
-                )
+                // 必须 remember：AppearanceOptions 每次重组都是新实例，
+                // 直接内联会让主题里的 remember(appearance) 全部失效，配色与 Density
+                // 每帧重建，抽屉阴影与过渡动画随之闪断。
+                appearance = remember(accentColor, paletteStyle, uiStyle, pureBlack, interfaceScale) {
+                    com.bysqh.guru.core.theme.AppearanceOptions(
+                        accent = accentColor,
+                        paletteStyle = paletteStyle,
+                        uiStyle = uiStyle,
+                        pureBlack = pureBlack,
+                        interfaceScale = interfaceScale
+                    )
+                }
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -325,7 +341,27 @@ class MainActivity : ComponentActivity() {
                     // 不拦截触摸事件；弹窗（Dialog 独立窗口）不受层级影响。
                     val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
                     val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
+                    val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(
+                        initialValue = BackgroundSettingsRepository.Kind.IMAGE
+                    )
+                    val bgPathSnapshot = bgPath
                     Box(modifier = Modifier.fillMaxSize()) {
+                        // [二开] MP4 / 动态照片由 window 层 TextureView 播放
+                        LaunchedEffect(bgPathSnapshot, bgKind, bgAlpha) {
+                            val videoPath = when {
+                                bgPathSnapshot == null || bgAlpha <= 0f -> null
+                                bgKind == BackgroundSettingsRepository.Kind.MP4 -> bgPathSnapshot
+                                bgKind == BackgroundSettingsRepository.Kind.MOTION_PHOTO ->
+                                    withContext(Dispatchers.IO) {
+                                        BackgroundSettingsRepository.extractMotionPhotoVideo(
+                                            java.io.File(bgPathSnapshot),
+                                            cacheDir
+                                        )
+                                    }?.absolutePath
+                                else -> null
+                            }
+                            setWallpaperVideo(videoPath, bgAlpha)
+                        }
                         AgreementGate(repository = agreementRepository) { agreementAccepted ->
                             AppNavigation(
                                 onboardingRepository = onboardingRepository,
@@ -339,7 +375,17 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        BackgroundImageOverlay(path = bgPath, imageAlpha = bgAlpha)
+                        // [二开] 按类型分发：GIF 走动图，MP4/动态照片由 window 层播放，静态图走上游实现
+                        if (bgPathSnapshot != null && bgAlpha > 0f) {
+                            when (bgKind) {
+                                BackgroundSettingsRepository.Kind.GIF ->
+                                    GifBackgroundView(path = bgPathSnapshot, alpha = bgAlpha)
+                                BackgroundSettingsRepository.Kind.MP4,
+                                BackgroundSettingsRepository.Kind.MOTION_PHOTO -> Unit
+                                BackgroundSettingsRepository.Kind.IMAGE ->
+                                    BackgroundImageOverlay(path = bgPathSnapshot, imageAlpha = bgAlpha)
+                            }
+                        }
                         // beta 包全局水印，置于最上层，不拦截触摸。
                         BetaWatermark()
                     }
@@ -372,6 +418,107 @@ class MainActivity : ComponentActivity() {
         browserManager.detachHiddenHost()
         PluginWebViewCache.clear()
         super.onDestroy()
+    }
+
+    /**
+     * [二开] 把 MP4 壁纸挂到 window 层的最上层。
+     *
+     * 为什么不用 Compose 的 AndroidView：它内部强制加 pointerInteropFilter 建立命中区域，
+     * 盖在界面上时命中测试优先命中它，下层界面收不到点击。
+     * window 层的 TextureView 不进 Compose 命中测试；并且用 WallpaperTextureView
+     * 在 dispatchTouchEvent 阶段直接返回 false，事件原封不动交给下层的 ComposeView，
+     * 于是背景盖在最上层也不会让界面失去响应。
+     *
+     * 纹理销毁时返回 false，自己持有 SurfaceTexture：抽屉开关不会拆掉画面。
+     */
+    private fun setWallpaperVideo(path: String?, alpha: Float) {
+        if (path == null) {
+            if (wallpaperPath != null || wallpaperView != null) releaseWallpaper()
+            return
+        }
+        wallpaperView?.alpha = alpha
+        if (path == wallpaperPath && wallpaperView != null) return
+        wallpaperPath = path
+        val content = findViewById<android.view.ViewGroup>(android.R.id.content) ?: return
+        val view = wallpaperView ?: WallpaperTextureView(this).also { tv ->
+            tv.isOpaque = false
+            tv.isClickable = false
+            tv.isFocusable = false
+            tv.isFocusableInTouchMode = false
+            tv.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+                override fun onSurfaceTextureAvailable(
+                    surfaceTexture: SurfaceTexture,
+                    width: Int,
+                    height: Int
+                ) {
+                    wallpaperSurface?.release()
+                    wallpaperSurface = Surface(surfaceTexture)
+                    startWallpaperPlayer()
+                }
+
+                override fun onSurfaceTextureSizeChanged(
+                    surfaceTexture: SurfaceTexture,
+                    width: Int,
+                    height: Int
+                ) = Unit
+
+                override fun onSurfaceTextureDestroyed(surfaceTexture: SurfaceTexture): Boolean = false
+
+                override fun onSurfaceTextureUpdated(surfaceTexture: SurfaceTexture) = Unit
+            }
+            wallpaperView = tv
+            // 插到 content 最上层：与静态图 / 动图一样盖在界面之上。
+            // 触摸靠 dispatchTouchEvent 返回 false 穿透到下层界面。
+            content.addView(
+                tv,
+                android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        view.alpha = alpha
+        if (view.isAvailable) startWallpaperPlayer()
+    }
+
+    private fun startWallpaperPlayer() {
+        val path = wallpaperPath ?: return
+        val surface = wallpaperSurface ?: return
+        wallpaperPlayer?.let { player ->
+            runCatching {
+                player.stop()
+                player.release()
+            }
+        }
+        val player = MediaPlayer()
+        wallpaperPlayer = player
+        runCatching {
+            player.setDataSource(path)
+            player.setSurface(surface)
+            player.isLooping = true
+            player.setVolume(0f, 0f)
+            player.setOnPreparedListener { it.start() }
+            player.setOnErrorListener { _, _, _ -> true }
+            player.prepareAsync()
+        }
+    }
+
+    private fun releaseWallpaper() {
+        wallpaperPlayer?.let { player ->
+            runCatching {
+                player.stop()
+                player.release()
+            }
+        }
+        wallpaperPlayer = null
+        wallpaperSurface?.release()
+        wallpaperSurface = null
+        wallpaperView?.let { view ->
+            view.surfaceTexture?.release()
+            (view.parent as? android.view.ViewGroup)?.removeView(view)
+        }
+        wallpaperView = null
+        wallpaperPath = null
     }
 
 }
@@ -1495,7 +1642,20 @@ fun AppNavigation(
     }
     }
     }
+
 }
+
+/**
+ * [二开] 壁纸专用 TextureView：完全不接管触摸。
+ *
+ * 只在 onTouchEvent 里返回 false 不够——TextureView 仍会被当作可命中的子 View，
+ * 部分 ROM 上整屏就此失去响应。这里在 dispatchTouchEvent 阶段直接拒绝，
+ * 保证父容器把事件继续分发给下面的 ComposeView。
+ */
+private class WallpaperTextureView(context: android.content.Context) : TextureView(context) {
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean = false
+}
+
 
 /** 侧边栏文件页写操作失败提示（新建 / 重命名 / 删除共用）。 */
 private fun toastFileOpFailed(context: android.content.Context, messageRes: Int) {
@@ -1537,6 +1697,7 @@ private val OPAQUE_URL_SCHEME = Regex(
 )
 
 private val TRAILING_LINE = Regex("^(.*):(\\d+)$")
+
 
 /** 文件树里点击即在内置查看器预览的图片格式（与 sendFile 的图片判定一致）。 */
 private val PREVIEWABLE_IMAGE_EXTS = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp")
