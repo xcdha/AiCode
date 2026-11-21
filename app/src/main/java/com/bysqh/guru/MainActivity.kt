@@ -47,6 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -1426,7 +1427,9 @@ fun AppNavigation(
                     drawerShape = RectangleShape,
                     drawerContainerColor = settingsPageBackground(),
                     drawerTonalElevation = 0.dp,
-                    modifier = Modifier.width(drawerWidth())
+                    modifier = Modifier
+                        .width(drawerWidth())
+                        .shadow(elevation = 12.dp, shape = RectangleShape, clip = false)
                 ) {
                     drawerBody(
                         drawerState.currentValue == DrawerValue.Open ||
