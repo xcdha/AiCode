@@ -2370,4 +2370,54 @@
 
     <string name="card_form_param_placeholder">Parameter</string>
     <string name="card_form_add_param">Add Parameter</string>
+
+    <!-- [二开] 记忆 / 角色 / 提示词片段 -->
+    <string name="memory_global_title">Global memories</string>
+    <string name="memory_project_title">Project memories</string>
+    <string name="memory_project_title_named">Project memories · %1$s</string>
+    <string name="memory_add">New memory</string>
+    <string name="memory_empty_global">No global memories yet</string>
+    <string name="memory_empty_project">No memories for this project yet</string>
+    <string name="memory_no_workspace">No workspace selected; project memories are unavailable</string>
+    <string name="memory_editor_new">New memory</string>
+    <string name="memory_editor_edit">Edit memory</string>
+    <string name="memory_name">Name</string>
+    <string name="memory_name_hint">Letters, digits and hyphens; used as the identifier</string>
+    <string name="memory_description">Description</string>
+    <string name="memory_description_hint">One sentence describing this memory</string>
+    <string name="memory_content">Content</string>
+    <string name="memory_content_hint">Long-term memory text for the AI, Markdown supported</string>
+    <string name="memory_scope">Scope</string>
+    <string name="memory_scope_global">Global</string>
+    <string name="memory_scope_project">Project</string>
+    <string name="memory_saved">Saved</string>
+    <string name="memory_save_failed">Failed to save</string>
+    <string name="memory_deleted">Deleted</string>
+    <string name="memory_delete_failed">Failed to delete</string>
+    <string name="memory_delete_confirm_title">Delete memory</string>
+    <string name="memory_delete_confirm_message">Delete "%1$s"? This cannot be undone.</string>
+    <string name="role_intro">The selected role supplies the identity prompt for new conversations. Identity is managed per role instead of inside system rules; changes apply to new sessions.</string>
+    <string name="role_group_title">Roles</string>
+    <string name="role_new">New role</string>
+    <string name="role_new_blank">Start with a blank identity</string>
+    <string name="role_name_label">Role name</string>
+    <string name="role_default_name">New role</string>
+    <string name="role_cannot_delete_title">Cannot delete</string>
+    <string name="role_cannot_delete_message">At least one role must remain.</string>
+    <string name="role_identity_empty">No identity prompt set</string>
+    <string name="role_identity_length">Identity prompt: %1$d chars</string>
+    <string name="role_current">Current role</string>
+    <string name="role_edit_title">Edit role</string>
+    <string name="role_change_avatar">Change avatar</string>
+    <string name="role_remove_avatar">Remove avatar</string>
+    <string name="role_identity">Identity prompt</string>
+    <string name="role_import_prompt">Import prompt</string>
+    <string name="role_delete">Delete role</string>
+
+    <string name="crop_decode_failed_title">Cannot read image</string>
+    <string name="crop_decode_failed_message">This image cannot be decoded. Try another one.</string>
+    <string name="crop_title">Adjust avatar</string>
+    <string name="crop_hint">Drag and zoom; the circle shows the final avatar</string>
+    <string name="settings_memory">Memory</string>
+    <string name="settings_roles">Roles</string>
 </resources>

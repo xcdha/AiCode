@@ -129,6 +129,7 @@ import compose.icons.feathericons.BookOpen
 import compose.icons.feathericons.Box
 import compose.icons.feathericons.Cloud
 import compose.icons.feathericons.Cpu
+import compose.icons.feathericons.Database
 import compose.icons.feathericons.Download
 import compose.icons.feathericons.FileText
 import compose.icons.feathericons.Globe
@@ -155,6 +156,7 @@ import compose.icons.feathericons.Sliders
 import compose.icons.feathericons.Terminal
 import compose.icons.feathericons.Trash2
 import compose.icons.feathericons.Users
+import compose.icons.feathericons.User
 import compose.icons.feathericons.Zap
 import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
 import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
@@ -188,6 +190,9 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     DefaultModels(R.string.settings_default_models),
     Mcp(R.string.settings_mcp),
     Skills(R.string.settings_skills),
+    // [二开] 记忆与角色
+    Memory(R.string.settings_memory),
+    Roles(R.string.settings_roles),
     Prompts(R.string.prompts_title),
     PromptDetail(R.string.prompts_title),
     PromptEditor(R.string.prompts_title),
@@ -1421,6 +1426,29 @@ fun SettingsScreen(
                     onBatchSetEnabled = { targets, enabled -> viewModel.setMcpServersEnabled(targets, enabled) },
                     onBatchReconnect = { names -> viewModel.reconnectMcpServers(names) }
                 )
+                // [二开] 记忆页
+                SettingsSection.Memory -> MemorySection(
+                    viewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                )
+                // [二开] 角色页
+                SettingsSection.Roles -> {
+                    val rolesViewModel: com.bysqh.guru.feature.settings.presentation.RolesViewModel =
+                        androidx.hilt.navigation.compose.hiltViewModel()
+                    val rolesState by rolesViewModel.state.collectAsStateWithLifecycle()
+                    val pendingCrop by rolesViewModel.pendingCrop.collectAsStateWithLifecycle()
+                    RolesSection(
+                        state = rolesState,
+                        pendingCrop = pendingCrop,
+                        onSelect = rolesViewModel::select,
+                        onCreate = rolesViewModel::create,
+                        onSave = rolesViewModel::save,
+                        onDelete = rolesViewModel::delete,
+                        onPickAvatar = rolesViewModel::pickAvatar,
+                        onCancelCrop = rolesViewModel::cancelCrop,
+                        onCommitCrop = rolesViewModel::commitAvatar,
+                        onRemoveAvatar = rolesViewModel::removeAvatar
+                    )
+                }
                 SettingsSection.Skills -> SkillsSection(
                     projectName = currentProjectName,
                     entries = skills,
@@ -1444,6 +1472,7 @@ fun SettingsScreen(
                         androidx.hilt.navigation.compose.hiltViewModel()
                     val promptsState by promptsViewModel.state.collectAsStateWithLifecycle()
                     LaunchedEffect(Unit) { promptsViewModel.refresh() }
+                    val disabledPromptNumbers by promptsViewModel.disabledNumbers.collectAsStateWithLifecycle()
                     PromptsSection(
                         state = promptsState,
                         selection = selectionFor(SettingsSection.Prompts),
@@ -1455,7 +1484,9 @@ fun SettingsScreen(
                         onDeleteFragment = promptsViewModel::deleteFragment,
                         onReorder = promptsViewModel::reorderFragments,
                         onToggleBuiltinDisabled = promptsViewModel::setBuiltinDisabled,
-                        onBatchDeleteFragments = promptsViewModel::deleteFragments
+                        onBatchDeleteFragments = promptsViewModel::deleteFragments,
+                        disabledNumbers = disabledPromptNumbers,
+                        onToggleFragmentEnabled = promptsViewModel::setFragmentEnabled
                     )
                     if (showResetPrompts) {
                         AlertDialog(
@@ -2383,6 +2414,20 @@ internal fun SettingsMenu(
                 icon = FeatherIcons.Box,
                 title = stringResource(SettingsSection.Mcp.titleRes),
                 onClick = { onOpen(SettingsSection.Mcp) }
+            )
+            SettingsDivider()
+            // [二开] 记忆：全局 / 项目记忆的查看与增删
+            SettingsRow(
+                icon = FeatherIcons.Database,
+                title = stringResource(SettingsSection.Memory.titleRes),
+                onClick = { onOpen(SettingsSection.Memory) }
+            )
+            SettingsDivider()
+            // [二开] 角色：内置身份段的替换角色，带头像
+            SettingsRow(
+                icon = FeatherIcons.User,
+                title = stringResource(SettingsSection.Roles.titleRes),
+                onClick = { onOpen(SettingsSection.Roles) }
             )
             SettingsDivider()
             SettingsRow(

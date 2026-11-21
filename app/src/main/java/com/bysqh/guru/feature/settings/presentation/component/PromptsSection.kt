@@ -85,7 +85,10 @@ internal fun PromptsSection(
     onDeleteFragment: (Int) -> Unit,
     onReorder: (List<PromptFragment>) -> Unit,
     onToggleBuiltinDisabled: (Boolean) -> Unit,
-    onBatchDeleteFragments: (List<Int>) -> Unit
+    onBatchDeleteFragments: (List<Int>) -> Unit,
+    // [二开] 片段开关：关闭的编号不参与提示词拼装
+    disabledNumbers: Set<Int> = emptySet(),
+    onToggleFragmentEnabled: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
     // 内置来源的片段删不了，也就不参与多选：勾选框置灰、全选也不会选中它们。
@@ -130,6 +133,8 @@ internal fun PromptsSection(
                     fragments = state.fragments,
                     selection = selection,
                     onOpenFragment = onOpenFragment,
+                    disabledNumbers = disabledNumbers,
+                    onToggleFragmentEnabled = onToggleFragmentEnabled,
                     onDeleteFragment = onDeleteFragment,
                     onReorder = onReorder,
                     modifier = Modifier.weight(1f)
@@ -181,7 +186,10 @@ private fun PromptList(
     onOpenFragment: (PromptFragment) -> Unit,
     onDeleteFragment: (Int) -> Unit,
     onReorder: (List<PromptFragment>) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // [二开] 片段开关
+    disabledNumbers: Set<Int> = emptySet(),
+    onToggleFragmentEnabled: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
     var localFragments by remember { mutableStateOf(fragments) }
     LaunchedEffect(fragments) { localFragments = fragments }
@@ -241,6 +249,8 @@ private fun PromptList(
                         selectionMode = selection.isActive,
                         selected = selection.isSelected(fragment.number.toString()),
                         onToggleSelect = { selection.toggle(fragment.number.toString()) },
+                        enabled = fragment.number !in disabledNumbers,
+                        onToggleEnabled = { onToggleFragmentEnabled(fragment.number, it) },
                         dragModifier = if (selection.isActive) {
                             Modifier
                         } else {
@@ -275,6 +285,8 @@ private fun PromptRow(
     onDelete: () -> Unit,
     deleteEnabled: Boolean,
     dragModifier: Modifier,
+    enabled: Boolean = true,
+    onToggleEnabled: (Boolean) -> Unit = {},
     selectionMode: Boolean = false,
     selected: Boolean = false,
     onToggleSelect: () -> Unit = {}
@@ -328,6 +340,9 @@ private fun PromptRow(
                 }
             }
 
+            Spacer(modifier = Modifier.width(Spacing.sm))
+            // [二开] 片段启用开关：关闭后该编号不进入系统提示词
+            AppSwitch(checked = enabled, onCheckedChange = onToggleEnabled)
             Spacer(modifier = Modifier.width(Spacing.sm))
             SourceBadge(fragment.source)
             Spacer(modifier = Modifier.width(Spacing.xs))

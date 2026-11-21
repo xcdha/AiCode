@@ -2,7 +2,7 @@ package com.bysqh.guru.feature.agent.domain.memory
 
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
-import com.bysqh.guru.feature.agent.domain.container.ProjectConfigLocation
+import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import com.bysqh.guru.feature.workspace.domain.ProjectAicodeRoot
 import java.io.File
@@ -24,7 +24,7 @@ class ProjectMemorySource(
 ) : MemorySource {
 
     private val memoryRoot: File by lazy {
-        if (executionModeHolder.capabilities().projectConfigLocation == ProjectConfigLocation.APP_PRIVATE_DIR) {
+        if (executionModeHolder.currentMode() == ExecutionMode.REMOTE_SSH) {
             File(File(containerInstaller.guruDir, "memory/projects"), projectAicodeRoot.projectKey(projectRoot))
         } else {
             File(projectRoot, ".guru/memory")
