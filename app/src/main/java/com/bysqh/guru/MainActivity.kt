@@ -396,6 +396,9 @@ fun AppNavigation(
     // Activity 级别的 ViewModel——Drawer 和 AIChatPanel 共享同一个实例。
     val agentViewModel: AIAgentViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
+    // [二开] 导航手势偏好：横移返回 / 预测性返回
+    val swipeBackEnabled by settingsViewModel.swipeBackEnabled.collectAsStateWithLifecycle()
+    val predictiveBackEnabled by settingsViewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
     val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
     val projectToolsViewModel: ProjectToolsViewModel = hiltViewModel()
     val pluginsViewModel: PluginsViewModel = hiltViewModel()
@@ -854,6 +857,12 @@ fun AppNavigation(
 
     // 页面主体（NavHost）：大屏放进 Row 的右侧，窄窗放进 modal 抽屉容器里。
     val navBody: @Composable () -> Unit = {
+        // [二开] 横移返回：聊天页的左右边缘留给抽屉手势，其余页面启用
+        com.bysqh.guru.core.ui.SwipeBackContainer(
+            enabled = swipeBackEnabled && currentRoute != "chat" && !drawerState.isOpen,
+            predictive = predictiveBackEnabled,
+            onBack = { navController.popBackStack() }
+        ) {
         NavHost(
             navController = navController,
             startDestination = "chat",
@@ -1135,6 +1144,7 @@ fun AppNavigation(
                 }
             }
         }
+        }  // SwipeBackContainer
     }
 
     val projectToolsListState = rememberLazyListState()

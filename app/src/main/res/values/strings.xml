@@ -2419,4 +2419,46 @@
     <string name="crop_hint">拖动与缩放，圆框内就是最终头像</string>
     <string name="settings_memory">记忆</string>
     <string name="settings_roles">角色</string>
+
+    <!-- [二开] 外观与主题 -->
+    <string name="appearance_title">外观与主题</string>
+    <string name="appearance_group_color">颜色与主题</string>
+    <string name="appearance_group_style">界面样式</string>
+    <string name="appearance_group_effects">界面与效果</string>
+    <string name="appearance_theme_mode">主题模式</string>
+    <string name="appearance_preset">配色方案</string>
+    <string name="appearance_monet">Monet 取色</string>
+    <string name="appearance_monet_desc">从系统壁纸提取配色；开启后配色方案不再生效</string>
+    <string name="appearance_palette_style">色彩风格</string>
+    <string name="appearance_palette_tonal_spot">柔和</string>
+    <string name="appearance_palette_neutral">中性</string>
+    <string name="appearance_palette_vibrant">鲜艳</string>
+    <string name="appearance_palette_expressive">表现力</string>
+    <string name="appearance_palette_rainbow">彩虹</string>
+    <string name="appearance_palette_fruit_salad">缤纷</string>
+    <string name="appearance_palette_monochrome">单色</string>
+    <string name="appearance_palette_fidelity">还原</string>
+    <string name="appearance_palette_content">内容</string>
+    <string name="appearance_accent_color">强色调</string>
+    <string name="appearance_accent_system">跟随主题</string>
+    <string name="appearance_accent_blue">蓝色</string>
+    <string name="appearance_accent_purple">紫色</string>
+    <string name="appearance_accent_pink">粉色</string>
+    <string name="appearance_accent_red">红色</string>
+    <string name="appearance_accent_orange">橙色</string>
+    <string name="appearance_accent_yellow">黄色</string>
+    <string name="appearance_accent_green">绿色</string>
+    <string name="appearance_accent_teal">青色</string>
+    <string name="appearance_ui_style">界面样式</string>
+    <string name="appearance_ui_style_standard">标准</string>
+    <string name="appearance_ui_style_miuix">Miuix</string>
+    <string name="appearance_interface_scale">界面缩放</string>
+    <string name="appearance_interface_scale_desc">调整全局字号大小（85% ~ 115%）</string>
+    <string name="appearance_pure_black">纯黑背景</string>
+    <string name="appearance_pure_black_desc">深色模式下把页面底色压到纯黑，省电且对比更高</string>
+    <string name="appearance_pure_black_dark_only">仅深色模式生效（当前为浅色模式）</string>
+    <string name="appearance_swipe_back">横移返回手势</string>
+    <string name="appearance_swipe_back_desc">从屏幕左/右边缘向内滑动返回上一页（聊天页留给侧栏手势）</string>
+    <string name="appearance_predictive_back">预测性返回动画</string>
+    <string name="appearance_predictive_back_desc">拖动时页面跟手位移并预览，松手超过阈值完成返回，否则回弹</string>
 </resources>

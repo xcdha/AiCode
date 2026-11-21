@@ -213,6 +213,8 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     Permissions(R.string.settings_permissions),
     AppPermissions(R.string.settings_app_permissions),
     BackgroundRun(R.string.settings_category_background),
+    // [二开] 外观与主题整页
+    Appearance(R.string.appearance_title),
     RemoteServers(R.string.settings_remote_servers),
     SessionManagement(R.string.settings_session_management),
     SessionDetail(R.string.settings_session_detail),
@@ -1449,6 +1451,8 @@ fun SettingsScreen(
                         onRemoveAvatar = rolesViewModel::removeAvatar
                     )
                 }
+                // [二开] 外观与主题整页
+                SettingsSection.Appearance -> AppearanceSettingsSection(viewModel = viewModel)
                 SettingsSection.Skills -> SkillsSection(
                     projectName = currentProjectName,
                     entries = skills,
@@ -2332,6 +2336,13 @@ internal fun SettingsMenu(
                 icon = FeatherIcons.Sliders,
                 title = stringResource(SettingsSection.General.titleRes),
                 onClick = { onOpen(SettingsSection.General) }
+            )
+            SettingsDivider()
+            // [二开] 外观与主题整页（配色 / 界面样式 / 效果）
+            SettingsRow(
+                icon = FeatherIcons.Sliders,
+                title = stringResource(R.string.appearance_title),
+                onClick = { onOpen(SettingsSection.Appearance) }
             )
             SettingsDivider()
             SettingsRow(

@@ -357,6 +357,8 @@ class SettingsViewModel @Inject constructor(
     private val modelMetadataService: ModelMetadataService,
     private val logSettingsRepository: LogSettingsRepository,
     private val themeSettingsRepository: ThemeSettingsRepository,
+    // [二开] 导航手势偏好（横移返回 / 预测性返回）
+    private val gestureSettingsRepository: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository,
     private val backgroundSettingsRepository: BackgroundSettingsRepository,
     private val keepaliveSettingsRepository: KeepaliveSettingsRepository,
     private val screenOnSettingsRepository: ScreenOnSettingsRepository,
@@ -618,6 +620,30 @@ class SettingsViewModel @Inject constructor(
 
     private val _dynamicColorEnabled = MutableStateFlow(false)
     val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled.asStateFlow()
+
+    /** [二开] 横移返回手势（默认开启）。 */
+    private val _swipeBackEnabled = MutableStateFlow(true)
+    val swipeBackEnabled: StateFlow<Boolean> = _swipeBackEnabled.asStateFlow()
+
+    /** [二开] 预测性返回动画（默认开启）。 */
+    private val _predictiveBackEnabled = MutableStateFlow(true)
+    val predictiveBackEnabled: StateFlow<Boolean> = _predictiveBackEnabled.asStateFlow()
+
+    /** [二开] 外观选项：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放。 */
+    private val _accentColor = MutableStateFlow(com.bysqh.guru.core.theme.AccentColor.SYSTEM)
+    val accentColor: StateFlow<com.bysqh.guru.core.theme.AccentColor> = _accentColor.asStateFlow()
+
+    private val _paletteStyle = MutableStateFlow(com.bysqh.guru.core.theme.PaletteStyle.TONAL_SPOT)
+    val paletteStyle: StateFlow<com.bysqh.guru.core.theme.PaletteStyle> = _paletteStyle.asStateFlow()
+
+    private val _uiStyle = MutableStateFlow(com.bysqh.guru.core.theme.UiStyle.STANDARD)
+    val uiStyle: StateFlow<com.bysqh.guru.core.theme.UiStyle> = _uiStyle.asStateFlow()
+
+    private val _pureBlack = MutableStateFlow(false)
+    val pureBlack: StateFlow<Boolean> = _pureBlack.asStateFlow()
+
+    private val _interfaceScale = MutableStateFlow(com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE)
+    val interfaceScale: StateFlow<Float> = _interfaceScale.asStateFlow()
 
     /** 全局自定义背景图文件路径（null=未设置），供设置弹窗展示与预览。 */
     private val _backgroundImagePath = MutableStateFlow<String?>(null)
@@ -1062,6 +1088,15 @@ class SettingsViewModel @Inject constructor(
                     _themeMode.value = it
                 }
             }
+
+            // [二开] 外观选项与导航手势
+            launch { gestureSettingsRepository.swipeBackFlow.collectLatest { _swipeBackEnabled.value = it } }
+            launch { gestureSettingsRepository.predictiveBackFlow.collectLatest { _predictiveBackEnabled.value = it } }
+            launch { themeSettingsRepository.accentColorFlow.collectLatest { _accentColor.value = it } }
+            launch { themeSettingsRepository.paletteStyleFlow.collectLatest { _paletteStyle.value = it } }
+            launch { themeSettingsRepository.uiStyleFlow.collectLatest { _uiStyle.value = it } }
+            launch { themeSettingsRepository.pureBlackFlow.collectLatest { _pureBlack.value = it } }
+            launch { themeSettingsRepository.interfaceScaleFlow.collectLatest { _interfaceScale.value = it } }
 
             launch {
                 themeSettingsRepository.themePresetIdFlow.collectLatest {
@@ -2596,6 +2631,41 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             themeSettingsRepository.setDynamicColorEnabled(enabled)
         }
+    }
+
+    /** [二开] 横移返回手势开关。 */
+    fun setSwipeBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setSwipeBack(enabled) }
+    }
+
+    /** [二开] 预测性返回动画开关。 */
+    fun setPredictiveBackEnabled(enabled: Boolean) {
+        viewModelScope.launch { gestureSettingsRepository.setPredictiveBack(enabled) }
+    }
+
+    /** [二开] 强调色（强色调）：覆盖配色方案的主色。 */
+    fun setAccentColor(value: com.bysqh.guru.core.theme.AccentColor) {
+        viewModelScope.launch { themeSettingsRepository.setAccentColor(value) }
+    }
+
+    /** [二开] 色彩风格：对整套配色做饱和度/色相变换。 */
+    fun setPaletteStyle(value: com.bysqh.guru.core.theme.PaletteStyle) {
+        viewModelScope.launch { themeSettingsRepository.setPaletteStyle(value) }
+    }
+
+    /** [二开] 界面样式：标准 / Miuix。 */
+    fun setUiStyle(value: com.bysqh.guru.core.theme.UiStyle) {
+        viewModelScope.launch { themeSettingsRepository.setUiStyle(value) }
+    }
+
+    /** [二开] 纯黑：深色模式下背景压到纯黑。 */
+    fun setPureBlack(enabled: Boolean) {
+        viewModelScope.launch { themeSettingsRepository.setPureBlack(enabled) }
+    }
+
+    /** [二开] 界面缩放：整体字号缩放。 */
+    fun setInterfaceScale(value: Float) {
+        viewModelScope.launch { themeSettingsRepository.setInterfaceScale(value) }
     }
 
     /** 选择新背景图（拷贝到私有目录后替换）。 */
