@@ -108,6 +108,7 @@ import compose.icons.feathericons.Download
 import compose.icons.feathericons.FileText
 import compose.icons.feathericons.Globe
 import compose.icons.feathericons.HardDrive
+import compose.icons.feathericons.Heart
 import compose.icons.feathericons.Image
 import compose.icons.feathericons.Info
 import compose.icons.feathericons.Lock
@@ -216,6 +217,7 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     Storage(R.string.settings_storage),
     TokenStats(R.string.settings_token_stats_title),
     Backup(R.string.settings_backup),
+    Sponsor(R.string.settings_sponsor),
     About(R.string.settings_about)
 }
 
@@ -857,6 +859,9 @@ fun SettingsScreen(
             // 它的构造即触发一次全盘统计，不能提到 SettingsScreen 顶层（那样每次进设置页都会扫盘）。
             val storageViewModel: com.bysqh.guru.feature.settings.presentation.StorageViewModel? =
                 if (current == SettingsSection.Storage) androidx.hilt.navigation.compose.hiltViewModel() else null
+            val sponsorViewModel: com.bysqh.guru.feature.settings.presentation.SponsorViewModel? =
+                if (current == SettingsSection.Sponsor) androidx.hilt.navigation.compose.hiltViewModel() else null
+            val sponsorState = sponsorViewModel?.uiState?.collectAsStateWithLifecycle()?.value
             Scaffold(
         containerColor = settingsPageBackground(),
         topBar = {
@@ -1550,6 +1555,7 @@ fun SettingsScreen(
                     )
                 }
                 SettingsSection.PluginPage -> {} // 已在外层全屏分支处理
+                SettingsSection.Sponsor -> sponsorViewModel?.let { SponsorSectionHost(viewModel = it) }
                 SettingsSection.About -> AboutSection(
                     updateCheckEnabled = updateCheckEnabled,
                     updateCheckChannel = updateCheckChannel,
