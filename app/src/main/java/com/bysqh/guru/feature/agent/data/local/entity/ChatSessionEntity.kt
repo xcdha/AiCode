@@ -1,6 +1,8 @@
 package com.bysqh.guru.feature.agent.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Ignore
+import com.bysqh.guru.feature.workspace.domain.model.WorkspaceRef
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.bysqh.guru.feature.agent.domain.model.AgentMode
@@ -10,7 +12,7 @@ import com.bysqh.guru.feature.agent.domain.model.ReasoningEffort
 
 @Entity(
     tableName = "chat_sessions",
-    indices = [Index(value = ["workspacePath"])]
+    indices = [Index(value = ["workspacePath"]), Index(value = ["backendInstanceId", "workspaceId"])]
 )
 data class ChatSessionEntity(
     @PrimaryKey val id: String,
@@ -42,7 +44,9 @@ data class ChatSessionEntity(
     /** 会话绑定的工作流 ID；null 表示使用默认内置工作流。 */
     val workflowId: String? = null,
     /** 会话绑定的工作流持久化状态；null 表示无状态。 */
-    val workflowState: String? = null
+    val workflowState: String? = null,
+    val backendInstanceId: String? = null,
+    val workspaceId: String? = null
 ) {
     fun toDomain(): ChatSession = ChatSession(
         id = id,
@@ -93,4 +97,8 @@ data class ChatSessionEntity(
             subagentType = session.subagentType
         )
     }
+
+    @get:Ignore
+    val workspaceRef: com.bysqh.guru.feature.workspace.domain.model.WorkspaceRef?
+        get() = backendInstanceId?.let { instance -> workspaceId?.let { WorkspaceRef(instance, it) } }
 }
