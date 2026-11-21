@@ -15,9 +15,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const HOST_BRIDGES = [
-  'app/src/main/java/com/aicode/feature/plugin/presentation/PluginWebBridge.kt',
-  'app/src/main/java/com/aicode/feature/plugin/overlay/PluginOverlayBridge.kt',
-  'app/src/main/java/com/aicode/feature/plugin/runtime/PluginHostApiDispatcher.kt'
+  'app/src/main/java/com/bysqh/guru/feature/plugin/presentation/PluginWebBridge.kt',
+  'app/src/main/java/com/bysqh/guru/feature/plugin/overlay/PluginOverlayBridge.kt',
+  'app/src/main/java/com/bysqh/guru/feature/plugin/runtime/PluginHostApiDispatcher.kt'
 ];
 const PAGE_SDK = 'app/src/main/assets/plugin-ui/aicode.js';
 

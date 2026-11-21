@@ -1,0 +1,60 @@
+package com.bysqh.guru.feature.terminal.domain
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
+
+/**
+ * 终端会话后端抽象：把"终端会话在哪运行"从硬编码的本地 Termux PTY 解耦。
+ *
+ * [TerminalSessionTool]（AI 的 terminal 工具）依赖本接口而非具体实现，
+ * 由 DI 委托层按当前执行模式转发到对应实现：
+ * - [TerminalSessionManager]：本地 Termux PTY（fork proot 进程）；
+ * - `RemoteTerminalSessionManager`：远程 SSH shell channel。
+ */
+interface TerminalSessionProvider {
+
+    /** 后台命令结束时 emit 的事件，供 ViewModel 订阅后通知 AI。 */
+    val tabFinishedEvents: SharedFlow<TabFinishedEvent>
+
+    /** 把一条命令挂后台跑（如 `npm run dev`），返回 opaque 标签句柄，调用方不得解析或替换它。 */
+    suspend fun startBackgroundCommand(
+        command: String,
+        title: String? = null,
+        notify: Boolean = false,
+        sourceSessionId: String? = null
+    ): String
+
+    /**
+     * 为插件创建命令标签：命令结束后关闭 shell，标签保留为已结束状态，由插件决定何时关闭。
+     * 标签带插件归属，不会成为当前标签，也不进入面向 AI 的 [listTabs]。
+     */
+    suspend fun startPluginCommand(
+        command: String,
+        title: String?,
+        pluginId: String
+    ): String
+
+    /** 读取标签状态；null 表示标签不存在。 */
+    fun tabStatus(id: String): TerminalTabStatus?
+
+    /** 按 id 向标签发送输入并回车执行。返回是否命中标签且仍活跃。 */
+    fun sendInput(id: String, input: String, appendNewline: Boolean = true): Boolean
+
+    /** 按 id 向标签写入原始文本，不自动追加回车。 */
+    fun writeToTab(id: String, text: String): Boolean
+
+    /** 按 id 向标签写入原始字节（控制字符，如 Ctrl-C=0x03）；可能阻塞，调用方应在后台有序写入。 */
+    fun writeBytesToTab(id: String, vararg bytes: Int): Boolean
+
+    /** 按 id 读取终端内容（emulator 屏幕缓冲）。返回 null 表示无此标签。 */
+    fun getTabOutput(id: String): String?
+
+    /** 订阅标签的原始输出；标签关闭或会话结束时流完成。返回 null 表示无此标签。 */
+    fun tabOutput(id: String): Flow<ByteArray>?
+
+    /** 列出当前后端上下文的非插件标签摘要；不汇总其他后端的标签。 */
+    fun listTabs(): List<TabInfo>
+
+    /** 关闭并销毁标签。返回是否成功。 */
+    fun closeTab(id: String): Boolean
+}

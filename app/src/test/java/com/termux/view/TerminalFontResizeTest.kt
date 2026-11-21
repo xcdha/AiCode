@@ -3,8 +3,8 @@ package com.termux.view
 import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.aicode.feature.terminal.presentation.component.AppTerminalViewClient
-import com.aicode.feature.terminal.presentation.component.TerminalKeyModifiers
+import com.bysqh.guru.feature.terminal.presentation.component.AppTerminalViewClient
+import com.bysqh.guru.feature.terminal.presentation.component.TerminalKeyModifiers
 import com.termux.terminal.TerminalEmulator
 import com.termux.terminal.TerminalSession
 import io.mockk.clearMocks

@@ -14,7 +14,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const HOST_KT = 'app/src/main/java/com/aicode/feature/plugin/runtime/PluginHostApiDispatcher.kt';
+const HOST_KT = 'app/src/main/java/com/bysqh/guru/feature/plugin/runtime/PluginHostApiDispatcher.kt';
 const SDK_DTS = 'plugins/sdk/types/host.d.ts';
 const DTS_PATTERN = /^\s*'(host\.[A-Za-z0-9_.]+)'\s*:/gm;
 
