@@ -262,6 +262,8 @@ fun SettingsScreen(
     onSessionsMutated: () -> Unit = {},
     onRerunOnboarding: () -> Unit = {},
     onShowStarPrompt: () -> Unit = {},
+    /** [二开] 首次进入时直接落到指定分区名（侧边栏「角色」入口用，避免暴露 internal 枚举）。 */
+    initialSectionName: String? = null,
     onboardingStep: OnboardingStep? = null,
     onOnboardingModelAdded: (() -> Unit)? = null,
     onOnboardingDismissFetchDialog: (() -> Unit)? = null
@@ -355,7 +357,13 @@ fun SettingsScreen(
     }
 
 
-    var section by remember { mutableStateOf(SettingsSection.Menu) }
+    var section by remember {
+        mutableStateOf(
+            initialSectionName?.let { name ->
+                SettingsSection.entries.firstOrNull { it.name == name }
+            } ?: SettingsSection.Menu
+        )
+    }
     var logReturnSection by remember { mutableStateOf(SettingsSection.Menu) }
     // 各列表页的多选状态：顶栏「多选」开关在本页 Scaffold 里，所以状态必须提到这里统一持有。
     // 用普通 map（非 snapshot）新建容器，避免在组合期写快照状态；Compose 状态在 ListSelectionState 内部。
@@ -2338,17 +2346,11 @@ internal fun SettingsMenu(
                 onClick = { onOpen(SettingsSection.General) }
             )
             SettingsDivider()
-            // [二开] 外观与主题整页（配色 / 界面样式 / 效果）
-            SettingsRow(
-                icon = FeatherIcons.Sliders,
-                title = stringResource(R.string.appearance_title),
-                onClick = { onOpen(SettingsSection.Appearance) }
-            )
-            SettingsDivider()
+            // [二开] 统一入口：外观与主题整页（配色 / 界面样式 / 效果）
             SettingsRow(
                 icon = FeatherIcons.Moon,
-                title = stringResource(R.string.settings_theme_title),
-                onClick = onOpenThemeSheet,
+                title = stringResource(R.string.appearance_title),
+                onClick = { onOpen(SettingsSection.Appearance) },
                 trailing = {
                     val colorLabel = if (dynamicColorEnabled && isDynamicColorSupported) {
                         stringResource(R.string.theme_dynamic_color)
@@ -2432,13 +2434,6 @@ internal fun SettingsMenu(
                 icon = FeatherIcons.Database,
                 title = stringResource(SettingsSection.Memory.titleRes),
                 onClick = { onOpen(SettingsSection.Memory) }
-            )
-            SettingsDivider()
-            // [二开] 角色：内置身份段的替换角色，带头像
-            SettingsRow(
-                icon = FeatherIcons.User,
-                title = stringResource(SettingsSection.Roles.titleRes),
-                onClick = { onOpen(SettingsSection.Roles) }
             )
             SettingsDivider()
             SettingsRow(

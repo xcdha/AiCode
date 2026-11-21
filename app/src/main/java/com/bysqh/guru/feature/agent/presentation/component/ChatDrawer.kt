@@ -139,6 +139,7 @@ import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Server
 import compose.icons.feathericons.Settings
 import compose.icons.feathericons.Trash2
+import compose.icons.feathericons.User
 import compose.icons.feathericons.Upload
 import compose.icons.feathericons.UploadCloud
 import compose.icons.feathericons.X
@@ -220,6 +221,8 @@ fun ChatDrawerContent(
     onUploadFiles: (String, List<Uri>) -> Unit = { _, _ -> },
     onUploadFolder: (String, Uri) -> Unit = { _, _ -> },
     onNavigateToBrowser: (() -> Unit)? = null,
+    /** [二开] 侧边栏角色入口：直达设置里的角色页。 */
+    onNavigateToRoles: (() -> Unit)? = null,
     onNavigateToSettings: () -> Unit,
     pluginEntries: List<PluginUiEntry> = emptyList(),
     pluginLanguageTag: String = "zh-CN",
@@ -409,6 +412,14 @@ fun ChatDrawerContent(
         }
 
         SettingsGroup {
+            if (onNavigateToRoles != null) {
+                SettingsRow(
+                    icon = FeatherIcons.User,
+                    title = stringResource(R.string.settings_roles),
+                    onClick = onNavigateToRoles
+                )
+                SettingsDivider()
+            }
             if (onNavigateToBrowser != null) {
                 SettingsRow(
                     icon = FeatherIcons.Globe,

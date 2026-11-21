@@ -274,6 +274,20 @@ class MainActivity : ComponentActivity() {
             val themeMode by themeSettings.themeModeFlow.collectAsStateWithLifecycle(initialValue = AppThemeMode.AUTO)
             val themePresetId by themeSettings.themePresetIdFlow.collectAsStateWithLifecycle(initialValue = null)
             val dynamicColor by themeSettings.dynamicColorFlow.collectAsStateWithLifecycle(initialValue = false)
+            // [二开] 外观选项：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放
+            val accentColor by themeSettings.accentColorFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.AccentColor.SYSTEM
+            )
+            val paletteStyle by themeSettings.paletteStyleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.PaletteStyle.TONAL_SPOT
+            )
+            val uiStyle by themeSettings.uiStyleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.UiStyle.STANDARD
+            )
+            val pureBlack by themeSettings.pureBlackFlow.collectAsStateWithLifecycle(initialValue = false)
+            val interfaceScale by themeSettings.interfaceScaleFlow.collectAsStateWithLifecycle(
+                initialValue = com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE
+            )
             val systemDarkTheme = isSystemInDarkTheme()
             val darkTheme = when (themeMode) {
                 AppThemeMode.AUTO -> systemDarkTheme
@@ -294,7 +308,14 @@ class MainActivity : ComponentActivity() {
             AIEditorTheme(
                 darkTheme = darkTheme,
                 preset = AppThemePreset.findById(themePresetId),
-                dynamicColor = dynamicColor
+                dynamicColor = dynamicColor,
+                appearance = com.bysqh.guru.core.theme.AppearanceOptions(
+                    accent = accentColor,
+                    paletteStyle = paletteStyle,
+                    uiStyle = uiStyle,
+                    pureBlack = pureBlack,
+                    interfaceScale = interfaceScale
+                )
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -396,6 +417,12 @@ fun AppNavigation(
     // Activity 级别的 ViewModel——Drawer 和 AIChatPanel 共享同一个实例。
     val agentViewModel: AIAgentViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
+    // [二开] 侧边栏「角色」入口：记录要直达的设置分区，进设置页后消费一次
+    var pendingSettingsSection by remember { mutableStateOf<String?>(null) }
+    // 离开设置页后清空，下次从侧边栏「设置」进入回到菜单首页
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != "settings") pendingSettingsSection = null
+    }
     // [二开] 导航手势偏好：横移返回 / 预测性返回
     val swipeBackEnabled by settingsViewModel.swipeBackEnabled.collectAsStateWithLifecycle()
     val predictiveBackEnabled by settingsViewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
@@ -811,6 +838,12 @@ fun AppNavigation(
                 openWorkbench(WorkbenchPaneKind.BROWSER)
                 if (!permanentDrawer) scope.launch { drawerState.close() }
             },
+            // [二开] 侧边栏角色入口：直达设置里的角色页
+            onNavigateToRoles = {
+                pendingSettingsSection = "Roles"
+                navController.navigate("settings")
+                if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
+            },
             onNavigateToSettings = {
                 navController.navigate("settings")
                 if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
@@ -980,6 +1013,7 @@ fun AppNavigation(
                 // 这是侧边栏点设置「卡一下」的主因。
                 SettingsScreen(
                     viewModel = settingsViewModel,
+                    initialSectionName = pendingSettingsSection,
                     onNavigateBack = {
                         navController.popBackStack()
                         // 大屏返回聊天页后侧栏本就常驻，不再弹 modal 抽屉。

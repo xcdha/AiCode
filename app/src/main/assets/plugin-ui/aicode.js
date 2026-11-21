@@ -1,6 +1,61 @@
 (function () {
   'use strict';
 
+  // Android WebView 里 <dialog> 内部按 vh 写的 max-height 会停留在首帧的视口高度，
+  // 弹窗只露出标题、正文展不开（lcs.agentteam 等插件复现）。
+  // 这里在打开后按视口高度换算成像素兜底，只收紧 max-height，内容本来就矮的弹窗不受影响。
+  (function () {
+    var proto = window.HTMLDialogElement && HTMLDialogElement.prototype;
+    if (!proto) return;
+
+    // WebView 首帧的 innerHeight 自己也可能偏小，依次用文档高度与屏幕高度兜底。
+    function viewportHeight() {
+      var height = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0);
+      if (height < 240 && window.screen) {
+        var ratio = window.devicePixelRatio || 1;
+        var fromScreen = Math.round(((window.screen.height || 0) / ratio) * 0.9);
+        if (fromScreen > height) height = fromScreen;
+      }
+      return height;
+    }
+
+    function fit(dialog) {
+      if (!dialog || !dialog.open) return;
+      var height = Math.round(viewportHeight() * 0.78);
+      if (height < 240) return;
+      var inner = dialog.firstElementChild;
+      if (inner) {
+        inner.style.maxHeight = height + 'px';
+        inner.style.overflowY = 'auto';
+      }
+      // 老 WebView 会把 dialog 自身也压成极小高度，一并放宽。
+      dialog.style.maxHeight = Math.round(height * 1.08) + 'px';
+    }
+
+    function fitAll() {
+      var list = document.querySelectorAll('dialog[open]');
+      for (var i = 0; i < list.length; i++) fit(list[i]);
+    }
+
+    // 插件可能在脚本载入前就取过 showModal 的引用，所以两个入口都包一层。
+    ['showModal', 'show'].forEach(function (name) {
+      var original = proto[name];
+      if (typeof original !== 'function') return;
+      proto[name] = function () {
+        var result = original.apply(this, arguments);
+        var self = this;
+        fit(self);
+        if (window.requestAnimationFrame) requestAnimationFrame(function () { fit(self); });
+        setTimeout(function () { fit(self); }, 120);
+        return result;
+      };
+    });
+
+    window.addEventListener('resize', fitAll);
+    window.addEventListener('orientationchange', function () { setTimeout(fitAll, 120); });
+    document.addEventListener('DOMContentLoaded', fitAll);
+  })();
+
   // 把页面实际背景色报给宿主：状态栏那条区域由宿主绘制，
   // 页面即使硬编码了自己的背景色，宿主也能和它对齐，不会出现色差。
   function reportPageBackground() {
