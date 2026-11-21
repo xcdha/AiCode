@@ -296,7 +296,11 @@ class MainActivity : ComponentActivity() {
                 initialValue = com.bysqh.guru.core.theme.UiStyle.STANDARD
             )
             val pureBlack by themeSettings.pureBlackFlow.collectAsStateWithLifecycle(initialValue = false)
-            val interfaceScale by themeSettings.interfaceScaleFlow.collectAsStateWithLifecycle(
+            // distinctUntilChanged：DataStore 首次发射与重读都会推同一个值，
+            // 不去重会让 LocalDensity 被重设一次，抽屉打开瞬间的阴影因此闪断。
+            val interfaceScale by remember {
+                themeSettings.interfaceScaleFlow.distinctUntilChanged()
+            }.collectAsStateWithLifecycle(
                 initialValue = com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE
             )
             val systemDarkTheme = isSystemInDarkTheme()

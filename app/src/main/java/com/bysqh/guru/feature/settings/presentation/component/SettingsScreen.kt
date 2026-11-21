@@ -1946,7 +1946,7 @@ fun SettingsScreen(
         BackgroundImageSheet(
             imagePath = backgroundImagePath,
             alpha = backgroundAlpha,
-            onPickImage = { viewModel.setBackgroundImage(it) },
+            onPickImage = { uri, mime -> viewModel.setBackgroundImage(uri, mime) },
             onAlphaChange = { viewModel.setBackgroundAlpha(it) },
             onRemove = { viewModel.clearBackgroundImage() },
             onDismiss = { showBackgroundSheet = false }

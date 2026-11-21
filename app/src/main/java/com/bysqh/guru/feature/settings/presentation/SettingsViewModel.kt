@@ -2669,9 +2669,9 @@ class SettingsViewModel @Inject constructor(
     }
 
     /** 选择新背景图（拷贝到私有目录后替换）。 */
-    fun setBackgroundImage(uri: Uri) {
+    fun setBackgroundImage(uri: Uri, mime: String? = null) {
         viewModelScope.launch {
-            backgroundSettingsRepository.setBackgroundImage(uri)
+            backgroundSettingsRepository.setBackgroundImage(uri, mime)
         }
     }
 

@@ -75,7 +75,7 @@ internal fun decodeBackgroundBitmap(path: String, maxWidth: Int, maxHeight: Int)
 internal fun BackgroundImageSheet(
     imagePath: String?,
     alpha: Float,
-    onPickImage: (Uri) -> Unit,
+    onPickImage: (Uri, String?) -> Unit,
     onAlphaChange: (Float) -> Unit,
     onRemove: () -> Unit,
     onDismiss: () -> Unit
@@ -84,7 +84,13 @@ internal fun BackgroundImageSheet(
     val context = LocalContext.current
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
-    ) { uri -> if (uri != null) onPickImage(uri) }
+    ) { uri ->
+        if (uri != null) {
+            // GIF 属于图片、MP4 属于视频，都交给仓储按文件头判定实际类型
+            val mime = runCatching { context.contentResolver.getType(uri) }.getOrNull()
+            onPickImage(uri, mime)
+        }
+    }
 
     // 缩略图预览：按屏幕宽度采样，避免大图全量解码
     val previewBitmap by produceState<ImageBitmap?>(initialValue = null, imagePath) {
@@ -165,7 +171,7 @@ internal fun BackgroundImageSheet(
                 Button(
                     onClick = {
                         imagePicker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                         )
                     },
                     modifier = Modifier.weight(1f)
