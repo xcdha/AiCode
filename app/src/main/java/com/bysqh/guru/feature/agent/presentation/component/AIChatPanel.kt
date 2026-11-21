@@ -813,7 +813,7 @@ fun AIChatPanel(
     LaunchedEffect(inputText) {
         if (inputText == "/") viewModel.refreshSlashCommands()
     }
-    var pendingAttachments by remember { mutableStateOf<List<PendingUploadAttachment>>(emptyList()) }
+    val pendingAttachments by viewModel.attachmentDraft.collectAsStateWithLifecycle()
     var uploadingCount by remember { mutableStateOf(0) }
     var messageForMenu by remember { mutableStateOf<AgentUIMessage?>(null) }
     var editingMessage by remember { mutableStateOf<AgentUIMessage?>(null) }
@@ -1089,7 +1089,7 @@ fun AIChatPanel(
     }
 
     fun removePendingAttachment(index: Int) {
-        pendingAttachments = pendingAttachments.filterIndexed { i, _ -> i != index }
+        viewModel.removeAttachmentDraft(index)
     }
 
     fun handlePickedAttachments(uris: List<Uri>, images: Boolean) {
@@ -1103,6 +1103,7 @@ fun AIChatPanel(
             return
         }
         val selected = selectedAttachments(uris, pendingAttachments.size)
+        val targetSessionId = currentSessionId
         scope.launch {
             var successCount = 0
             val failures = mutableListOf<String>()
@@ -1112,7 +1113,7 @@ fun AIChatPanel(
                     runCatching {
                         copyUriToWorkspace(context, uri, viewModel.fileAccess, includeImageData = images)
                     }.onSuccess { uploaded ->
-                        pendingAttachments = pendingAttachments + uploaded.toPendingAttachment()
+                        viewModel.addAttachmentDraft(uploaded.toPendingAttachment(), targetSessionId)
                         successCount += 1
                     }.onFailure { error ->
                         failures += (error.message ?: uploadFallbackError(context))
@@ -1416,7 +1417,6 @@ fun AIChatPanel(
                 inputAttachments = attachments.toAgentAttachments()
             )
             viewModel.clearInputDraft()
-            pendingAttachments = emptyList()
             followBottom = true
             scope.launch {
                 kotlinx.coroutines.delay(0)
@@ -1984,7 +1984,7 @@ fun AIChatPanel(
                     onOptionSelected = { option ->
                         viewModel.executeRewindOption(targetId, option) { text, attachments ->
                             viewModel.updateInputDraft(text)
-                            pendingAttachments = attachments.map { it.toPendingAttachment() }
+                            viewModel.updateAttachmentDraft(attachments.map { it.toPendingAttachment() })
                         }
                     },
                     onDismissRequest = { viewModel.dismissRewindMenu() }
