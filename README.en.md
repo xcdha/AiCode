@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="docs/icon.webp" width="112" alt="AiCode" />
-  <h1 align="center">AiCode</h1>
+  <img src="docs/icon.webp" width="112" alt="Guru" />
+  <h1 align="center">Guru</h1>
   <p align="center">
     Universal AI Coding Agent for Android · Linux dev environment · Local & remote SSH
     <br />
@@ -16,22 +16,22 @@
 </p>
 
 <p align="center">
-  <a href="https://trendshift.io/repositories/193355?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-193355" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/193355" alt="jieapi%2FAiCode | Trendshift" width="250" height="55"/></a>
+  <a href="https://trendshift.io/repositories/193355?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-193355" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/193355" alt="jieapi%2FGuru | Trendshift" width="250" height="55"/></a>
 </p>
 
 <p align="center">
   <table>
     <tr>
-      <td align="center"><img src="docs/screenshots/home.png" alt="AiCode home - AI chat interface with code generation and Markdown rendering" width="270"/></td>
-      <td align="center"><img src="docs/screenshots/git.png" alt="AiCode Git integration - visual commit history and branch management" width="270"/></td>
+      <td align="center"><img src="docs/screenshots/home.png" alt="Guru home - AI chat interface with code generation and Markdown rendering" width="270"/></td>
+      <td align="center"><img src="docs/screenshots/git.png" alt="Guru Git integration - visual commit history and branch management" width="270"/></td>
     </tr>
     <tr>
       <td align="center">Home · AI Chat</td>
       <td align="center">Git · Commit History</td>
     </tr>
     <tr>
-      <td align="center"><img src="docs/screenshots/container.png" alt="AiCode container settings - container image management" width="270"/></td>
-      <td align="center"><img src="docs/screenshots/models.png" alt="AiCode model list - multi-provider model management" width="270"/></td>
+      <td align="center"><img src="docs/screenshots/container.png" alt="Guru container settings - container image management" width="270"/></td>
+      <td align="center"><img src="docs/screenshots/models.png" alt="Guru model list - multi-provider model management" width="270"/></td>
     </tr>
     <tr>
       <td align="center">Container · Image Manager</td>
@@ -44,9 +44,9 @@
 
 ## Overview
 
-AiCode is a universal AI coding agent that runs on Android, packing a full Linux development environment into your phone: it bundles an Alpine Linux container and terminal, and the AI agent can read and write files, run shell commands and run build tools, so writing, debugging and building all happen on-device. A remote SSH server can also serve as the execution backend, turning your phone into a mobile workstation for remote projects.
+Guru is a universal AI coding agent that runs on Android, packing a full Linux development environment into your phone: it bundles an Alpine Linux container and terminal, and the AI agent can read and write files, run shell commands and run build tools, so writing, debugging and building all happen on-device. A remote SSH server can also serve as the execution backend, turning your phone into a mobile workstation for remote projects.
 
-There is nothing to set up beforehand: install the app, configure a model under AI Vendors, and you can start coding — no computer, no environment to build yourself. AiCode ships no models and locks you into no vendor: it supports the OpenAI / Anthropic / Gemini protocols plus custom providers, with models, keys and endpoints all configured by you.
+There is nothing to set up beforehand: install the app, configure a model under AI Vendors, and you can start coding — no computer, no environment to build yourself. Guru ships no models and locks you into no vendor: it supports the OpenAI / Anthropic / Gemini protocols plus custom providers, with models, keys and endpoints all configured by you.
 
 ## Sponsors
 
@@ -108,11 +108,11 @@ There is nothing to set up beforehand: install the app, configure a model under 
 
 ## Support & Sponsor
 
-If AiCode is helpful to you, give it a [Star](https://github.com/jieapi/aicode) — it helps more developers discover the project. You can also support ongoing development on **[Afdian](https://ifdian.net/a/jieapi)**.
+If Guru is helpful to you, give it a [Star](https://github.com/jieapi/aicode) — it helps more developers discover the project. You can also support ongoing development on **[Afdian](https://ifdian.net/a/jieapi)**.
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=jieapi%2Faicode&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=jieapi%2Fguru&type=date&legend=top-left">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=jieapi/aicode&type=date&theme=dark&legend=top-left" />
    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=jieapi/aicode&type=date&legend=top-left" />
@@ -122,7 +122,7 @@ If AiCode is helpful to you, give it a [Star](https://github.com/jieapi/aicode) 
 
 ## Feedback & Contribution
 
-- **QQ group**: join the [AiCode QQ group](https://qm.qq.com/q/ByvqODJdIs) (group number: 1107110698) to share tips and feedback
+- **QQ group**: join the [Guru QQ group](https://qm.qq.com/q/ByvqODJdIs) (group number: 1107110698) to share tips and feedback
 - **Bug reports**: open an [Issue](https://github.com/jieapi/aicode/issues) with reproduction steps, device model and OS version
 - **Feature requests**: discuss your ideas in [Issues](https://github.com/jieapi/aicode/issues)
 - **Contributing**: submit a [Pull Request](https://github.com/jieapi/aicode/pulls)
@@ -135,7 +135,7 @@ If AiCode is helpful to you, give it a [Star](https://github.com/jieapi/aicode) 
 
 ## Disclaimer
 
-AiCode is provided "as is", for learning, research and lawful software development only. Using it for any illegal or infringing purpose is strictly prohibited, including but not limited to unauthorized access to, cracking or reverse engineering of others' software or systems, circumventing technological protection measures, stealing or leaking others' data, or distributing malicious code.
+Guru is provided "as is", for learning, research and lawful software development only. Using it for any illegal or infringing purpose is strictly prohibited, including but not limited to unauthorized access to, cracking or reverse engineering of others' software or systems, circumventing technological protection measures, stealing or leaking others' data, or distributing malicious code.
 
 You bear all risks and responsibility for your use of this software. The authors and contributors shall not be liable for any loss arising from your use of, or inability to use, this software, nor for any act you perform using it or its consequences.
 
