@@ -133,7 +133,7 @@ class StatefulAgentWorkflow @Inject constructor(
         const val MODE_REMINDER_AUTO_FILE = "agent/auto-mode.md"
         val LEADING_COMMENT = Regex("(?s)^\\s*<!--.*?-->\\s*")
         /** 模型直出图片落盘目录（与 GenerateImageTool 保持一致）。 */
-        const val GENERATED_IMAGE_DIR = "~/.aicode/generated-images"
+        const val GENERATED_IMAGE_DIR = "~/.guru/generated-images"
         const val MAX_GENERATED_IMAGE_BYTES = 20L * 1024 * 1024
     }
 
@@ -643,7 +643,7 @@ class StatefulAgentWorkflow @Inject constructor(
                             val aiResponse = stream.finalResponse ?: AIResponse(content = stream.text.toString())
                             hookToolCalls += aiResponse.toolCalls.size
                             // 模型直出图片（Gemini 图像模型）不随流式增量到达，整块在 Final 里：
-                            // 先把 base64 落盘到 ~/.aicode/generated-images/ 并构造 UI 附件（只存路径不存 base64），
+                            // 先把 base64 落盘到 ~/.guru/generated-images/ 并构造 UI 附件（只存路径不存 base64），
                             // 再随 LlmResponse 把带 path 的 images 交 reduce 挂上 AssistantMessage 供下一回放。
                             val (persistedImages, attachments) =
                                 if (aiResponse.images.isNotEmpty()) persistModelImages(aiResponse.images) else emptyList<AgentImage>() to emptyList()
@@ -1460,7 +1460,7 @@ class StatefulAgentWorkflow @Inject constructor(
     }
 
     /**
-     * 把模型直出的图片（base64）落盘到 `~/.aicode/generated-images/`，返回带容器路径的 images
+     * 把模型直出的图片（base64）落盘到 `~/.guru/generated-images/`，返回带容器路径的 images
      * 与一一对应的 UI 附件（附件只带路径不含 base64，落库不撑爆数据库行）。
      */
     private suspend fun persistModelImages(images: List<AgentImage>): Pair<List<AgentImage>, List<AgentAttachment>> =

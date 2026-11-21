@@ -1,6 +1,6 @@
 # 插件开发
 
-插件通过 `.zip` 包向 AiCode 添加技能、子代理、AI 工具、页面、MCP、提供商、Hooks、执行后端、Agent 工作流、外部会话源和系统浮层，由使用者在「设置 → 插件」中统一启停与卸载。一个插件可以组合多项能力。
+插件通过 `.zip` 包向 Guru 添加技能、子代理、AI 工具、页面、MCP、提供商、Hooks、执行后端、Agent 工作流、外部会话源和系统浮层，由使用者在「设置 → 插件」中统一启停与卸载。一个插件可以组合多项能力。
 
 ::: warning 预览功能
 插件系统仍在快速演进。启用插件等同于信任其全部声明，安装前请确认来源；接口版本与清单限制见 [plugin.json 清单参考](/advanced/plugin/manifest)。
@@ -11,7 +11,7 @@
 | 部分 | 推荐方式 | 交付产物 |
 | --- | --- | --- |
 | 插件逻辑 | TypeScript + 插件 SDK | esbuild 生成 JavaScript 运行时入口 |
-| 页面界面 | Vue 3 单文件组件 + TypeScript，优先使用宿主 `aicode-*` 组件 | Vite 生成 HTML、JavaScript 和 CSS |
+| 页面界面 | Vue 3 单文件组件 + TypeScript，优先使用宿主 `guru-*` 组件 | Vite 生成 HTML、JavaScript 和 CSS |
 | 项目起点 | 仓库中的 `plugins/template/` 独立模板 | 清单、运行时与页面一起打包 |
 
 宿主运行构建后的 JavaScript 和 HTML，源码由开发者维护。仅提供技能、子代理或 MCP 配置时，可直接编写 Markdown / JSON，按需增加运行时和页面。
@@ -34,8 +34,8 @@
 | 让 AI 调用插件逻辑 | `tools` + `runtime` | [AI 工具与插件运行时](/advanced/plugin/tools-runtime) |
 | 监听运行、拦截请求、代审核或扩展备份 | `hooks`、`backup` + `runtime` | [生命周期 Hooks](/advanced/plugin/hooks) |
 | 添加工作区工具、设置页、菜单动作或配置页 | `workspaceTools`、`uiEntries`、`configPage` | [插件页面与宿主接口](/advanced/plugin/ui-pages) |
-| 读写文件、运行命令、管理会话、保存密钥或请求网络 | 页面 `aicode.*` / 进程 `host.*` | [页面接口](/advanced/plugin/ui-pages#宿主接口)、[进程接口](/advanced/plugin/tools-runtime#host-api-细节) |
-| 使用主题、组件、插件事件与文件订阅 | `aicode-*`、`events`、`fs.watch` | [页面样式、组件与事件](/advanced/plugin/ui-components) |
+| 读写文件、运行命令、管理会话、保存密钥或请求网络 | 页面 `guru.*` / 进程 `host.*` | [页面接口](/advanced/plugin/ui-pages#宿主接口)、[进程接口](/advanced/plugin/tools-runtime#host-api-细节) |
+| 使用主题、组件、插件事件与文件订阅 | `guru-*`、`events`、`fs.watch` | [页面样式、组件与事件](/advanced/plugin/ui-components) |
 | 直接调用已配置的模型并编排工具循环 | `modelAccess` + `model.*` | [模型句柄与流式调用](/advanced/plugin/model-handles) |
 | 创建 App 外的悬浮窗口 | `overlay` | [系统浮层](/advanced/plugin/overlay) |
 | 执行 Android 命令或接入 OpenAI 兼容服务 | `shizuku`、`providers` | [Shizuku 与插件提供商](/advanced/plugin/shizuku-providers) |
@@ -58,9 +58,9 @@
 
 常见组合方式：
 
-- **仅声明 `executionBackends`**：将远端机器、云沙箱或自定义容器接入 AiCode，文件浏览、编辑器、Git 与内置 Agent 推理循环仍由宿主提供。
+- **仅声明 `executionBackends`**：将远端机器、云沙箱或自定义容器接入 Guru，文件浏览、编辑器、Git 与内置 Agent 推理循环仍由宿主提供。
 - **仅声明 `workflows`**：在本地或现有远程工作区上运行外部 Agent 引擎，会话列表与消息仍由宿主本地数据库保存。
-- **同时声明 `executionBackends`、`workflows` 与 `sessions`**：将外部已有运行体的工作区、历史会话与流式执行完整接入 AiCode。
+- **同时声明 `executionBackends`、`workflows` 与 `sessions`**：将外部已有运行体的工作区、历史会话与流式执行完整接入 Guru。
 
 ## 信任与授权
 

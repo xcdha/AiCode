@@ -41,7 +41,7 @@ object BackupCrypto {
     /** 每块明文大小；每块独立做一次 GCM，单次 doFinal 产出有界。 */
     private const val CHUNK_SIZE = 256 * 1024
 
-    private val MAGIC = "AICODEBK".toByteArray(Charsets.US_ASCII)
+    private val MAGIC = "GURUBK".toByteArray(Charsets.US_ASCII)
     private const val FORMAT_VERSION = 0x02
     private const val NONCE_BASE_LEN = 8
 
@@ -225,7 +225,7 @@ object BackupCrypto {
         var read = 0
         while (read < len) {
             val n = input.read(buffer, offset + read, len - read)
-            if (n < 0) throw IllegalArgumentException("不是有效的加密 AiCode 备份文件")
+            if (n < 0) throw IllegalArgumentException("不是有效的加密 Guru 备份文件")
             read += n
         }
     }

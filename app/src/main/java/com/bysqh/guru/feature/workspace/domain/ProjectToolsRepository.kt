@@ -23,7 +23,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * 项目已启用工具项条目（保存在 `<workspace>/.aicode/tools.json` 中）。
+ * 项目已启用工具项条目（保存在 `<workspace>/.guru/tools.json` 中）。
  */
 @Serializable
 data class ProjectToolItem(
@@ -42,7 +42,7 @@ internal data class ProjectToolsFile(
 )
 
 /**
- * 当前项目的工具箱管理器：负责读取、持久化 `<workspace>/.aicode/tools.json`，
+ * 当前项目的工具箱管理器：负责读取、持久化 `<workspace>/.guru/tools.json`，
  * 并与已安装的插件做动态对账。
  */
 @Singleton

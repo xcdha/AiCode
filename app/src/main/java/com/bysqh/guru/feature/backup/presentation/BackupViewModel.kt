@@ -190,7 +190,7 @@ class BackupViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     file.outputStream().buffered().use { backupManager.export(pw, _exportOptions.value, it, pluginIds) }
                 }
-                val name = "aicode-backup-${fileTimestamp()}.tar.gz"
+                val name = "guru-backup-${fileTimestamp()}.tar.gz"
                 val result = withContext(Dispatchers.IO) {
                     runCatching { targetRepository.storageFor(target).upload(name, file).getOrThrow() }
                 }

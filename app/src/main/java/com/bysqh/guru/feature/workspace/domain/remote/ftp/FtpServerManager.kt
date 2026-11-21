@@ -81,7 +81,7 @@ class FtpServerManager @Inject constructor(
     private val _port = MutableStateFlow(2121)
     val port: StateFlow<Int> = _port.asStateFlow()
 
-    private val _username = MutableStateFlow("aicode")
+    private val _username = MutableStateFlow("guru")
     val username: StateFlow<String> = _username.asStateFlow()
 
     private val _password = MutableStateFlow(generateRandomPassword())
@@ -107,7 +107,7 @@ class FtpServerManager @Inject constructor(
         scope.launch {
             val prefs = context.ftpServerDataStore.data.first()
             _port.value = prefs[PORT_KEY] ?: 2121
-            _username.value = prefs[USERNAME_KEY] ?: "aicode"
+            _username.value = prefs[USERNAME_KEY] ?: "guru"
             val storedPassword = prefs[PASSWORD_KEY]?.let { KeystoreCipher.decryptString(it) }
             // 从未设置或仍是旧版固定弱口令时，改用随机口令并在 UI 展示供用户复制，避免默认 123456 被同网段利用。
             _password.value = if (storedPassword.isNullOrBlank() || storedPassword == LEGACY_DEFAULT_PASSWORD) {

@@ -64,8 +64,8 @@ class RemoteRepository @Inject constructor(
     private val containerInstaller: ContainerInstaller,
     private val agentDatabase: AgentDatabase
 ) {
-    /** 每个挂载的同步指纹索引，用于跳过未变文件；落在 app 私有的 `aicode/sync-index/` 下。 */
-    private val syncIndexStore = SyncIndexStore(File(containerInstaller.aicodeDir, "sync-index"))
+    /** 每个挂载的同步指纹索引，用于跳过未变文件；落在 app 私有的 `guru/sync-index/` 下。 */
+    private val syncIndexStore = SyncIndexStore(File(containerInstaller.guruDir, "sync-index"))
     private val activeEngines = ConcurrentHashMap<String, SyncEngine>()
     private val connectionLock = Any()
     private val connectionAttempts = mutableMapOf<String, Any>()

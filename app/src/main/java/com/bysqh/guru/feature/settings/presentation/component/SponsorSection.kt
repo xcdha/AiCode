@@ -103,7 +103,7 @@ internal fun SponsorSectionHost(viewModel: SponsorViewModel) {
 
 /**
  * 赞助页：上方「赞助方式」分组卡片 + 下方自适应列数（手机 5 列）的「赞助用户」圆形头像网格。
- * 排版参考常见的赞助页结构，视觉组件严格复用 AiCode 的 [SettingsGroupHeader] / [SettingsGroup] /
+ * 排版参考常见的赞助页结构，视觉组件严格复用 Guru 的 [SettingsGroupHeader] / [SettingsGroup] /
  * [SettingsRow] 与语义色板。
  */
 @Composable
@@ -398,7 +398,7 @@ private object SponsorImageLoader {
                 val request = Request.Builder()
                     .url(url)
                     .cacheControl(CacheControl.FORCE_NETWORK)
-                    .header("User-Agent", "aicode-android")
+                    .header("User-Agent", "guru-android")
                     .get()
                     .build()
                 RepoDataFetcher.DEFAULT_CLIENT.newCall(request).execute().use { response ->

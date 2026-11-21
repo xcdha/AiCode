@@ -11,7 +11,7 @@ import javax.inject.Singleton
  * Skill 仓库，聚合各 [SkillSource]（全局目录 + 项目目录 + 插件）提供的技能，
  * 并按 [SkillConfigRepository] 的禁用名单过滤注入清单。
  *
- * 全局技能 `~/.aicode/skills`、项目级技能 `<workspace>/.aicode/skills`，两者都经 [FileAccessProvider]
+ * 全局技能 `~/.guru/skills`、项目级技能 `<workspace>/.guru/skills`，两者都经 [FileAccessProvider]
  * 以容器路径读写，跟随当前执行环境（本地宿主目录或远程 SSH 工作区）。
  * 插件技能来自手机端插件包，只读，同样出现在 [listAllSkills] 供设置页展示，但不允许直接编辑或删除。
  */
@@ -66,7 +66,7 @@ class SkillRepository @Inject constructor(
      * 写入技能文件（新建或编辑）。[originalName] 为编辑前的名称，新建时传 null；返回 null 表示成功。
      *
      * 编辑时写回原目录里的原指令文件（可能叫 CLAUDE.md），改名只改 frontmatter 的 name、不动目录名——
-     * 技能正文常按 `~/.aicode/skills/<目录>/run.py` 引用同目录脚本，跟着改名会把这些引用打断。
+     * 技能正文常按 `~/.guru/skills/<目录>/run.py` 引用同目录脚本，跟着改名会把这些引用打断。
      */
     fun save(form: SkillForm, scope: SkillScope, originalName: String? = null): SkillSaveError? {
         if (scope == SkillScope.PLUGIN) return SkillSaveError.IO_FAILED

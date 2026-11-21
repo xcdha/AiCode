@@ -189,7 +189,7 @@ internal fun AboutSection(
                 onClick = { openUrl(context, GITHUB_REPO_URL) }
             )
             SettingsDivider()
-            // 支持 AiCode：手动唤起求 Star 弹窗
+            // 支持 Guru：手动唤起求 Star 弹窗
             SettingsRow(
                 icon = FeatherIcons.Star,
                 title = stringResource(R.string.about_star_prompt),

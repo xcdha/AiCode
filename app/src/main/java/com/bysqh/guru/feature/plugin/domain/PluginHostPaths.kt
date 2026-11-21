@@ -31,7 +31,7 @@ sealed interface PluginWatchTarget {
  *
  * `~` 展开到当前环境的 home，裸相对路径挂到工作区根。本地模式下真实路径经
  * [com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper] 映射，只会落到容器 rootfs、工作区与
- * `~/.aicode`，宿主 App 的其它私有目录没有对应的容器路径，因此天然不可达。
+ * `~/.guru`，宿主 App 的其它私有目录没有对应的容器路径，因此天然不可达。
  */
 class PluginHostPaths(
     private val fileAccess: FileAccessProvider,
@@ -234,18 +234,18 @@ class PluginHostPaths(
      */
     private fun isProtectedRoot(path: String, followFinalLink: Boolean): Boolean {
         val target = identity(path, followFinalLink)
-        val aicode = homeResolver.aicodeRoot().trimEnd('/')
+        val guru = homeResolver.guruRoot().trimEnd('/')
         val protected = listOf(
             "/",
             homeResolver.home(),
-            aicode,
+            guru,
             workspaceRoot(),
             dataRoot(),
-            "$aicode/plugins",
-            "$aicode/plugins/installed",
-            "$aicode/plugins/staging",
-            "$aicode/plugins/data",
-            "$aicode/plugin-dev"
+            "$guru/plugins",
+            "$guru/plugins/installed",
+            "$guru/plugins/staging",
+            "$guru/plugins/data",
+            "$guru/plugin-dev"
         )
         return protected.any { identity(it) == target }
     }
@@ -274,12 +274,12 @@ class PluginHostPaths(
     private fun assertWatchScope(path: String, recursive: Boolean) {
         val trimmed = identity(path)
         val home = identity(homeResolver.home())
-        val aicode = identity(homeResolver.aicodeRoot())
-        if (trimmed == identity("/") || trimmed == home || trimmed == aicode) {
+        val guru = identity(homeResolver.guruRoot())
+        if (trimmed == identity("/") || trimmed == home || trimmed == guru) {
             throw PluginHostException("PATH_DENIED", "watch range is too broad: $path")
         }
         if (!recursive) return
-        if (home.startsWith("$trimmed/") || aicode.startsWith("$trimmed/")) {
+        if (home.startsWith("$trimmed/") || guru.startsWith("$trimmed/")) {
             throw PluginHostException("PATH_DENIED", "watch range includes $home: $path")
         }
     }
@@ -318,6 +318,6 @@ class PluginHostPaths(
 
         /** 插件数据目录在当前执行环境中的真实路径；`data://` 映射到这里。 */
         fun dataRoot(homeResolver: PathHomeResolver, pluginId: String): String =
-            homeResolver.aicodeRoot().trimEnd('/') + "/plugins/data/" + pluginId
+            homeResolver.guruRoot().trimEnd('/') + "/plugins/data/" + pluginId
     }
 }

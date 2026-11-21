@@ -47,10 +47,10 @@ class ToolOutputStore @Inject constructor(
 
     /**
      * 设备本地存档目录（宿主路径），仅供本机存储占用统计与清理。
-     * 写入落在当前执行环境（本地即此目录；远程经 SFTP 落到服务器 home 下的 `.aicode/tool-output`），
+     * 写入落在当前执行环境（本地即此目录；远程经 SFTP 落到服务器 home 下的 `.guru/tool-output`），
      * 故远程模式下本目录为空、实际存档在远端。
      */
-    val outputDir: File get() = File(containerInstaller.aicodeDir, OUTPUT_DIR)
+    val outputDir: File get() = File(containerInstaller.guruDir, OUTPUT_DIR)
 
     fun process(toolName: String, callId: String, result: ToolResult): ToolResult {
         return when (result) {
@@ -147,7 +147,7 @@ class ToolOutputStore @Inject constructor(
 
     private fun writeFullOutput(toolName: String, callId: String, text: String): StoredPathResult {
         return try {
-            val dir = "${pathHomeResolver.aicodeRoot()}/$OUTPUT_DIR"
+            val dir = "${pathHomeResolver.guruRoot()}/$OUTPUT_DIR"
             fileAccess.mkdirs(dir)
             val path = uniqueOutputPath(dir, toolName, callId)
             fileAccess.writeFile(path, text, overwrite = false)

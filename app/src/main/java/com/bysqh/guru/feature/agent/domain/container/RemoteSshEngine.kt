@@ -264,6 +264,6 @@ class RemoteSshEngine @Inject constructor(
         val key = shellQuote("includeIf.gitdir:$wsRoot/.path")
         return "export GIT_CONFIG_COUNT=1; " +
             "export GIT_CONFIG_KEY_0=$key; " +
-            "export GIT_CONFIG_VALUE_0=\"\${HOME}/.aicode/gitconfig.credential\"; "
+            "export GIT_CONFIG_VALUE_0=\"\${HOME}/.guru/gitconfig.credential\"; "
     }
 }

@@ -622,7 +622,7 @@ class BrowserManager @Inject constructor(
 
     /** WebView 主题：isLightTheme 决定网页看到的 prefers-color-scheme（见 values/styles.xml）。 */
     private fun webViewThemeRes(night: Boolean): Int =
-        if (night) R.style.Theme_AICode_WebView_Dark else R.style.Theme_AICode_WebView
+        if (night) R.style.Theme_Guru_WebView_Dark else R.style.Theme_Guru_WebView
 
     /**
      * 内核级暗色设置。prefers-color-scheme 实际由 WebView 主题的 isLightTheme 决定（见 [webViewThemeRes]），

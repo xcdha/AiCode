@@ -186,8 +186,8 @@ internal object MarkdownPreprocessor {
     // 数学链接编解码（供 MathImageTransformer 使用）
     // ---------------------------------------------------------------------------------------------
 
-    const val MATH_BLOCK_SCHEME = "aicode-math-block://"
-    const val MATH_INLINE_SCHEME = "aicode-math-inline://"
+    const val MATH_BLOCK_SCHEME = "guru-math-block://"
+    const val MATH_INLINE_SCHEME = "guru-math-inline://"
 
     fun encodeMathLink(latex: String, block: Boolean): String {
         val enc = Base64.getUrlEncoder().withoutPadding().encodeToString(latex.toByteArray(Charsets.UTF_8))

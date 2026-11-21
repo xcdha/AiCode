@@ -227,7 +227,7 @@ class PluginWebBridge(
 
     /**
      * 插件数据目录在当前执行环境中的真实路径。进程侧同一路径通过 AICODE_DATA_DIR 提供；
-     * 本地为容器内 `/…/.aicode/plugins/data/<id>`，远程落在服务器同名目录。
+     * 本地为容器内 `/…/.guru/plugins/data/<id>`，远程落在服务器同名目录。
      */
     private fun dataDirPath(): String = PluginHostPaths.dataRoot(homeResolver, page.pluginId)
 

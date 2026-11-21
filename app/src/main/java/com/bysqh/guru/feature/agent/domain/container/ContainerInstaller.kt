@@ -36,14 +36,14 @@ class ContainerInstaller @Inject constructor(
         @Volatile private var docsExtractedSession = false
 
         /**
-         * 从 assets 提取文档到 ~/.aicode/docs (内置使用指导)，支持 guide/ advanced/ 等分类子目录。
+         * 从 assets 提取文档到 ~/.guru/docs (内置使用指导)，支持 guide/ advanced/ 等分类子目录。
          *
          * 提取前先整目录删除：文档按功能分类，版本间调整分类会改变文件路径，只覆盖不清理会让
          * 上个版本的同名旧文件残留在别的路径下，AI 可能读到过期内容。
          */
         fun extractDocs(context: Context) {
             if (docsExtractedSession) return
-            val destDir = File(File(context.filesDir, "aicode"), "docs")
+            val destDir = File(File(context.filesDir, "guru"), "docs")
             runCatching {
                 destDir.deleteRecursively()
                 destDir.mkdirs()
@@ -55,13 +55,13 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取内置提示词到 ~/.aicode/prompts/，每次启动全量覆盖，使 App 升级后提示词随之更新。
+         * 从 assets 提取内置提示词到 ~/.guru/prompts/，每次启动全量覆盖，使 App 升级后提示词随之更新。
          *
-         * 用户自定义覆盖放在 ~/.aicode/prompts.custom/（同名即覆盖），本方法不触碰该目录，
+         * 用户自定义覆盖放在 ~/.guru/prompts.custom/（同名即覆盖），本方法不触碰该目录，
          * 故用户重写的片段不会被升级覆盖。参见 [com.bysqh.guru.feature.agent.domain.prompt.SystemPromptProvider]。
          */
         fun extractPrompts(context: Context) {
-            val destDir = File(File(context.filesDir, "aicode"), "prompts")
+            val destDir = File(File(context.filesDir, "guru"), "prompts")
             destDir.mkdirs()
             runCatching {
                 extractAssetsRecursive(context, "prompts", destDir)
@@ -89,11 +89,11 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取内置子代理定义（如 Explore）到 ~/.aicode/agents/。
+         * 从 assets 提取内置子代理定义（如 Explore）到 ~/.guru/agents/。
          * 若文件已存在则不覆盖，以保留用户的修改与删除后的重建选择。
          */
         fun extractAgents(context: Context) {
-            val destDir = File(File(context.filesDir, "aicode"), "agents")
+            val destDir = File(File(context.filesDir, "guru"), "agents")
             destDir.mkdirs()
             runCatching {
                 val entries = context.assets.list("agents") ?: return@runCatching
@@ -111,18 +111,18 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取内置脚本（如面板 demo_balance.py）到 ~/.aicode/scripts/。
+         * 从 assets 提取内置脚本（如面板 demo_balance.py）到 ~/.guru/scripts/。
          * 若文件已存在则不覆盖，以保留用户的修改。
          */
         fun extractScripts(context: Context) {
-            val destDir = File(File(context.filesDir, "aicode"), "scripts")
+            val destDir = File(File(context.filesDir, "guru"), "scripts")
             destDir.mkdirs()
             runCatching {
-                val entries = context.assets.list("aicode/scripts") ?: return@runCatching
+                val entries = context.assets.list("guru/scripts") ?: return@runCatching
                 for (entry in entries) {
                     val destFile = File(destDir, entry)
                     if (!destFile.exists()) {
-                        context.assets.open("aicode/scripts/$entry").use { input ->
+                        context.assets.open("guru/scripts/$entry").use { input ->
                             destFile.outputStream().use { output -> input.copyTo(output) }
                         }
                         destFile.setExecutable(true, false)
@@ -134,21 +134,21 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取自定义 git credential helper 到 ~/.aicode/git-credential-aicode 并赋可执行位。
+         * 从 assets 提取自定义 git credential helper 到 ~/.guru/git-credential-guru 并赋可执行位。
          *
-         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.aicode/git-credential-aicode，
+         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/git-credential-guru，
          * 由容器初始化菜单（provision.sh）在 `.gitconfig` 里登记为第二个 credential.helper，
-         * 排在 `store` 之后兜底未登录（双保险）。helper 详行为见 assets/aicode/git-credential-aicode。
+         * 排在 `store` 之后兜底未登录（双保险）。helper 详行为见 assets/guru/git-credential-guru。
          *
          * 启动即提取、独立于 provisioning 成败：provisioning 失败时 git 没装上，helper 配置不存在也无所谓；
          * 一旦 git 装好且配置登记，helper 立即可用。提取失败仅告警不抛（helper 缺席仅导致未登录时无弹窗，
          * git 仍能裸跑报认证失败，不致命）。
          */
         fun extractCredentialHelper(context: Context) {
-            val dest = File(File(context.filesDir, "aicode"), "git-credential-aicode")
+            val dest = File(File(context.filesDir, "guru"), "git-credential-guru")
             runCatching {
                 dest.parentFile?.mkdirs()
-                context.assets.open("aicode/git-credential-aicode").use { input ->
+                context.assets.open("guru/git-credential-guru").use { input ->
                     dest.outputStream().use { output -> input.copyTo(output) }
                 }
                 // 对所有用户赋可执行位（proot 进程以 App uid 运行，参照 [copyAsset] 的 0o111 模式）。
@@ -161,19 +161,19 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取容器初始化依赖安装脚本到 ~/.aicode/provision.sh 并赋可执行位。
+         * 从 assets 提取容器初始化依赖安装脚本到 ~/.guru/provision.sh 并赋可执行位。
          *
-         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.aicode/provision.sh，由
+         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/provision.sh，由
          * 首次进入终端的初始化菜单以 `sh` 执行——脚本按包管理器
          * （apk/apt-get/dnf/yum/pacman）安装基础包，包清单维护在脚本内而非代码里。
          * 启动即提取、每次覆盖写（脚本随 App 版本更新）。提取失败仅告警不抛：
          * 缺脚本时初始化菜单不会出现，用户可手动安装基础工具。
          */
         fun extractProvisionScript(context: Context) {
-            val dest = File(File(context.filesDir, "aicode"), "provision.sh")
+            val dest = File(File(context.filesDir, "guru"), "provision.sh")
             runCatching {
                 dest.parentFile?.mkdirs()
-                context.assets.open("aicode/provision.sh").use { input ->
+                context.assets.open("guru/provision.sh").use { input ->
                     dest.outputStream().use { output -> input.copyTo(output) }
                 }
                 if (!dest.setExecutable(true, false)) {
@@ -185,17 +185,17 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取环境工具（`aicode` 命令 + 共享库 lib/）到 ~/.aicode/bin 与 ~/.aicode/lib 并赋可执行位。
+         * 从 assets 提取环境工具（`guru` 命令 + 共享库 lib/）到 ~/.guru/bin 与 ~/.guru/lib 并赋可执行位。
          *
-         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.aicode/bin/aicode（在 PATH 中，见
-         * buildContainerEnv）与 /root/.aicode/lib/（env-common.sh、android-sdk.sh 与 scenarios/ 子目录），
-         * 供用户随时执行 `aicode` 安装开发环境（场景化）。每次覆盖写（随 App 版本更新）；提取失败仅告警
+         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/bin/guru（在 PATH 中，见
+         * buildContainerEnv）与 /root/.guru/lib/（env-common.sh、android-sdk.sh 与 scenarios/ 子目录），
+         * 供用户随时执行 `guru` 安装开发环境（场景化）。每次覆盖写（随 App 版本更新）；提取失败仅告警
          * 不抛：缺工具时容器初始化菜单（provision.sh）会提示未就绪，用户重启 App 即可重新提取。
          */
         fun extractEnvTool(context: Context) {
             runCatching {
-                extractDirOverwrite(context, "aicode/bin", File(File(context.filesDir, "aicode"), "bin"), executable = true)
-                extractDirOverwrite(context, "aicode/lib", File(File(context.filesDir, "aicode"), "lib"), executable = false)
+                extractDirOverwrite(context, "guru/bin", File(File(context.filesDir, "guru"), "bin"), executable = true)
+                extractDirOverwrite(context, "guru/lib", File(File(context.filesDir, "guru"), "lib"), executable = false)
             }.onFailure {
                 FileLogger.w(TAG, "提取环境工具失败: ${it.message}", it)
             }
@@ -237,7 +237,7 @@ class ContainerInstaller @Inject constructor(
          * 为准，不要靠本标记推断。
          *
          * 内置 rootfs 固定在 3.21 分支：该分支的 apk-tools 2.14 在 proot 下可靠，apk 源分支也据此固定
-         * （见 assets/aicode/lib/env-common.sh 的兜底 v3.21）。
+         * （见 assets/guru/lib/env-common.sh 的兜底 v3.21）。
          */
         private const val INSTALL_VERSION = "alpine-3.21.3-v6"
 
@@ -282,17 +282,17 @@ class ContainerInstaller @Inject constructor(
      *
      * 刻意**独立于 [rootfsDir]**：rootfs 在容器版本升级时会被整体删除重装（见 [installRootfsIfNeed]），
      * 而本目录承载用户数据，必须跨升级保留。它由 [com.bysqh.guru.feature.agent.domain.container.LinuxContainerEngine]
-     * 绑定到容器内 `/root/.aicode`，故 AI / 终端看到的 `/root/.aicode` 实际落在这里。
+     * 绑定到容器内 `/root/.guru`，故 AI / 终端看到的 `/root/.guru` 实际落在这里。
      */
-    val aicodeDir: File
-        get() = File(context.filesDir, "aicode")
+    val guruDir: File
+        get() = File(context.filesDir, "guru")
 
-    /** 把 [aicodeDir] 下的宿主文件映射为容器内路径；`.aicode` 绑定到 `/root/.aicode`。 */
+    /** 把 [guruDir] 下的宿主文件映射为容器内路径；`.guru` 绑定到 `/root/.guru`。 */
     fun containerPathFor(file: File): String {
-        val root = aicodeDir.canonicalFile
+        val root = guruDir.canonicalFile
         val relative = runCatching { file.canonicalFile.relativeTo(root) }.getOrNull()
             ?: return file.absolutePath
-        return "/root/.aicode/" + relative.invariantSeparatorsPath
+        return "/root/.guru/" + relative.invariantSeparatorsPath
     }
 
     /**
@@ -419,7 +419,7 @@ class ContainerInstaller @Inject constructor(
     /**
      * 按 [profile] 解压安装 rootfs。内置走 assets 全流程（rootfs/resolv/apk 源）；自定义本地镜像只解压
      * tar.gz + 写 DNS（不写 apk 源）。两者都不自动装包——基础工具由进入终端时的
-     * 初始化菜单（assets/aicode/provision.sh）引导用户选择安装。远程 SSH profile 无本地 rootfs，直接返回
+     * 初始化菜单（assets/guru/provision.sh）引导用户选择安装。远程 SSH profile 无本地 rootfs，直接返回
      * （命令执行走 [RemoteSshEngine]，不需本地 rootfs）。
      */
     suspend fun installRootfsIfNeed(
@@ -610,16 +610,16 @@ class ContainerInstaller @Inject constructor(
         }
     }
 
-    /** 从 assets 提取文档到 ~/.aicode/docs (内置使用指导) */
+    /** 从 assets 提取文档到 ~/.guru/docs (内置使用指导) */
     fun extractDocs() = extractDocs(context)
 
-    /** 从 assets 提取 git credential helper 到 ~/.aicode/git-credential-aicode 并赋可执行位。 */
+    /** 从 assets 提取 git credential helper 到 ~/.guru/git-credential-guru 并赋可执行位。 */
     fun extractCredentialHelper() = extractCredentialHelper(context)
 
-    /** 从 assets 提取容器初始化依赖安装脚本到 ~/.aicode/provision.sh 并赋可执行位。 */
+    /** 从 assets 提取容器初始化依赖安装脚本到 ~/.guru/provision.sh 并赋可执行位。 */
     fun extractProvisionScript() = extractProvisionScript(context)
 
-    /** 从 assets 提取环境工具（aicode 命令 + 共享库）到 ~/.aicode/{bin,lib} 并赋可执行位。 */
+    /** 从 assets 提取环境工具（guru 命令 + 共享库）到 ~/.guru/{bin,lib} 并赋可执行位。 */
     fun extractEnvTool() = extractEnvTool(context)
 
     /** 解压 alpine-minirootfs.tar.gz，正确处理目录/文件/符号链接/硬链接与权限位；返回解压条目数。 */

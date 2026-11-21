@@ -34,7 +34,7 @@ data class PluginStoreItem(
     val installedVersion: String?,
     val updateAvailable: Boolean,
     val compatible: Boolean,
-    /** 插件源码仓库是否归属 AiCode 官方账号。 */
+    /** 插件源码仓库是否归属 Guru 官方账号。 */
     val official: Boolean
 )
 

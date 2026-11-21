@@ -74,7 +74,7 @@ class RepoDataFetcher(
             try {
                 val reqBuilder = Request.Builder()
                     .url(url)
-                    .header("User-Agent", "aicode-android")
+                    .header("User-Agent", "guru-android")
                     .get()
 
                 if (!cachedEtag.isNullOrBlank()) {

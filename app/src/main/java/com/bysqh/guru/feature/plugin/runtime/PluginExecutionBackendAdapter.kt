@@ -517,7 +517,7 @@ class PluginExecutionBackendAdapter(
         }
 
         override fun readLines(path: String): Sequence<String> = sequence {
-            val temporary = File.createTempFile("aicode_plugin_lines_", ".tmp").apply { deleteOnExit() }
+            val temporary = File.createTempFile("guru_plugin_lines_", ".tmp").apply { deleteOnExit() }
             try {
                 runBlocking(Dispatchers.IO) {
                     runtimeManager.openBinaryStream(
@@ -724,7 +724,7 @@ class PluginExecutionBackendAdapter(
         }
 
         override fun copyToLocal(path: String): File {
-            val temporary = File.createTempFile("aicode_plugin_", ".copy").apply { deleteOnExit() }
+            val temporary = File.createTempFile("guru_plugin_", ".copy").apply { deleteOnExit() }
             try {
                 runBlocking(Dispatchers.IO) {
                     runtimeManager.openBinaryStream(

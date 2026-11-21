@@ -339,7 +339,7 @@ internal fun SessionManagementSectionHost(
                 menuSession = null
                 pendingExportSessionId = session.id
                 val safeTitle = session.title.replace(Regex("[^\\w\\u4e00-\\u9fa5\\-]"), "_")
-                exportLauncher.launch("aicode-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
+                exportLauncher.launch("guru-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
             },
             onBatchSelect = {
                 menuSession = null
@@ -1304,7 +1304,7 @@ internal fun SessionDetailSectionHost(
         onExport = {
             pendingExportId = session.id
             val safeTitle = session.title.replace(Regex("[^\\w\\u4e00-\\u9fa5\\-]"), "_")
-            exportLauncher.launch("aicode-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
+            exportLauncher.launch("guru-session-$safeTitle-${System.currentTimeMillis()}.tar.gz")
         },
         onDelete = {
             if (isBusy) Toast.makeText(context, runningBlockedText, Toast.LENGTH_SHORT).show()

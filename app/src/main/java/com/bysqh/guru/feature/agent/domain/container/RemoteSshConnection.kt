@@ -412,7 +412,7 @@ class RemoteSshConnection @Inject constructor(
         home: String,
         private val checkActive: () -> Unit
     ) : BuiltinDocsSync.Backend {
-        private val root = home.trimEnd('/') + "/.aicode/docs"
+        private val root = home.trimEnd('/') + "/.guru/docs"
 
         init {
             require(root.startsWith('/') && root.drop(1).split('/').all {
@@ -590,7 +590,7 @@ class RemoteSshConnection @Inject constructor(
     }
 
     /**
-     * 释放 App 内置资源（子代理定义、面板示例脚本等）到远程 `~/.aicode/<subdir>/`。
+     * 释放 App 内置资源（子代理定义、面板示例脚本等）到远程 `~/.guru/<subdir>/`。
      * 仅补齐服务器上缺失的文件、**不覆盖已存在**（保留用户修改），脚本赋可执行位。
      * 与 [uploadDocs] 一样在连接/重连后调用——远程模式下全局 agents/scripts 以远端为准，
      * 内置默认需在远端存在才能「开箱即用」。二进制安全（base64 传输）。
@@ -603,7 +603,7 @@ class RemoteSshConnection @Inject constructor(
         if (files.isEmpty()) return
         val client = sshClient ?: return
         val home = remoteHome ?: return
-        val destDir = home.trimEnd('/') + "/.aicode/" + destSubdir.trim('/')
+        val destDir = home.trimEnd('/') + "/.guru/" + destSubdir.trim('/')
         withContext(Dispatchers.IO) {
             runCatching {
                 sftpOperationMutex.withLock { sftp().mkdirs(destDir) }
@@ -619,7 +619,7 @@ class RemoteSshConnection @Inject constructor(
 
     /**
      * 把 App 的 git 凭据注入远程服务器（仅当用户开启「自动注入」时调用）：
-     * 写 `~/.aicode/git-credentials`（store 格式）+ `~/.aicode/gitconfig.credential`。
+     * 写 `~/.guru/git-credentials`（store 格式）+ `~/.guru/gitconfig.credential`。
      *
      * 生效机制：[RemoteSshEngine] 执行命令时用 `GIT_CONFIG_*` 环境变量指向 credential 文件，
      * 并经 `includeIf "gitdir:<工作区根>/"` 限定只有工作区根目录下的仓库才加载 store helper。
@@ -632,11 +632,11 @@ class RemoteSshConnection @Inject constructor(
     suspend fun uploadGitCredentialConfig(credentials: List<GitCredential>, workspaceRoot: String) = credentialSyncMutex.withLock {
         val client = sshClient ?: return@withLock
         val home = remoteHome ?: return@withLock
-        val aicodeDir = home.trimEnd('/') + "/.aicode"
+        val guruDir = home.trimEnd('/') + "/.guru"
         val wsRoot = workspaceRoot.trimEnd('/').ifEmpty { return@withLock }
         withContext(Dispatchers.IO) {
             runCatching {
-                sftpOperationMutex.withLock { sftp().mkdirs(aicodeDir) }
+                sftpOperationMutex.withLock { sftp().mkdirs(guruDir) }
 
                 val creds = credentials.joinToString("\n") { c ->
                     "https://${enc(c.username)}:${enc(c.token)}@${c.host}"
@@ -644,43 +644,43 @@ class RemoteSshConnection @Inject constructor(
 
 
                 // 上传 credential helper 脚本（本地由 ContainerInstaller 提取），配置为唯一 helper；
-                // 服务器上没有 App，用 AICODE_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
+                // 服务器上没有 App，用 GURU_CRED_NO_PROMPT 让未命中时直接空退出而非等待弹窗。
                 containerInstaller.extractCredentialHelper()
-                val helperScript = java.io.File(containerInstaller.aicodeDir, "git-credential-aicode").readText()
+                val helperScript = java.io.File(containerInstaller.guruDir, "git-credential-guru").readText()
                 check(helperScript.isNotBlank()) { "Git credential helper is empty" }
                 val remoteHelperScript = helperScript.replaceFirst(
                     "#!/bin/sh\n",
-                    "#!/bin/sh\nexport AICODE_CRED_NO_PROMPT=1\n"
+                    "#!/bin/sh\nexport GURU_CRED_NO_PROMPT=1\n"
                 )
-                writeRemoteFile("$aicodeDir/git-credential-aicode", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
-                writeRemoteFile("$aicodeDir/git-credentials", encodeCreds(creds).toByteArray(Charsets.UTF_8))
+                writeRemoteFile("$guruDir/git-credential-guru", remoteHelperScript.toByteArray(Charsets.UTF_8), executable = true)
+                writeRemoteFile("$guruDir/git-credentials", encodeCreds(creds).toByteArray(Charsets.UTF_8))
 
                 val credentialConfig = buildString {
                     append("[credential]\n")
-                    append("    helper = !AICODE_CRED_NO_PROMPT=1 $aicodeDir/git-credential-aicode\n")
+                    append("    helper = !GURU_CRED_NO_PROMPT=1 $guruDir/git-credential-guru\n")
                 }
-                writeRemoteFile("$aicodeDir/gitconfig.credential", credentialConfig.toByteArray(Charsets.UTF_8))
+                writeRemoteFile("$guruDir/gitconfig.credential", credentialConfig.toByteArray(Charsets.UTF_8))
                 gitCredentialWorkspaceRoot = wsRoot
-                FileLogger.i(TAG, "已注入 git 凭据到远程 $aicodeDir（限定 $wsRoot/）")
+                FileLogger.i(TAG, "已注入 git 凭据到远程 $guruDir（限定 $wsRoot/）")
             }.onFailure { FileLogger.w(TAG, "注入 git 凭据到远程失败", it) }
         }
     }
 
     /**
      * 撤销远程注入：删除 App 管理的凭据与 helper 文件，命令不再附加凭证配置。
-     * `~/.aicode/gitconfig` 是旧版实现生成的文件，旧版期间写入其中的用户配置可能只存在于该文件，
+     * `~/.guru/gitconfig` 是旧版实现生成的文件，旧版期间写入其中的用户配置可能只存在于该文件，
      * 这里不作删除。
      */
     suspend fun removeGitCredentialConfig() = credentialSyncMutex.withLock {
         val client = sshClient ?: return@withLock
         val home = remoteHome ?: return@withLock
-        val aicodeDir = home.trimEnd('/') + "/.aicode"
+        val guruDir = home.trimEnd('/') + "/.guru"
         withContext(Dispatchers.IO) {
             runCatching {
                 sftpOperationMutex.withLock {
                     val sftp = sftp()
-                    listOf("gitconfig.credential", "git-credentials", "git-credential-aicode").forEach { name ->
-                        val path = "$aicodeDir/$name"
+                    listOf("gitconfig.credential", "git-credentials", "git-credential-guru").forEach { name ->
+                        val path = "$guruDir/$name"
                         if (sftp.statExistence(path) != null) sftp.rm(path)
                     }
                 }

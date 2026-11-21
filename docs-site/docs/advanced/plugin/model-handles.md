@@ -10,7 +10,7 @@
 
 ## 页面与进程接口
 
-下表使用页面侧 `aicode.model.*` 的签名。进程通过 `hostCall('host.model.方法', {参数})` 调用，参数统一放入对象：
+下表使用页面侧 `guru.model.*` 的签名。进程通过 `hostCall('host.model.方法', {参数})` 调用，参数统一放入对象：
 
 | 方法 | 作用 |
 | --- | --- |
@@ -92,7 +92,7 @@ const messages = [
 
 | type | 宿主行为 | 插件职责 |
 | --- | --- | --- |
-| `app` | 从工具注册表读取内置或 MCP 工具的描述与参数 schema，转给模型；不执行 | 模型返回 `toolCalls` 后调用 `aicode.tools.execute` / `host.tools.execute` |
+| `app` | 从工具注册表读取内置或 MCP 工具的描述与参数 schema，转给模型；不执行 | 模型返回 `toolCalls` 后调用 `guru.tools.execute` / `host.tools.execute` |
 | `custom` | 只把 `description` 与 `inputSchema` 转给模型；不执行 | 插件自己处理调用，生成 `tool` 消息 |
 
 - `app` 只接受内置与 MCP 工具。`plugin__` 前缀的插件工具返回 `TOOL_NOT_ALLOWED`，未知工具返回 `TOOL_NOT_FOUND`。
@@ -106,7 +106,7 @@ const messages = [
 ```js
 async function callWithTools(handleId, messages, tools, onEvent, runTool) {
   for (let round = 0; round < 4; round++) {
-    const result = await aicode.model.stream({handleId, messages, tools}, onEvent)
+    const result = await guru.model.stream({handleId, messages, tools}, onEvent)
     if (result.status !== 'success') return result
     const calls = result.final.toolCalls || []
     if (calls.length === 0) return result
@@ -145,8 +145,8 @@ async function callWithTools(handleId, messages, tools, onEvent, runTool) {
 `app` 工具通过宿主的工具接口执行，复用聊天页同一套权限策略：
 
 ```js
-const {tools} = await aicode.tools.list({includeSchema: true})
-const result = await aicode.tools.execute(
+const {tools} = await guru.tools.list({includeSchema: true})
+const result = await guru.tools.execute(
   'writeFile',
   {path: '~/workspace/notes.md', content: '# 结论\n...'},
   {sessionId: 'plugin:demo.team-chat:team-chat', timeoutMs: 120000}
@@ -166,13 +166,13 @@ if (result.status === 'success') {
 ```js
 let approval = null
 const timer = setInterval(async () => {
-  const pending = await aicode.tools.pending(sessionId).catch(() => null)
+  const pending = await guru.tools.pending(sessionId).catch(() => null)
   approval = pending ? pending.approval : null
   renderApproval(approval) // approval 为 null 时隐藏审批条
 }, 800)
 
 try {
-  const result = await aicode.tools.execute('writeFile', args, {sessionId})
+  const result = await guru.tools.execute('writeFile', args, {sessionId})
   // 执行完成
 } finally {
   clearInterval(timer)
@@ -180,7 +180,7 @@ try {
 }
 ```
 
-按钮调用 `aicode.tools.resolve(approval.id, choice)` 回传 `once` / `always` / `reject`；只有 `rememberablePatterns` 非空时才展示「始终允许」。审批字段、失效条件与错误码见[工具目录与代执行](/advanced/plugin/tools-runtime#工具目录与代执行)。
+按钮调用 `guru.tools.resolve(approval.id, choice)` 回传 `once` / `always` / `reject`；只有 `rememberablePatterns` 非空时才展示「始终允许」。审批字段、失效条件与错误码见[工具目录与代执行](/advanced/plugin/tools-runtime#工具目录与代执行)。
 
 ## 图片输入与输出
 
@@ -239,7 +239,7 @@ if (result.final.images) {
 | `retry` | `attempt`、`maxRetries`、`error.code`、`error.statusCode?` | 网络重试提示 |
 | `keySwitch` | `index`、`total` | 多 Key 自动切换提示 |
 
-只有上游请求已经结束、且缓冲事件已全部返回时，`read` 才返回 `done: true`。即使请求已成功、失败或取消，只要仍有事件未读，就应继续携带上一批的 `cursor` 读取；`aicode.model.stream` 会自动完成这个循环。
+只有上游请求已经结束、且缓冲事件已全部返回时，`read` 才返回 `done: true`。即使请求已成功、失败或取消，只要仍有事件未读，就应继续携带上一批的 `cursor` 读取；`guru.model.stream` 会自动完成这个循环。
 
 `done: true` 时带 `status`：
 

@@ -175,7 +175,7 @@ internal suspend fun copyUriToWorkspace(
     fileAccess: FileAccessProvider,
     includeImageData: Boolean = false
 ): UploadedWorkspaceFile = withContext(Dispatchers.IO) {
-    val attachmentsDir = "${WorkspacePathMapper.CONTAINER_ROOT}/.aicode/attachments"
+    val attachmentsDir = "${WorkspacePathMapper.CONTAINER_ROOT}/.guru/attachments"
     val fileName = uniqueUploadName(fileAccess, attachmentsDir, safeUploadFileName(context, uri))
     val containerPath = "$attachmentsDir/$fileName"
 

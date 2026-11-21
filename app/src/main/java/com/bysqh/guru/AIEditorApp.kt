@@ -320,16 +320,16 @@ class AIEditorApp : Application(), Configuration.Provider {
         appScope.launch {
             ContainerInstaller.extractDocs(this@AIEditorApp)
         }
-        // 启动即把内置提示词全量释放到 ~/.aicode/prompts/（覆盖式，随 App 升级更新）；
-        // 用户自定义覆盖放在 ~/.aicode/prompts.custom/，同名即覆盖，不被升级覆盖。
+        // 启动即把内置提示词全量释放到 ~/.guru/prompts/（覆盖式，随 App 升级更新）；
+        // 用户自定义覆盖放在 ~/.guru/prompts.custom/，同名即覆盖，不被升级覆盖。
         appScope.launch {
             ContainerInstaller.extractPrompts(this@AIEditorApp)
         }
-        // 启动即释放套餐余量示例脚本等内置脚本到 ~/.aicode/scripts/
+        // 启动即释放套餐余量示例脚本等内置脚本到 ~/.guru/scripts/
         appScope.launch {
             ContainerInstaller.extractScripts(this@AIEditorApp)
         }
-        // 启动即释放内置子代理定义（Explore）到 ~/.aicode/agents/；已存在不覆盖，用户改过或删掉都不会被升级拉回。
+        // 启动即释放内置子代理定义（Explore）到 ~/.guru/agents/；已存在不覆盖，用户改过或删掉都不会被升级拉回。
         appScope.launch {
             ContainerInstaller.extractAgents(this@AIEditorApp)
         }
@@ -456,7 +456,7 @@ class AIEditorApp : Application(), Configuration.Provider {
                 }
                 runCatching {
                     remoteSshConnection.connect(config)
-                    // 连接成功后同步内置文档到远程 ~/.aicode/docs/，供 AI 查阅。
+                    // 连接成功后同步内置文档到远程 ~/.guru/docs/，供 AI 查阅。
                     syncDocsToRemote()
                     releaseBuiltinAssetsToRemote()
                 }.onFailure { FileLogger.e(TAG, "SSH 连接失败，将在首次命令时重试", it) }
@@ -593,12 +593,12 @@ class AIEditorApp : Application(), Configuration.Provider {
     }
 
     /**
-     * 释放内置子代理定义（Explore）与面板示例脚本到远程 `~/.aicode/agents`、`~/.aicode/scripts`。
+     * 释放内置子代理定义（Explore）与面板示例脚本到远程 `~/.guru/agents`、`~/.guru/scripts`。
      * 远程模式下全局 agents/scripts 以远端为准，内置默认需在远端存在才能开箱即用；仅补齐缺失、不覆盖用户修改。
      */
     private suspend fun releaseBuiltinAssetsToRemote() {
         remoteSshConnection.uploadBuiltinFiles("agents", collectAssetBytes("agents"))
-        remoteSshConnection.uploadBuiltinFiles("scripts", collectAssetBytes("aicode/scripts"), executable = true)
+        remoteSshConnection.uploadBuiltinFiles("scripts", collectAssetBytes("guru/scripts"), executable = true)
     }
 
     /** 收集 assets 目录下的扁平文件（name → 字节）。目录项会被跳过。 */

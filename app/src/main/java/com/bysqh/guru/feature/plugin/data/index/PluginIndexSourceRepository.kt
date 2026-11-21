@@ -33,9 +33,9 @@ data class PluginIndexSource(
 }
 
 object PluginIndexDefaults {
-    const val OFFICIAL_URL = "https://raw.githubusercontent.com/jieapi/AiCode-Plugins-Store/main/index.json"
-    const val OFFICIAL_NAME = "AiCode Plugins"
-    const val OFFICIAL_ID = "aicode.official"
+    const val OFFICIAL_URL = "https://raw.githubusercontent.com/jieapi/Guru-Plugins-Store/main/index.json"
+    const val OFFICIAL_NAME = "Guru Plugins"
+    const val OFFICIAL_ID = "guru.official"
 
     val official = PluginIndexSource(
         id = OFFICIAL_ID,

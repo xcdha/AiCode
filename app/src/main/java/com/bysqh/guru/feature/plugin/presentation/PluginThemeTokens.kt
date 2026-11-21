@@ -24,59 +24,59 @@ object PluginThemeTokens {
         semantic: AppSemanticColors,
         fontScale: Float
     ): Map<String, String> = linkedMapOf(
-        "--aicode-bg" to scheme.background.toCss(),
-        "--aicode-surface" to scheme.surface.toCss(),
-        "--aicode-surface-variant" to scheme.surfaceVariant.toCss(),
-        "--aicode-on-surface" to scheme.onSurface.toCss(),
-        "--aicode-on-surface-variant" to scheme.onSurfaceVariant.toCss(),
-        "--aicode-primary" to scheme.primary.toCss(),
-        "--aicode-on-primary" to scheme.onPrimary.toCss(),
-        "--aicode-primary-container" to scheme.primaryContainer.toCss(),
-        "--aicode-primary-soft" to scheme.primary.copy(alpha = 0.12f).toCss(),
-        "--aicode-tertiary" to scheme.tertiary.toCss(),
-        "--aicode-tertiary-soft" to scheme.tertiary.copy(alpha = 0.12f).toCss(),
-        "--aicode-outline" to scheme.outline.toCss(),
-        "--aicode-outline-soft" to scheme.outline.copy(alpha = 0.12f).toCss(),
-        "--aicode-error" to scheme.error.toCss(),
-        "--aicode-success" to semantic.success.toCss(),
-        "--aicode-success-soft" to semantic.success.copy(alpha = 0.12f).toCss(),
-        "--aicode-warning" to semantic.warning.toCss(),
-        "--aicode-warning-soft" to semantic.warning.copy(alpha = 0.12f).toCss(),
-        "--aicode-page-bg" to semantic.pageBackground.toCss(),
-        "--aicode-card-surface" to semantic.cardSurface.toCss(),
-        "--aicode-subtle-text" to semantic.subtleText.toCss(),
-        "--aicode-subtle-border" to semantic.subtleBorder.toCss(),
-        "--aicode-space-xs" to px(Spacing.xs.value),
-        "--aicode-space-sm" to px(Spacing.sm.value),
-        "--aicode-space-md" to px(Spacing.md.value),
-        "--aicode-space-lg" to px(Spacing.lg.value),
-        "--aicode-space-xl" to px(Spacing.xl.value),
-        "--aicode-radius-xs" to px(Radius.xs.value),
-        "--aicode-radius-sm" to px(Radius.sm.value),
-        "--aicode-radius-md" to px(Radius.md.value),
-        "--aicode-radius-md-large" to px(Radius.mdLarge.value),
-        "--aicode-radius-lg" to px(Radius.lg.value),
-        "--aicode-radius-xl" to px(Radius.xl.value),
-        "--aicode-font-scale" to String.format(Locale.US, "%.2f", fontScale),
-        "--aicode-touch-target" to "44px",
-        "--aicode-switch-track" to if (isDark(scheme)) "#334155" else "#E2E8F0",
-        "--aicode-switch-thumb" to if (isDark(scheme)) "#F8FAFC" else "#FFFFFF",
-        "--aicode-font-sans" to "system-ui, -apple-system, \"Noto Sans CJK SC\", sans-serif",
-        "--aicode-font-mono" to "ui-monospace, \"Roboto Mono\", monospace",
-        "--aicode-text-field-border" to if (isDark(scheme)) {
+        "--guru-bg" to scheme.background.toCss(),
+        "--guru-surface" to scheme.surface.toCss(),
+        "--guru-surface-variant" to scheme.surfaceVariant.toCss(),
+        "--guru-on-surface" to scheme.onSurface.toCss(),
+        "--guru-on-surface-variant" to scheme.onSurfaceVariant.toCss(),
+        "--guru-primary" to scheme.primary.toCss(),
+        "--guru-on-primary" to scheme.onPrimary.toCss(),
+        "--guru-primary-container" to scheme.primaryContainer.toCss(),
+        "--guru-primary-soft" to scheme.primary.copy(alpha = 0.12f).toCss(),
+        "--guru-tertiary" to scheme.tertiary.toCss(),
+        "--guru-tertiary-soft" to scheme.tertiary.copy(alpha = 0.12f).toCss(),
+        "--guru-outline" to scheme.outline.toCss(),
+        "--guru-outline-soft" to scheme.outline.copy(alpha = 0.12f).toCss(),
+        "--guru-error" to scheme.error.toCss(),
+        "--guru-success" to semantic.success.toCss(),
+        "--guru-success-soft" to semantic.success.copy(alpha = 0.12f).toCss(),
+        "--guru-warning" to semantic.warning.toCss(),
+        "--guru-warning-soft" to semantic.warning.copy(alpha = 0.12f).toCss(),
+        "--guru-page-bg" to semantic.pageBackground.toCss(),
+        "--guru-card-surface" to semantic.cardSurface.toCss(),
+        "--guru-subtle-text" to semantic.subtleText.toCss(),
+        "--guru-subtle-border" to semantic.subtleBorder.toCss(),
+        "--guru-space-xs" to px(Spacing.xs.value),
+        "--guru-space-sm" to px(Spacing.sm.value),
+        "--guru-space-md" to px(Spacing.md.value),
+        "--guru-space-lg" to px(Spacing.lg.value),
+        "--guru-space-xl" to px(Spacing.xl.value),
+        "--guru-radius-xs" to px(Radius.xs.value),
+        "--guru-radius-sm" to px(Radius.sm.value),
+        "--guru-radius-md" to px(Radius.md.value),
+        "--guru-radius-md-large" to px(Radius.mdLarge.value),
+        "--guru-radius-lg" to px(Radius.lg.value),
+        "--guru-radius-xl" to px(Radius.xl.value),
+        "--guru-font-scale" to String.format(Locale.US, "%.2f", fontScale),
+        "--guru-touch-target" to "44px",
+        "--guru-switch-track" to if (isDark(scheme)) "#334155" else "#E2E8F0",
+        "--guru-switch-thumb" to if (isDark(scheme)) "#F8FAFC" else "#FFFFFF",
+        "--guru-font-sans" to "system-ui, -apple-system, \"Noto Sans CJK SC\", sans-serif",
+        "--guru-font-mono" to "ui-monospace, \"Roboto Mono\", monospace",
+        "--guru-text-field-border" to if (isDark(scheme)) {
             scheme.outlineVariant.copy(alpha = 0.6f).toCss()
         } else {
             scheme.outlineVariant.toCss()
         },
-        "--aicode-text-field-focused-bg" to if (isDark(scheme)) {
+        "--guru-text-field-focused-bg" to if (isDark(scheme)) {
             scheme.surfaceVariant.copy(alpha = 0.8f).toCss()
         } else {
             semantic.cardSurface.toCss()
         },
-        "--aicode-text-field-disabled-border" to scheme.outlineVariant
+        "--guru-text-field-disabled-border" to scheme.outlineVariant
             .copy(alpha = if (isDark(scheme)) 0.3f else 0.5f).toCss(),
-        "--aicode-text-field-disabled-text" to scheme.onSurface.copy(alpha = 0.38f).toCss(),
-        "--aicode-dialog-surface" to scheme.surfaceContainerHigh.toCss()
+        "--guru-text-field-disabled-text" to scheme.onSurface.copy(alpha = 0.38f).toCss(),
+        "--guru-dialog-surface" to scheme.surfaceContainerHigh.toCss()
     )
 
     fun css(variables: Map<String, String>): String =

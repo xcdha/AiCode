@@ -44,9 +44,9 @@ data class PromptFragment(
 /**
  * 提示词片段的四级来源解析：同一编号只生效优先级最高的一层。
  *
- * - 项目：工作区 `.aicode/prompts.custom/`（远程走 [ProjectAicodeRoot] 私有目录）
- * - 全局：`<aicodeDir>/prompts.custom/`
- * - 本地：`<aicodeDir>/prompts/`（启动时从内置释放的副本）
+ * - 项目：工作区 `.guru/prompts.custom/`（远程走 [ProjectAicodeRoot] 私有目录）
+ * - 全局：`<guruDir>/prompts.custom/`
+ * - 本地：`<guruDir>/prompts/`（启动时从内置释放的副本）
  * - 内置：`assets/prompts/`
  *
  * 编号即身份（文件名前两位数字），决定片段在系统提示词里的顺序。
@@ -58,8 +58,8 @@ class PromptFragmentCatalog @Inject constructor(
     private val projectAicodeRoot: ProjectAicodeRoot
 ) {
 
-    private val globalDir: File get() = File(containerInstaller.aicodeDir, CUSTOM_DIR)
-    private val localDir: File get() = File(containerInstaller.aicodeDir, LOCAL_DIR)
+    private val globalDir: File get() = File(containerInstaller.guruDir, CUSTOM_DIR)
+    private val localDir: File get() = File(containerInstaller.guruDir, LOCAL_DIR)
 
     /** 某工作区对应的项目层目录；无工作区返回 null。 */
     private fun projectDir(projectRoot: String?): File? =

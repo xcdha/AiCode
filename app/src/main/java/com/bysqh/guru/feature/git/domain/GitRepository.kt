@@ -701,7 +701,7 @@ class GitRepository @Inject constructor(
 
     /**
      * 写入提交署名，**优先项目级**：当前工作区（~/workspace/.git/config）已有项目级署名时写 local，
-     * 否则写 global（容器 `GIT_CONFIG_GLOBAL=/root/.aicode/.gitconfig`，持久挂载，跨 rootfs 升级不丢）作默认。
+     * 否则写 global（容器 `GIT_CONFIG_GLOBAL=/root/.guru/.gitconfig`，持久挂载，跨 rootfs 升级不丢）作默认。
      * 这样 UI 与终端 `git config user.name` 读到的同一份——优先项目级、无则退全局，对齐 git 自身解析顺序。
      * 空值跳过对应项不动现有配置。由 UI 在用户保存身份时显式调用。
      */

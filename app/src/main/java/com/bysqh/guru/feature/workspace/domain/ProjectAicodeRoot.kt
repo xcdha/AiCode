@@ -9,11 +9,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 项目级 `.aicode` 配置目录的归属解析。
+ * 项目级 `.guru` 配置目录的归属解析。
  *
- * - 本地工作区随目录走（`<workspacePath>/.aicode`），可被 AI 直接编辑、可 git 追踪；
+ * - 本地工作区随目录走（`<workspacePath>/.guru`），可被 AI 直接编辑、可 git 追踪；
  * - 远端或声明为 [ProjectConfigLocation.APP_PRIVATE_DIR] 的后端：宿主 [java.io.File] 无法在本地直接创建目录，
- *   故改存 App 私有目录 `filesDir/aicode/projects/<项目名-标识哈希>/`，标识由后端 [projectKey] 生成。
+ *   故改存 App 私有目录 `filesDir/guru/projects/<项目名-标识哈希>/`，标识由后端 [projectKey] 生成。
  *
  * 与项目级记忆 [com.bysqh.guru.feature.agent.domain.memory.ProjectMemorySource] 使用同一套标识算法。
  */
@@ -30,9 +30,9 @@ class ProjectAicodeRoot @Inject constructor(
     fun forPath(workspacePath: String): File {
         val backend = executionModeHolder.currentBackend()
         return if (backend.capabilities.projectConfigLocation == ProjectConfigLocation.APP_PRIVATE_DIR) {
-            File(File(containerInstaller.aicodeDir, PROJECTS_DIR), backend.projectConfigKey(workspacePath))
+            File(File(containerInstaller.guruDir, PROJECTS_DIR), backend.projectConfigKey(workspacePath))
         } else {
-            File(workspacePath, AICODE_DIR)
+            File(workspacePath, GURU_DIR)
         }
     }
 
@@ -41,7 +41,7 @@ class ProjectAicodeRoot @Inject constructor(
         executionModeHolder.currentBackend().projectConfigKey(workspacePath)
 
     private companion object {
-        const val AICODE_DIR = ".aicode"
+        const val GURU_DIR = ".guru"
         const val PROJECTS_DIR = "projects"
     }
 }

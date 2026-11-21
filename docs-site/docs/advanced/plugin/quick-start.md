@@ -7,7 +7,7 @@
 在安装了 Node.js 18+ 和 npm 的开发环境中执行：
 
 ```bash
-npx degit jieapi/AiCode/plugins/template my-plugin
+npx degit jieapi/Guru/plugins/template my-plugin
 cd my-plugin
 npm install
 ```
@@ -51,8 +51,8 @@ my-plugin/
 
 侧载用于开发期间验证插件，项目目录根部必须包含 `plugin.json`。
 
-1. 在 AiCode 的「设置 → 插件」中点击右上角设置按钮，开启「开发者侧载」。
-2. 将项目放入 `~/.aicode/plugin-dev/my-plugin/`，并确保包含最新的构建产物。
+1. 在 Guru 的「设置 → 插件」中点击右上角设置按钮，开启「开发者侧载」。
+2. 将项目放入 `~/.guru/plugin-dev/my-plugin/`，并确保包含最新的构建产物。
 3. 回到插件页，在「开发中」标签打开项目详情，点击「安装」并启用。
 
 本地模式下，侧载目录位于手机容器；远程 SSH 模式下，侧载目录位于远端服务器的用户 home。开发目录与侧载目录不同时，需要把清单、构建产物和清单引用的其他文件同步过去。
@@ -80,7 +80,7 @@ npm run watch
 
 保持「开发者侧载」开启，构建产物保存后会自动重载；也可在项目详情手动点击「重载」。宿主读取构建产物，请编辑 `src/`，不要直接修改生成的 `dist/`。
 
-页面与桥接口需要在 AiCode 中验证。运行失败时，按[日志与调试](/advanced/plugin/packaging#日志与调试)排查。
+页面与桥接口需要在 Guru 中验证。运行失败时，按[日志与调试](/advanced/plugin/packaging#日志与调试)排查。
 
 ## 5. 打包交付
 

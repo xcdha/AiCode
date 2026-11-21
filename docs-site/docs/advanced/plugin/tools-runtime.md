@@ -53,7 +53,7 @@ TypeScript SDK 负责消息收发；使用其他语言或自行接入协议时�
 | --- | --- | --- |
 | `tool.invoke` | `{handler, args}` | 执行 AI 工具 |
 | `hook.invoke` | `{handler, args}` | 执行生命周期 hook |
-| `ui.invoke` | `{handler, args}` | 页面通过 `aicode.invoke` 调用进程 |
+| `ui.invoke` | `{handler, args}` | 页面通过 `guru.invoke` 调用进程 |
 | `backend.invoke` | `{handler, args}` | 执行后端文件、命令、终端与工作区操作 |
 | `workflow.invoke` | `{handler, args}` | 执行 Agent 工作流轮次、取消、压缩或标题生成 |
 
@@ -321,7 +321,7 @@ TypeScript SDK 负责消息收发；使用其他语言或自行接入协议时�
 
 工具调用绑定发起时的工作区与执行环境。评估或等待审批期间切换工作区、本地 / SSH 模式或 SSH 服务器，会使旧请求失效；应提示使用者在新环境重新发起，不要自动重试写操作。失效请求不会执行，也不会把「始终允许」写入新项目。
 
-页面侧使用 `aicode.tools.list` / `execute` / `pending` / `resolve`，调用形式见[页面工具接口](/advanced/plugin/ui-pages#工具与-mcp)。页面审批流程与模型工具循环见[模型句柄与流式调用](/advanced/plugin/model-handles#审批流程)。
+页面侧使用 `guru.tools.list` / `execute` / `pending` / `resolve`，调用形式见[页面工具接口](/advanced/plugin/ui-pages#工具与-mcp)。页面审批流程与模型工具循环见[模型句柄与流式调用](/advanced/plugin/model-handles#审批流程)。
 
 ## handler 约定
 

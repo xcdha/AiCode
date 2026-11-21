@@ -73,7 +73,7 @@ class WebSearchTool @Inject constructor() : AgentTool() {
                                     mapOf(
                                         "objective" to JsonPrimitive(query),
                                         "search_queries" to JsonArray(listOf(JsonPrimitive(query))),
-                                        "session_id" to JsonPrimitive("aicode-android")
+                                        "session_id" to JsonPrimitive("guru-android")
                                     )
                                 )
                             )
@@ -86,7 +86,7 @@ class WebSearchTool @Inject constructor() : AgentTool() {
                 val request = Request.Builder()
                     .url(PARALLEL_MCP_URL)
                     .header("Accept", "application/json, text/event-stream")
-                    .header("User-Agent", "aicode/1.0")
+                    .header("User-Agent", "guru/1.0")
                     .post(requestBody.toRequestBody("application/json".toMediaType()))
                     .build()
 

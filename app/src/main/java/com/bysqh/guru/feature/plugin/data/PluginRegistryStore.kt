@@ -39,7 +39,7 @@ data class PluginRecord(
     val dependencyFingerprint: String? = null,
     /** 来源类型：package 或 development。 */
     val sourceKind: String = SOURCE_PACKAGE,
-    /** development 来源在 ~/.aicode/plugin-dev 下的目录名。 */
+    /** development 来源在 ~/.guru/plugin-dev 下的目录名。 */
     val devDirName: String? = null,
     /** 每次安装独立生成，区分同版本、同清单甚至相同 ZIP 的重装。 */
     val installRevision: String? = null

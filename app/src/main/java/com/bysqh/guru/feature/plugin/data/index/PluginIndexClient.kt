@@ -166,7 +166,7 @@ class PluginIndexClient @Inject constructor(
         val request = Request.Builder()
             .url(url)
             .header("Accept", "application/vnd.github+json")
-            .header("User-Agent", "aicode-plugin-index")
+            .header("User-Agent", "guru-plugin-index")
             .header("X-GitHub-Api-Version", "2022-11-28")
             .build()
         http.newCall(request).execute().use { response ->
@@ -188,7 +188,7 @@ class PluginIndexClient @Inject constructor(
         noCache: Boolean,
         expectedSize: Long? = null
     ): ByteArray {
-        val builder = Request.Builder().url(url).header("User-Agent", "aicode-plugin-index")
+        val builder = Request.Builder().url(url).header("User-Agent", "guru-plugin-index")
         if (noCache) builder.cacheControl(CacheControl.Builder().noCache().build())
         http.newCall(builder.build()).execute().use { response ->
             if (!response.isSuccessful) throw IOException("HTTP ${response.code}: $url")

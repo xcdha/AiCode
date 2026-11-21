@@ -47,7 +47,7 @@ internal object RemoteAgentConfigProtocol {
 
     fun manifest(bytes: ByteArray, kind: AgentConfigKind): Map<String, RemoteAgentConfigFingerprint> {
         if (bytes.size > MAX_MANIFEST_BYTES) throw IOException("Remote manifest exceeds byte limit")
-        val lines = lines(bytes, "AICODE_CONFIG_1 M")
+        val lines = lines(bytes, "GURU_CONFIG_1 M")
         val candidates = linkedMapOf<String, RemoteAgentConfigFingerprint>()
         var total = 0L
         for (line in lines) {
@@ -75,7 +75,7 @@ internal object RemoteAgentConfigProtocol {
         if (bytes.size > MAX_WIRE_BYTES || expected.size > MAX_FILES) throw IOException("Remote configuration exceeds batch limit")
         val result = linkedMapOf<String, String>()
         var total = 0L
-        for (line in lines(bytes, "AICODE_CONFIG_1 B")) {
+        for (line in lines(bytes, "GURU_CONFIG_1 B")) {
             val fields = line.split('\t')
             if (fields.size != 3 || fields[0] != "B") throw IOException("Malformed remote configuration body")
             val path = decodePath(fields[1])
@@ -123,7 +123,7 @@ internal object RemoteAgentConfigProtocol {
         val script = """
             set -eu
             root=${'$'}1
-            printf 'AICODE_CONFIG_1 M\n'
+            printf 'GURU_CONFIG_1 M\n'
             if [ ! -e "${'$'}root" ] && [ ! -L "${'$'}root" ]; then
                 probe=${'$'}root
                 while [ ! -e "${'$'}probe" ] && [ ! -L "${'$'}probe" ]; do
@@ -139,7 +139,7 @@ internal object RemoteAgentConfigProtocol {
             [ -d "${'$'}root" ] && [ -r "${'$'}root" ] && [ -x "${'$'}root" ] || exit 23
             cd "${'$'}root"
             {
-                find . -maxdepth $depth \( -type f -o -type l \) $pattern -exec sh -c ${quote(worker)} aicode-config {} + || exit 30
+                find . -maxdepth $depth \( -type f -o -type l \) $pattern -exec sh -c ${quote(worker)} guru-config {} + || exit 30
                 printf 'END\n'
             } | (
                 count=0
@@ -164,7 +164,7 @@ internal object RemoteAgentConfigProtocol {
                 printf 'END\n'
             )
         """.trimIndent()
-        return "sh -c ${quote(script)} aicode-config ${quote(root)}"
+        return "sh -c ${quote(script)} guru-config ${quote(root)}"
     }
 
     fun bodiesCommand(root: String): String {
@@ -175,7 +175,7 @@ internal object RemoteAgentConfigProtocol {
             count=0
             total=0
             ended=0
-            printf 'AICODE_CONFIG_1 B\n'
+            printf 'GURU_CONFIG_1 B\n'
             while IFS= read -r encoded; do
                 if [ "${'$'}encoded" = END ]; then ended=1; break; fi
                 count=${'$'}((count + 1))
@@ -197,7 +197,7 @@ internal object RemoteAgentConfigProtocol {
             if IFS= read -r extra; then exit 29; fi
             printf 'END\n'
         """.trimIndent()
-        return "sh -c ${quote(script)} aicode-config ${quote(root)}"
+        return "sh -c ${quote(script)} guru-config ${quote(root)}"
     }
 
     private fun lines(bytes: ByteArray, header: String): List<String> {

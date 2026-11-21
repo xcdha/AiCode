@@ -18,7 +18,7 @@ import java.util.LinkedList
  * SAF DocumentsProvider，把 app 私有 `filesDir` 暴露为**单一根**到系统「文件」app 及其它 app 的
  * SAF 选择器，满足「对外可见」。根下只放出两个子目录：
  * - `projects`：工作区（各项目）；
- * - `aicode`：AI 配置目录（skills/ 与 mcp.json，容器内即 `/root/.aicode`）。
+ * - `guru`：AI 配置目录（skills/ 与 mcp.json，容器内即 `/root/.guru`）。
  *
  * 其余内部目录（rootfs、容器二进制、数据库、DataStore 等）刻意不在根下列出，避免对外泄露/误删。
  *
@@ -59,14 +59,14 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         ctx().filesDir
 
     /**
-     * 根下唯一对外可见的子目录名白名单：工作区 `projects` 与 AI 配置 `aicode`（容器内 /root/.aicode，
+     * 根下唯一对外可见的子目录名白名单：工作区 `projects` 与 AI 配置 `guru`（容器内 /root/.guru，
      * 含 skills/ 与 mcp.json）。两者首次访问即创建，其余 filesDir 内部目录不列出。
      */
     private fun exposedChildren(): List<File> {
         ContainerInstaller.extractDocs(ctx())
         return listOf(
             File(baseDir(), "projects").apply { mkdirs() },
-            File(baseDir(), "aicode").apply { mkdirs() },
+            File(baseDir(), "guru").apply { mkdirs() },
         )
     }
 
@@ -219,7 +219,7 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
 
     /**
      * docId 直接用绝对路径（与 Termux 一致），故必须校验归属：仅根目录本身及其白名单子目录
-     * （projects/aicode）内的路径可访问，其余一律拒绝——否则获 root 授权的应用可构造 docId
+     * （projects/guru）内的路径可访问，其余一律拒绝——否则获 root 授权的应用可构造 docId
      * 读写 databases、shared_prefs、git-credentials 等 filesDir 内部文件。
      */
     private fun fileForDocId(docId: String): File {
@@ -233,7 +233,7 @@ class WorkspaceDocumentsProvider : DocumentsProvider() {
         val path = runCatching { file.canonicalPath }.getOrNull() ?: return false
         val base = runCatching { baseDir().canonicalPath }.getOrNull() ?: return false
         if (path == base) return true
-        return listOf("projects", "aicode").any { name ->
+        return listOf("projects", "guru").any { name ->
             val root = File(base, name).path
             path == root || path.startsWith("$root/")
         }

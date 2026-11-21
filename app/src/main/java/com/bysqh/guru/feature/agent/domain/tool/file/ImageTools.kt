@@ -52,7 +52,7 @@ import javax.inject.Inject
 /**
  * 当前聊天模型支持视觉时直接附加图片；否则创建识图会话，返回分析文本与 vision_id。
  * 返回 vision_id 后可用 id + prompt 继续追问。
- * 会话请求体落盘在 ~/.aicode/vision-sessions/（见 [VisionSessionStore]）。
+ * 会话请求体落盘在 ~/.guru/vision-sessions/（见 [VisionSessionStore]）。
  * 识图模型不校验视觉能力，调用失败时把错误信息原样作为工具结果返回。
  */
 class ViewImageTool @Inject constructor(

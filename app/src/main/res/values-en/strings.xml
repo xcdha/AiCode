@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="chat_perm_plugin_source">Plugin request: %1$s (%2$s)</string>
-    <string name="app_name">AiCode</string>
+    <string name="app_name">Guru</string>
     <string name="common_tool_missing_argument">Missing parameter: %1$s.</string>
     <string name="plan_mode_invalid_action">Invalid action: %1$s. Supported values: enter or exit.</string>
     <string name="plan_mode_already_active">Already in PLAN mode.</string>
@@ -205,7 +205,7 @@
     <!-- Storage page -->
     <string name="settings_storage">Storage</string>
     <string name="storage_refresh">Rescan</string>
-    <string name="storage_total_title">Used by AiCode</string>
+    <string name="storage_total_title">Used by Guru</string>
     <string name="storage_scanning">Calculating…</string>
     <string name="storage_device_free">%1$s free of %2$s</string>
     <string name="storage_section_breakdown">Breakdown</string>
@@ -291,7 +291,7 @@
     <string name="provider_test_resp_body">Response Body</string>
     <string name="provider_test_error_detail">Error Stack</string>
     <string name="provider_dashboard_test_failed">Execution Failed</string>
-    <string name="provider_dashboard_no_scripts">No scripts found in ~/.aicode/scripts/</string>
+    <string name="provider_dashboard_no_scripts">No scripts found in ~/.guru/scripts/</string>
     <string name="provider_dashboard_select_title">Select Dashboard Script</string>
     <string name="provider_dashboard_clear_script">None (Clear script)</string>
     <string name="provider_dashboard_loading">Loading dashboard...</string>
@@ -438,7 +438,7 @@
     <string name="credential_auto_inject_title">Auto-inject credentials</string>
     <string name="credential_auto_inject_hint">Sync git credentials saved in the app to this remote server, effective only for repositories under the current workspace root. Does not affect your manual git usage on the server.</string>
     <string name="credential_auto_inject_prompt_title">Auto-inject git credentials?</string>
-    <string name="credential_auto_inject_prompt_body">Allow AiCode to sync git credentials saved in the app to this remote server? It only applies to repositories under the current workspace root and will not modify the server\'s global git config.</string>
+    <string name="credential_auto_inject_prompt_body">Allow Guru to sync git credentials saved in the app to this remote server? It only applies to repositories under the current workspace root and will not modify the server\'s global git config.</string>
     <string name="credential_auto_inject_enable">Enable</string>
     <string name="common_rename">Rename</string>
     <string name="common_hide">Hide</string>
@@ -575,7 +575,7 @@
     <!-- About -->
     <string name="about_version">Version</string>
     <string name="about_github_repo">GitHub Repository</string>
-    <string name="about_star_prompt">Support AiCode</string>
+    <string name="about_star_prompt">Support Guru</string>
     <string name="about_star_prompt_desc">Star the project on GitHub</string>
     <string name="about_license">Open Source License</string>
     <string name="about_description">Universal AI Coding Agent for Android · Linux dev environment · Local &amp; remote SSH</string>
@@ -621,8 +621,8 @@
     <string name="sponsor_open_link">Open link</string>
 
     <!-- Star Prompt -->
-    <string name="star_prompt_title">Enjoying AiCode?</string>
-    <string name="star_prompt_message">AiCode is free and open source. If it has been helpful in your workflow, please consider giving it a Star on GitHub so more developers can discover it.</string>
+    <string name="star_prompt_title">Enjoying Guru?</string>
+    <string name="star_prompt_message">Guru is free and open source. If it has been helpful in your workflow, please consider giving it a Star on GitHub so more developers can discover it.</string>
     <string name="star_prompt_action_star">Star on GitHub</string>
     <string name="star_prompt_action_later">Maybe later</string>
     <string name="star_prompt_action_dismiss">Don\'t ask again</string>
@@ -642,18 +642,18 @@
     <string name="about_update_verify_not_newer">Package version is not newer than the installed one</string>
     <string name="about_update_install_failed">No app available to install packages</string>
 
-    <string name="agreement_title">Welcome to AiCode</string>
+    <string name="agreement_title">Welcome to Guru</string>
     <string name="agreement_terms">User Agreement</string>
     <string name="agreement_privacy">Privacy Policy</string>
-    <string name="agreement_notice_prefix">"Before using AiCode, please read and agree to the "</string>
+    <string name="agreement_notice_prefix">"Before using Guru, please read and agree to the "</string>
     <string name="agreement_terms_link">User Agreement</string>
     <string name="agreement_notice_conjunction">" and "</string>
     <string name="agreement_privacy_link">Privacy Policy</string>
     <string name="agreement_notice_suffix">" to understand the usage rules and data handling practices.\n\nBy tapping “Agree and continue”, you confirm that you have read and agree to both documents."</string>
     <string name="agreement_accept">Agree and continue</string>
     <string name="agreement_decline">Disagree</string>
-    <string name="agreement_terms_url">https://aicode.murk.top/en/terms</string>
-    <string name="agreement_privacy_url">https://aicode.murk.top/en/privacy</string>
+    <string name="agreement_terms_url">https://guru.murk.top/en/terms</string>
+    <string name="agreement_privacy_url">https://guru.murk.top/en/privacy</string>
 
     <!-- Ask User Question -->
     <string name="ask_confirm_title">AI needs your confirmation</string>
@@ -1099,7 +1099,7 @@
     <!-- Credential List -->
     <string name="credential_empty_hint">No credentials yet, tap + to add</string>
     <string name="credential_empty_title">No Git Credentials</string>
-    <string name="credential_empty_desc">Tap + in the top right to sign in with GitHub or add an access token. AiCode then authenticates pushes and pulls automatically</string>
+    <string name="credential_empty_desc">Tap + in the top right to sign in with GitHub or add an access token. Guru then authenticates pushes and pulls automatically</string>
 
     <!-- Credential Add / Quick Login -->
     <string name="credential_add_sheet_title">Add Credential</string>
@@ -1132,7 +1132,7 @@
     <string name="credential_device_waiting_desc">Credentials will be bound and saved automatically once authorized</string>
     <string name="credential_device_success_title">Authorization Successful</string>
     <string name="credential_device_success">Signed in as %1$s and credential saved</string>
-    <string name="credential_device_install_required">Signed in as %1$s. You still need to install AiCode on your repositories before pushing/pulling code.</string>
+    <string name="credential_device_install_required">Signed in as %1$s. You still need to install Guru on your repositories before pushing/pulling code.</string>
     <string name="credential_device_install_now">Install</string>
     <string name="credential_device_install_later">Later</string>
     <string name="credential_device_failed_title">Authorization Incomplete</string>
@@ -1507,7 +1507,7 @@
     <!-- Subagent Settings -->
     <string name="settings_subagents">Subagents</string>
     <string name="subagents_empty">No custom subagents yet</string>
-    <string name="subagents_empty_hint">Tap + in the top bar to create one, or drop an agent\'s .md definition into ~/.aicode/agents/</string>
+    <string name="subagents_empty_hint">Tap + in the top bar to create one, or drop an agent\'s .md definition into ~/.guru/agents/</string>
     <string name="subagents_no_project">No subagents in this project</string>
     <string name="subagents_no_global">No global subagents</string>
     <string name="subagents_delete_confirm_title">Delete subagent</string>
@@ -1961,7 +1961,7 @@
     <string name="crash_restart">Restart app</string>
     <string name="crash_exit">Exit app</string>
     <string name="crash_log_hint">Full log files at: %1$s</string>
-    <string name="crash_report_title">AiCode Crash Report</string>
+    <string name="crash_report_title">Guru Crash Report</string>
     <string name="crash_report_time">Time: %1$s</string>
     <string name="crash_report_version">Version: %1$s</string>
     <string name="crash_report_device">Device: %1$s</string>
@@ -2205,7 +2205,7 @@
     <string name="plugins_store_update">Update</string>
     <string name="plugins_store_installed">Installed</string>
     <string name="plugins_store_incompatible">Incompatible</string>
-    <string name="plugins_store_requires_min_version">Requires AiCode >= %1$s</string>
+    <string name="plugins_store_requires_min_version">Requires Guru >= %1$s</string>
     <string name="plugins_store_retry">Retry</string>
     <string name="plugins_store_error_network">Cannot reach the index repository. Check the network or URL.</string>
     <string name="plugins_store_error_invalid">The index is invalid and was rejected.</string>
@@ -2311,7 +2311,7 @@
     <string name="plugins_enable">Enable plugin</string>
     <string name="plugins_enable_hint">When off, the skills, sub-agents, tools, and pages it provides stop working.</string>
     <string name="plugins_hint_damaged">The plugin files are damaged or missing, so it can\'t be enabled. Uninstall it and import it again.</string>
-    <string name="plugins_hint_incompatible">This plugin isn\'t compatible with this version of AiCode, so it can\'t be enabled.</string>
+    <string name="plugins_hint_incompatible">This plugin isn\'t compatible with this version of Guru, so it can\'t be enabled.</string>
     <string name="plugins_section_summary">About</string>
     <string name="plugins_section_info">Details</string>
     <string name="plugins_section_dependencies">Dependencies</string>
@@ -2346,7 +2346,7 @@
     <string name="plugins_error_manifest_version">Unsupported manifest version: %1$s</string>
     <string name="plugins_error_unsupported_field">Field not supported by this version: %1$s</string>
     <string name="plugins_error_unsupported_contribution">Content type not supported by this version yet: %1$s</string>
-    <string name="plugins_error_api_incompatible">The plugin requires plugin API %1$s, which this version of AiCode doesn\'t provide.</string>
+    <string name="plugins_error_api_incompatible">The plugin requires plugin API %1$s, which this version of Guru doesn\'t provide.</string>
     <string name="plugins_error_duplicate_id">Duplicate ID: %1$s</string>
     <string name="plugins_error_file_missing">A file referenced by the manifest is missing: %1$s</string>
     <string name="plugins_error_content_invalid">Invalid content: %1$s</string>

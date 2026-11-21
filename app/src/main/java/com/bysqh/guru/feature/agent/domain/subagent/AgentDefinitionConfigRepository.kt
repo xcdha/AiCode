@@ -29,8 +29,8 @@ import kotlinx.serialization.json.putJsonArray
 
 /**
  * 子代理启停配置持久化，与技能的 `skills.json` 同一套约定，支持全局 + 项目级两级：
- * - 全局：当前执行环境的 `~/.aicode/agents.json`（跨项目保留）；
- * - 项目级：`workspacePath/.aicode/agents.json`（随工作区走，可 git 追踪）。
+ * - 全局：当前执行环境的 `~/.guru/agents.json`（跨项目保留）；
+ * - 项目级：`workspacePath/.guru/agents.json`（随工作区走，可 git 追踪）。
  *
  * 格式 `{"disabled": ["name-a"]}`，只存禁用名单；生效禁用集合 = 全局 + 项目并集。
  * 每次读取都从磁盘加载，外部手工编辑即时生效；名单里已不存在的子代理名在过滤时天然被忽略。
@@ -43,7 +43,7 @@ class AgentDefinitionConfigRepository @Inject constructor(
     private val fileAccess: FileAccessProvider
 ) {
     /** 本地全局配置文件，仅用于宿主文件变更监听。 */
-    private fun globalFile(): File = File(containerInstaller.aicodeDir, CONFIG_FILE)
+    private fun globalFile(): File = File(containerInstaller.guruDir, CONFIG_FILE)
 
     private fun projectFile(): File = File(projectAicodeRoot.current(), CONFIG_FILE)
 
@@ -58,8 +58,8 @@ class AgentDefinitionConfigRepository @Inject constructor(
     val changes: SharedFlow<Unit> = merge(
         fileChangeHub.watchAicode(AGENTS_DIR, recursive = true),
         fileChangeHub.watchAicode(),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR/$AGENTS_DIR", recursive = true),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR/$AGENTS_DIR", recursive = true),
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR")
     ).mapNotNull { batch ->
         if (!batch.changes.any(::isAgentChange)) return@mapNotNull null
         FileLogger.i(TAG, "检测到子代理目录或配置变化，已通知刷新")
@@ -71,7 +71,7 @@ class AgentDefinitionConfigRepository @Inject constructor(
         val path = change.hostPath
         if (path == globalFile().absolutePath) return true
         if (path == projectFile().absolutePath) return true
-        val globalAgents = File(containerInstaller.aicodeDir, AGENTS_DIR).absolutePath
+        val globalAgents = File(containerInstaller.guruDir, AGENTS_DIR).absolutePath
         if (path == globalAgents || path.startsWith("$globalAgents/")) return true
         val projectAgents = File(projectAicodeRoot.current(), AGENTS_DIR).absolutePath
         return path == projectAgents || path.startsWith("$projectAgents/")
@@ -104,8 +104,8 @@ class AgentDefinitionConfigRepository @Inject constructor(
     companion object {
         private const val TAG = "AgentDefinitionConfigRepository"
         private const val CONFIG_FILE = "agents.json"
-        private const val GLOBAL_CONFIG_PATH = "~/.aicode/$CONFIG_FILE"
-        private const val AICODE_DIR = ".aicode"
+        private const val GLOBAL_CONFIG_PATH = "~/.guru/$CONFIG_FILE"
+        private const val GURU_DIR = ".guru"
         private const val AGENTS_DIR = "agents"
         private val JSON = Json { ignoreUnknownKeys = true; isLenient = true }
         private val PRETTY_JSON = Json { prettyPrint = true }

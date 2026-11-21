@@ -106,7 +106,7 @@ internal fun MarkdownPreviewWebView(
 }
 
 private fun webViewThemeRes(dark: Boolean): Int =
-    if (dark) R.style.Theme_AICode_WebView_Dark else R.style.Theme_AICode_WebView
+    if (dark) R.style.Theme_Guru_WebView_Dark else R.style.Theme_Guru_WebView
 
 private const val BG_DARK = 0xFF0D1117.toInt()
 private const val BG_LIGHT = 0xFFFFFFFF.toInt()

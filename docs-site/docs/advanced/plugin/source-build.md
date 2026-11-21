@@ -64,7 +64,7 @@ export const tools: Record<string, PluginHandler> = {
 };
 ```
 
-handler 的键必须与清单中的 `handler` 一致。工具参数由 `inputSchema` 描述，页面也可用 `aicode.invoke('tools.echo', {text: 'hello'})` 调用同一 handler。
+handler 的键必须与清单中的 `handler` 一致。工具参数由 `inputSchema` 描述，页面也可用 `guru.invoke('tools.echo', {text: 'hello'})` 调用同一 handler。
 
 | SDK 导出 | 用途 |
 | --- | --- |
@@ -132,11 +132,11 @@ app.mount('#app');
 
 ```vue
 <template>
-  <main class="aicode-page">
-    <aicode-field label="名称">
-      <aicode-input v-model="name" placeholder="输入名称" />
-    </aicode-field>
-    <aicode-button @click="save">保存</aicode-button>
+  <main class="guru-page">
+    <guru-field label="名称">
+      <guru-input v-model="name" placeholder="输入名称" />
+    </guru-field>
+    <guru-button @click="save">保存</guru-button>
     <p>{{ status }}</p>
   </main>
 </template>
@@ -149,7 +149,7 @@ const status = ref('');
 
 async function save(): Promise<void> {
   try {
-    await aicode.fs.write('data://config.json', JSON.stringify({ name: name.value }));
+    await guru.fs.write('data://config.json', JSON.stringify({ name: name.value }));
     status.value = '已保存';
   } catch (error) {
     status.value = '保存失败：' + (error as Error).message;
@@ -173,8 +173,8 @@ import '@jieapi/plugin-sdk/page/vue';
 
 | 类型入口 | 提供内容 |
 | --- | --- |
-| `@jieapi/plugin-sdk/page` | `window.aicode`、全局 `aicode`、`AicodeUI`，以及桥方法、返回值和事件 payload |
-| `@jieapi/plugin-sdk/page/vue` | Vue `GlobalComponents` 中的 `aicode-*` 组件、props 与事件类型，包括 `v-model` 更新事件 |
+| `@jieapi/plugin-sdk/page` | `window.aicode`、全局 `guru`、`AicodeUI`，以及桥方法、返回值和事件 payload |
+| `@jieapi/plugin-sdk/page/vue` | Vue `GlobalComponents` 中的 `guru-*` 组件、props 与事件类型，包括 `v-model` 更新事件 |
 
 类型声明仅用于开发，不会进入页面产物。模板的 `npm run typecheck` 使用 `tsc` 检查 `.ts` 文件；Vue SFC 还需结合 Vue 编辑器的类型提示、页面构建和真机验证。
 

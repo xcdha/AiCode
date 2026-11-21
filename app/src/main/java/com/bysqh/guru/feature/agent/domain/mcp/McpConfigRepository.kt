@@ -48,8 +48,8 @@ data class McpServerEntry(
 
 /**
  * MCP 配置持久化，支持全局 + 项目级两级：
- * - 全局：`filesDir/aicode/mcp.json`（跨项目、跨升级保留）；
- * - 项目级：`workspacePath/.aicode/mcp.json`（随工作区走，可 git 追踪）。
+ * - 全局：`filesDir/guru/mcp.json`（跨项目、跨升级保留）；
+ * - 项目级：`workspacePath/.guru/mcp.json`（随工作区走，可 git 追踪）。
  *
  * 生效配置 = 全局 + 项目合并，**项目级优先**，同名时项目项覆盖全局项。
  * 并发模式：Mutex 保护文件 IO + MutableStateFlow 缓存，项目级按工作区路径各自缓存。
@@ -66,16 +66,16 @@ class McpConfigRepository @Inject constructor(
         const val TAG = "McpConfigRepository"
         const val CONFIG_FILE = "mcp.json"
         const val DEFAULT_JSON = """{"mcpServers":{}}"""
-        /** 项目级配置目录名，容器内即 `~/workspace/.aicode`。 */
-        const val AICODE_DIR_NAME = ".aicode"
+        /** 项目级配置目录名，容器内即 `~/workspace/.guru`。 */
+        const val GURU_DIR_NAME = ".guru"
         val PRETTY_JSON = Json { prettyPrint = true }
     }
 
-    /** 全局配置文件：`filesDir/aicode/mcp.json`。 */
+    /** 全局配置文件：`filesDir/guru/mcp.json`。 */
     private val globalFile: File
-        get() = File(containerInstaller.aicodeDir, CONFIG_FILE)
+        get() = File(containerInstaller.guruDir, CONFIG_FILE)
 
-    /** 当前工作区的项目级配置文件：`workspacePath/.aicode/mcp.json`。 */
+    /** 当前工作区的项目级配置文件：`workspacePath/.guru/mcp.json`。 */
     private fun projectFileForPath(workspacePath: String): File =
         File(projectAicodeRoot.forPath(workspacePath), CONFIG_FILE)
 
@@ -93,7 +93,7 @@ class McpConfigRepository @Inject constructor(
      */
     val externalChanges: SharedFlow<Unit> = merge(
         fileChangeHub.watchAicode(),
-        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$AICODE_DIR_NAME")
+        fileChangeHub.watchWorkspace("${FileChangeHub.CONTAINER_ROOT}/$GURU_DIR_NAME")
     ).mapNotNull { batch ->
         val globalPath = globalFile.absolutePath
         val projectPath = projectFileForPath(workspaceRepository.currentPath()).absolutePath
@@ -149,7 +149,7 @@ class McpConfigRepository @Inject constructor(
 
     private suspend fun load(file: File): String = withContext(Dispatchers.IO) {
         // 只读加载：文件不存在时返回默认配置，不主动创建目录/文件，
-        // 避免在 projectsRoot 下误建 .aicode 目录被工作区扫描器当成工作区。
+        // 避免在 projectsRoot 下误建 .guru 目录被工作区扫描器当成工作区。
         if (file.isFile) {
             return@withContext runCatching { file.readText() }.getOrElse {
                 FileLogger.w(TAG, "读取 ${file.name} 失败，回退默认配置: ${it.message}")

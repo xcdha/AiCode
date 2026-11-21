@@ -384,7 +384,7 @@ class PluginRuntimeManager @Inject constructor(
             put("AICODE_PLUGIN_VERSION", version)
             put("AICODE_DATA_DIR", dataDir)
             put("AICODE_WORKSPACE", wsRoot)
-            // [二开] 插件按 AICODE_HOME 定位配置根目录（未设置时回退 ~/.aicode），
+            // [二开] 插件按 AICODE_HOME 定位配置根目录（未设置时回退 ~/.guru），
             // 宿主实际读写的是 ~/.guru；不注入会让插件把配置写到另一个目录而不生效。
             put("AICODE_HOME", homeResolver.guruRoot())
             if (ipc != null) {
@@ -468,11 +468,11 @@ class PluginRuntimeManager @Inject constructor(
             ?: ContainerProfile.BUILTIN_ALPINE
     }
 
-    /** 宿主文件路径映射到容器内路径：插件目录由 `.aicode` 绑定挂载到 `/root/.aicode`。 */
+    /** 宿主文件路径映射到容器内路径：插件目录由 `.guru` 绑定挂载到 `/root/.guru`。 */
     private fun containerDir(file: File): String = installer.containerPathFor(file)
 
     internal suspend fun dataDirectory(pluginId: String): String = withContext(Dispatchers.IO) {
-        val directory = File(installer.aicodeDir, "plugins/data/$pluginId")
+        val directory = File(installer.guruDir, "plugins/data/$pluginId")
         if (!directory.isDirectory && !directory.mkdirs() && !directory.isDirectory) {
             throw PluginProcessException("STORAGE_FAILED", "cannot create plugin data directory")
         }
@@ -508,7 +508,7 @@ class PluginRuntimeManager @Inject constructor(
     }
 
     internal fun createIpcConfig(pluginId: String): IpcConfig? {
-        val ipcDir = File(installer.aicodeDir, IPC_DIR).apply { mkdirs() }
+        val ipcDir = File(installer.guruDir, IPC_DIR).apply { mkdirs() }
         val sockNameBytes = ByteArray(4).also { ipcRandom.nextBytes(it) }
         val sockName = sockNameBytes.joinToString("") { "%02x".format(it) } + ".sock"
         val hostSockFile = File(ipcDir, sockName)

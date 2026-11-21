@@ -99,7 +99,7 @@ sealed interface PluginImportState {
         val origin: PluginInstallOrigin = PluginInstallOrigin(),
         /** 非官方在线安装需要使用者手动输入该插件的源码仓库地址。 */
         val expectedRepository: String? = null,
-        /** 展示用来源名称，例如「AiCode Plugins」。 */
+        /** 展示用来源名称，例如「Guru Plugins」。 */
         val sourceLabel: String? = null,
         /** 来源是否在宿主官方白名单内；只有它为 true 时跳过手输仓库。 */
         val officialSource: Boolean = false
@@ -231,8 +231,8 @@ class PluginsViewModel @Inject constructor(
     private var indexSourceSaveJob: Job? = null
     private var downloadMirrorSaveJob: Job? = null
 
-    /** 开发者目录固定挂在容器 `~/.aicode/plugin-dev`，每个子目录是一个插件项目。 */
-    val devRootPath: String = "~/.aicode/plugin-dev"
+    /** 开发者目录固定挂在容器 `~/.guru/plugin-dev`，每个子目录是一个插件项目。 */
+    val devRootPath: String = "~/.guru/plugin-dev"
 
     private val _devProjects = MutableStateFlow<List<PluginDevProject>>(emptyList())
     val devProjects: StateFlow<List<PluginDevProject>> = _devProjects.asStateFlow()

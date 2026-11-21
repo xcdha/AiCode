@@ -94,8 +94,8 @@ sealed interface PluginInstallResult {
 /**
  * 插件的安装、启停与贡献聚合。
  *
- * 插件包与数据保存在容器内全局配置目录 `~/.aicode/plugins`（宿主侧为 [ContainerInstaller.aicodeDir]，
- * 由 PRoot 绑定到容器内 `/root/.aicode`），本地容器里的命令可以直接访问插件文件与将来的依赖。
+ * 插件包与数据保存在容器内全局配置目录 `~/.guru/plugins`（宿主侧为 [ContainerInstaller.guruDir]，
+ * 由 PRoot 绑定到容器内 `/root/.guru`），本地容器里的命令可以直接访问插件文件与将来的依赖。
  * 安装记录留在宿主私有目录，不随包进入容器，避免容器内进程改写启停状态。SSH 模式下插件仍只在手机端。
  */
 @Singleton
@@ -113,7 +113,7 @@ class PluginManager internal constructor(
         installer: ContainerInstaller,
         dependencyPreparer: PluginDependencyPreparer
     ) : this(
-        File(installer.aicodeDir, PLUGINS_DIR),
+        File(installer.guruDir, PLUGINS_DIR),
         PluginApi.VERSION,
         System::currentTimeMillis,
         File(context.filesDir, REGISTRY_FILE),
@@ -240,7 +240,7 @@ class PluginManager internal constructor(
     /** 插件专属数据目录，对应桥里的 `data://` 根。 */
     fun dataDirFor(pluginId: String): File = File(dataRoot, pluginId)
 
-    /** 开发者侧载目录，容器内对应 `~/.aicode/plugin-dev`。 */
+    /** 开发者侧载目录，容器内对应 `~/.guru/plugin-dev`。 */
     val devDir: File
         get() = File(rootDir.parentFile ?: rootDir, DEV_DIR).apply { mkdirs() }
 

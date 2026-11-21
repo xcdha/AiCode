@@ -10,7 +10,7 @@ enum class WorkspaceDiscoveryMode {
     HYBRID
 }
 
-/** 项目级 `.aicode` 配置（记忆、规则等）的存储位置。 */
+/** 项目级 `.guru` 配置（记忆、规则等）的存储位置。 */
 enum class ProjectConfigLocation {
     WORKSPACE_DIR,
     APP_PRIVATE_DIR
@@ -47,7 +47,7 @@ interface ExecutionBackend {
     /** 后端声明的能力矩阵。 */
     val capabilities: BackendCapabilities
 
-    /** 注入系统提示词 `{{AICODE_ENVIRONMENT}}` 的环境描述。 */
+    /** 注入系统提示词 `{{GURU_ENVIRONMENT}}` 的环境描述。 */
     fun environmentDescription(): String
 
     /** 提示词源缓存使用的环境隔离键；环境身份变化时需返回不同键。 */

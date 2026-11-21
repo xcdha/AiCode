@@ -198,7 +198,7 @@ fun SelectionToggleAction(
 /**
  * 底部悬浮多选操作条：左侧（可选关闭按钮 +）「已选 N 项」，右侧「全选 / 取消全选」胶囊按钮 + 页面批量动作。
  *
- * 与前端 `.aicode-selection-bar` 保持同一套卡片、描边与阴影规范；默认由顶栏开关或系统返回键退出，
+ * 与前端 `.guru-selection-bar` 保持同一套卡片、描边与阴影规范；默认由顶栏开关或系统返回键退出，
  * 无顶栏开关的容器（如侧边抽屉）可通过 [showCloseButton] 开启左侧关闭按钮。
  */
 @Composable

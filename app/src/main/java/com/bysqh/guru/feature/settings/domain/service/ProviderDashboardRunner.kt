@@ -77,11 +77,11 @@ class ProviderDashboardRunner @Inject constructor(
     }
 
     /**
-     * 获取脚本目录 `~/.aicode/scripts` 下的所有可用脚本文件名列表。经 [FileAccessProvider] 访问，
-     * 跟随当前执行环境（本地落 App 私有目录，远程落服务器 home 下的 `.aicode/scripts`）。
+     * 获取脚本目录 `~/.guru/scripts` 下的所有可用脚本文件名列表。经 [FileAccessProvider] 访问，
+     * 跟随当前执行环境（本地落 App 私有目录，远程落服务器 home 下的 `.guru/scripts`）。
      */
     fun listAvailableScripts(): List<String> {
-        val scriptsDir = "${pathHomeResolver.aicodeRoot()}/scripts"
+        val scriptsDir = "${pathHomeResolver.guruRoot()}/scripts"
         fileAccess.mkdirs(scriptsDir)
         return fileAccess.listFiles(scriptsDir)
             .filter { !it.isDirectory && !it.name.startsWith(".") }
@@ -112,7 +112,7 @@ class ProviderDashboardRunner @Inject constructor(
 
         FileLogger.i(TAG, "执行面板脚本 provider=${provider.name} targetPath=$targetPath model=${context?.model}")
         // 必须传工作区路径：proot 靠它把当前工作区 bind 到容器内 /root/workspace，
-        // 否则脚本里访问工作区文件（如 .aicode/progress.json）会落到 rootfs 的空目录。
+        // 否则脚本里访问工作区文件（如 .guru/progress.json）会落到 rootfs 的空目录。
         val result = commandEngine.runCommandSyncUnbounded(
             fullCommand,
             projectPath = workspaceRepository.currentPath(),
@@ -130,11 +130,11 @@ class ProviderDashboardRunner @Inject constructor(
 
     /** 把用户/列表给的脚本路径解析为当前执行环境下的绝对路径（home 随本地/远程而变，不写死 /root）。 */
     private fun resolveContainerScriptPath(path: String): String {
-        val root = pathHomeResolver.aicodeRoot()
+        val root = pathHomeResolver.guruRoot()
         return when {
             path.startsWith("/") -> path
             path.startsWith("~/") -> pathHomeResolver.expandHome(path)
-            path.startsWith(".aicode/scripts/") -> "$root/${path.removePrefix(".aicode/")}"
+            path.startsWith(".guru/scripts/") -> "$root/${path.removePrefix(".guru/")}"
             path.startsWith("scripts/") -> "$root/$path"
             else -> "$root/scripts/$path"
         }
@@ -152,14 +152,14 @@ class ProviderDashboardRunner @Inject constructor(
         val effectiveBaseUrl = provider.effectiveBaseUrl(effectiveApiKey)
 
         val envs = mutableListOf(
-            "AICODE_PROVIDER_ID=${escape(provider.id)}",
-            "AICODE_PROVIDER_NAME=${escape(provider.name)}",
-            "AICODE_PROVIDER_TYPE=${escape(provider.type.name)}",
-            "AICODE_PROVIDER_API_KEY=${escape(effectiveApiKey)}",
-            "AICODE_PROVIDER_BASE_URL=${escape(effectiveBaseUrl)}",
-            "AICODE_PROVIDER_DEFAULT_MODEL=${escape(provider.defaultModel)}",
-            "AICODE_PROVIDER_SELECTED_MODEL=${escape(provider.selectedModel)}",
-            "AICODE_MODEL=${escape(effectiveModel)}"
+            "GURU_PROVIDER_ID=${escape(provider.id)}",
+            "GURU_PROVIDER_NAME=${escape(provider.name)}",
+            "GURU_PROVIDER_TYPE=${escape(provider.type.name)}",
+            "GURU_PROVIDER_API_KEY=${escape(effectiveApiKey)}",
+            "GURU_PROVIDER_BASE_URL=${escape(effectiveBaseUrl)}",
+            "GURU_PROVIDER_DEFAULT_MODEL=${escape(provider.defaultModel)}",
+            "GURU_PROVIDER_SELECTED_MODEL=${escape(provider.selectedModel)}",
+            "GURU_MODEL=${escape(effectiveModel)}"
         )
 
         // 自定义脚本参数：按提供商配置注入为 AICODE_KEY_<KEY> 环境变量，
@@ -175,26 +175,26 @@ class ProviderDashboardRunner @Inject constructor(
         if (context != null) {
             envs.add("AICODE_WORKSPACE=${escape(context.workspacePath)}")
             envs.add("AICODE_WORKSPACE_NAME=${escape(context.workspaceName)}")
-            envs.add("AICODE_SESSION_ID=${escape(context.sessionId)}")
-            envs.add("AICODE_LAST_INPUT_TOKENS=${context.lastInputTokens}")
-            envs.add("AICODE_LAST_OUTPUT_TOKENS=${context.lastOutputTokens}")
-            envs.add("AICODE_LAST_CACHED_TOKENS=${context.lastCachedTokens}")
-            envs.add("AICODE_TOTAL_INPUT_TOKENS=${context.totalInputTokens}")
-            envs.add("AICODE_TOTAL_OUTPUT_TOKENS=${context.totalOutputTokens}")
-            envs.add("AICODE_MODEL_CONTEXT_TOKENS=${context.modelContextTokens}")
-            envs.add("AICODE_MODEL_MAX_INPUT_TOKENS=${context.modelMaxInputTokens}")
-            envs.add("AICODE_MODEL_MAX_OUTPUT_TOKENS=${context.modelMaxOutputTokens}")
-            envs.add("AICODE_MODEL_INPUT_COST_USD_PER_M=${context.modelInputCostUsdPerM}")
-            envs.add("AICODE_MODEL_OUTPUT_COST_USD_PER_M=${context.modelOutputCostUsdPerM}")
-            envs.add("AICODE_MODEL_CACHE_READ_COST_USD_PER_M=${context.modelCacheReadCostUsdPerM}")
-            envs.add("AICODE_MODEL_SUPPORTS_TOOLS=${context.modelSupportsTools}")
-            envs.add("AICODE_MODEL_SUPPORTS_VISION=${context.modelSupportsVision}")
-            envs.add("AICODE_MODEL_SUPPORTS_REASONING=${context.modelSupportsReasoning}")
-            envs.add("AICODE_MESSAGE_COUNT=${context.messageCount}")
-            envs.add("AICODE_AGENT_STATE=${escape(context.agentState)}")
-            envs.add("AICODE_SESSION_MODE=${escape(context.sessionMode)}")
-            envs.add("AICODE_REASONING_EFFORT=${escape(context.reasoningEffort)}")
-            envs.add("AICODE_REFRESH_REASON=${escape(context.refreshReason)}")
+            envs.add("GURU_SESSION_ID=${escape(context.sessionId)}")
+            envs.add("GURU_LAST_INPUT_TOKENS=${context.lastInputTokens}")
+            envs.add("GURU_LAST_OUTPUT_TOKENS=${context.lastOutputTokens}")
+            envs.add("GURU_LAST_CACHED_TOKENS=${context.lastCachedTokens}")
+            envs.add("GURU_TOTAL_INPUT_TOKENS=${context.totalInputTokens}")
+            envs.add("GURU_TOTAL_OUTPUT_TOKENS=${context.totalOutputTokens}")
+            envs.add("GURU_MODEL_CONTEXT_TOKENS=${context.modelContextTokens}")
+            envs.add("GURU_MODEL_MAX_INPUT_TOKENS=${context.modelMaxInputTokens}")
+            envs.add("GURU_MODEL_MAX_OUTPUT_TOKENS=${context.modelMaxOutputTokens}")
+            envs.add("GURU_MODEL_INPUT_COST_USD_PER_M=${context.modelInputCostUsdPerM}")
+            envs.add("GURU_MODEL_OUTPUT_COST_USD_PER_M=${context.modelOutputCostUsdPerM}")
+            envs.add("GURU_MODEL_CACHE_READ_COST_USD_PER_M=${context.modelCacheReadCostUsdPerM}")
+            envs.add("GURU_MODEL_SUPPORTS_TOOLS=${context.modelSupportsTools}")
+            envs.add("GURU_MODEL_SUPPORTS_VISION=${context.modelSupportsVision}")
+            envs.add("GURU_MODEL_SUPPORTS_REASONING=${context.modelSupportsReasoning}")
+            envs.add("GURU_MESSAGE_COUNT=${context.messageCount}")
+            envs.add("GURU_AGENT_STATE=${escape(context.agentState)}")
+            envs.add("GURU_SESSION_MODE=${escape(context.sessionMode)}")
+            envs.add("GURU_REASONING_EFFORT=${escape(context.reasoningEffort)}")
+            envs.add("GURU_REFRESH_REASON=${escape(context.refreshReason)}")
         }
 
         return envs.joinToString(" ")

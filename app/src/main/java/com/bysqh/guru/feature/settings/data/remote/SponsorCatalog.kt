@@ -53,7 +53,7 @@ class SponsorCatalog @Inject constructor(
                 val request = Request.Builder()
                     .url(url)
                     .cacheControl(CacheControl.FORCE_NETWORK)
-                    .header("User-Agent", "aicode-android")
+                    .header("User-Agent", "guru-android")
                     .get()
                     .build()
 

@@ -534,7 +534,7 @@ internal object LogViewerHelper {
 
         val shareDir = prepareShareDir(context)
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
-        val zipFile = File(shareDir, "aicode-logs-$stamp.zip")
+        val zipFile = File(shareDir, "guru-logs-$stamp.zip")
         ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { zos ->
             appLogs.forEach { writeZipEntry(zos, "app/${it.name}", it) }
             aiLogs.forEach { writeZipEntry(zos, "ai/${it.name}", it) }

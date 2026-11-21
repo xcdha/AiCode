@@ -4,7 +4,7 @@
 
 清单有配套的 JSON Schema（`plugins/schema/plugin.schema.json`）：在编辑器里给 `plugin.json` 加上 `"$schema": "…/plugin.schema.json"`（相对路径指向该文件）后，字段名写错或类型不对会直接红线，还有字段补全与枚举提示。`$schema` 只给编辑器用，宿主会忽略它的内容。
 
-独立项目不在本仓库里，相对路径指不到那份 schema，可以把它复制进自己的仓库，或改成仓库的 raw 地址（`https://raw.githubusercontent.com/jieapi/AiCode/main/plugins/schema/plugin.schema.json`）；使用 `plugins/template` 开始的项目默认已指向仓库内路径，搬出去时改这一行即可。
+独立项目不在本仓库里，相对路径指不到那份 schema，可以把它复制进自己的仓库，或改成仓库的 raw 地址（`https://raw.githubusercontent.com/jieapi/Guru/main/plugins/schema/plugin.schema.json`）；使用 `plugins/template` 开始的项目默认已指向仓库内路径，搬出去时改这一行即可。
 
 ## 顶层字段
 
@@ -181,7 +181,7 @@
 | --- | --- | --- |
 | `purpose` | 是 | 用途说明，最多 200 字符；显示在安装预览与插件详情 |
 
-声明后可调用 `host.model.*` / `aicode.model.*`，请求计入对应供应商用量，插件拿不到 Key；未声明时返回 `MODEL_ACCESS_NOT_DECLARED`。调用方式见[模型句柄与流式调用](/advanced/plugin/model-handles)。
+声明后可调用 `host.model.*` / `guru.model.*`，请求计入对应供应商用量，插件拿不到 Key；未声明时返回 `MODEL_ACCESS_NOT_DECLARED`。调用方式见[模型句柄与流式调用](/advanced/plugin/model-handles)。
 
 ### mcp
 
@@ -278,7 +278,7 @@
 | `portForward` | `false` | 插件后端端口转发当前未开放，只能省略或为 `false` |
 | `isRemoteEnvironment` | `true` | 是否属于远程环境（用于区分默认工作区类型与界面展示） |
 | `workspaceDiscovery` | `"scan"` | 工作区发现模式：`scan`（宿主拉取）、`register`（插件主动推送）或 `hybrid`（两者结合） |
-| `projectConfigLocation` | `"appPrivateDir"` | 项目级 `.aicode` 存储位置：`workspaceDir`（工作区目录）或 `appPrivateDir`（App 私有目录），只接受 camelCase；当前 `workspaceDir` 仅允许显式声明 `isRemoteEnvironment: false` 的后端使用 |
+| `projectConfigLocation` | `"appPrivateDir"` | 项目级 `.guru` 存储位置：`workspaceDir`（工作区目录）或 `appPrivateDir`（App 私有目录），只接受 camelCase；当前 `workspaceDir` 仅允许显式声明 `isRemoteEnvironment: false` 的后端使用 |
 
 `handlers` 支持以下可选键（按声明的能力提供）：`fs`、`exec`、`execStream`、`execHealth`、`terminal`、`workspaceList`、`workspaceCreate`、`workspaceDelete`、`workspaceSelect`。
 
@@ -395,7 +395,7 @@ if (result.decision === 'allow') {
 }
 ```
 
-`sessionId` 必须是当前工作区会话 ID。返回 `allow` / `deny` / `cancel`，只批准本次请求，不产生永久授权，也不覆盖宿主工具的权限判断。超时、工作区切换、会话移除或插件停用时取消。可用 `host.permissions.cancel({requestId})` 撤回；页面对应 `aicode.permissions.request(options)` / `cancel(requestId)`。卡片由 App 固定标注插件来源。请求默认等待 2 分钟，可用 `timeoutMs` 设置 1 秒至 10 分钟。
+`sessionId` 必须是当前工作区会话 ID。返回 `allow` / `deny` / `cancel`，只批准本次请求，不产生永久授权，也不覆盖宿主工具的权限判断。超时、工作区切换、会话移除或插件停用时取消。可用 `host.permissions.cancel({requestId})` 撤回；页面对应 `guru.permissions.request(options)` / `cancel(requestId)`。卡片由 App 固定标注插件来源。请求默认等待 2 分钟，可用 `timeoutMs` 设置 1 秒至 10 分钟。
 
 ### workspaceTools
 

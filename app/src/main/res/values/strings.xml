@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="chat_perm_plugin_source">插件请求：%1$s（%2$s）</string>
-    <string name="app_name">AiCode</string>
+    <string name="app_name">Guru</string>
     <string name="common_tool_missing_argument">缺少参数：%1$s。</string>
     <string name="plan_mode_invalid_action">无效的 action：%1$s。支持 enter 或 exit。</string>
     <string name="plan_mode_already_active">当前已处于 PLAN（计划）模式。</string>
@@ -291,7 +291,7 @@
     <string name="provider_test_resp_body">响应体</string>
     <string name="provider_test_error_detail">错误堆栈</string>
     <string name="provider_dashboard_test_failed">执行失败</string>
-    <string name="provider_dashboard_no_scripts">~/.aicode/scripts 目录下暂无脚本</string>
+    <string name="provider_dashboard_no_scripts">~/.guru/scripts 目录下暂无脚本</string>
     <string name="provider_dashboard_select_title">选择面板脚本</string>
     <string name="provider_dashboard_clear_script">不使用面板脚本 (清空)</string>
     <string name="provider_dashboard_loading">正在加载面板…</string>
@@ -438,7 +438,7 @@
     <string name="credential_auto_inject_title">自动注入凭证</string>
     <string name="credential_auto_inject_hint">把应用中保存的 git 凭据同步到远程服务器，仅对当前工作区根目录下的仓库生效，不影响你在服务器上手动使用 git</string>
     <string name="credential_auto_inject_prompt_title">自动注入 git 凭证？</string>
-    <string name="credential_auto_inject_prompt_body">是否让 AiCode 把应用中保存的 git 凭据同步到该远程服务器？仅对当前工作区根目录下的仓库生效，不会改动服务器的全局 git 配置。</string>
+    <string name="credential_auto_inject_prompt_body">是否让 Guru 把应用中保存的 git 凭据同步到该远程服务器？仅对当前工作区根目录下的仓库生效，不会改动服务器的全局 git 配置。</string>
     <string name="credential_auto_inject_enable">开启</string>
     <string name="common_rename">重命名</string>
     <string name="common_hide">隐藏</string>
@@ -575,7 +575,7 @@
     <!-- About -->
     <string name="about_version">版本</string>
     <string name="about_github_repo">GitHub 仓库</string>
-    <string name="about_star_prompt">支持 AiCode</string>
+    <string name="about_star_prompt">支持 Guru</string>
     <string name="about_star_prompt_desc">在 GitHub 为项目点亮 Star</string>
     <string name="about_license">开源许可证</string>
     <string name="about_description">Android 上的通用 AI Coding Agent · Linux 开发环境 · 支持本地与远程 SSH</string>
@@ -621,8 +621,8 @@
     <string name="sponsor_open_link">打开链接</string>
 
     <!-- Star Prompt -->
-    <string name="star_prompt_title">喜欢 AiCode 吗？</string>
-    <string name="star_prompt_message">AiCode 完全开源免费。如果它帮到了你的日常开发，欢迎去 GitHub 点个 Star 支持，让更多开发者看到这个项目。</string>
+    <string name="star_prompt_title">喜欢 Guru 吗？</string>
+    <string name="star_prompt_message">Guru 完全开源免费。如果它帮到了你的日常开发，欢迎去 GitHub 点个 Star 支持，让更多开发者看到这个项目。</string>
     <string name="star_prompt_action_star">前往 GitHub 点 Star</string>
     <string name="star_prompt_action_later">下次一定</string>
     <string name="star_prompt_action_dismiss">不再提示</string>
@@ -642,7 +642,7 @@
     <string name="about_update_verify_not_newer">安装包版本不高于当前版本</string>
     <string name="about_update_install_failed">没有可用的安装程序</string>
 
-    <string name="agreement_title">欢迎使用 AiCode</string>
+    <string name="agreement_title">欢迎使用 Guru</string>
     <string name="agreement_terms">用户协议</string>
     <string name="agreement_privacy">隐私政策</string>
     <string name="agreement_notice_prefix">使用前，请阅读并同意</string>
@@ -652,8 +652,8 @@
     <string name="agreement_notice_suffix">，了解使用规则与数据处理方式。\n\n点击“同意并继续”表示你已阅读并同意上述两份文件。</string>
     <string name="agreement_accept">同意并继续</string>
     <string name="agreement_decline">不同意</string>
-    <string name="agreement_terms_url">https://aicode.murk.top/terms</string>
-    <string name="agreement_privacy_url">https://aicode.murk.top/privacy</string>
+    <string name="agreement_terms_url">https://guru.murk.top/terms</string>
+    <string name="agreement_privacy_url">https://guru.murk.top/privacy</string>
 
     <!-- Ask User Question -->
     <string name="ask_confirm_title">AI 需要你的确认</string>
@@ -1132,7 +1132,7 @@
     <string name="credential_device_waiting_desc">完成授权后将自动绑定并保存凭据</string>
     <string name="credential_device_success_title">授权成功</string>
     <string name="credential_device_success">已成功关联账号 %1$s 并保存凭据</string>
-    <string name="credential_device_install_required">已登录为 %1$s。还需把 AiCode 安装到你的仓库，之后才能推送/拉取代码。</string>
+    <string name="credential_device_install_required">已登录为 %1$s。还需把 Guru 安装到你的仓库，之后才能推送/拉取代码。</string>
     <string name="credential_device_install_now">去安装</string>
     <string name="credential_device_install_later">稍后</string>
     <string name="credential_device_failed_title">授权未能完成</string>
@@ -1507,7 +1507,7 @@
     <!-- Subagent Settings -->
     <string name="settings_subagents">子代理</string>
     <string name="subagents_empty">还没有自定义子代理</string>
-    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.aicode/agents/</string>
+    <string name="subagents_empty_hint">点右上角「+」新建一个，或把 agent 的 .md 定义放进 ~/.guru/agents/</string>
     <string name="subagents_no_project">当前项目暂无子代理</string>
     <string name="subagents_no_global">暂无全局子代理</string>
     <string name="subagents_delete_confirm_title">删除子代理</string>
@@ -1960,7 +1960,7 @@
     <string name="crash_restart">重启应用</string>
     <string name="crash_exit">退出应用</string>
     <string name="crash_log_hint">完整日志文件位置：%1$s</string>
-    <string name="crash_report_title">AiCode 崩溃报告</string>
+    <string name="crash_report_title">Guru 崩溃报告</string>
     <string name="crash_report_time">时间：%1$s</string>
     <string name="crash_report_version">版本：%1$s</string>
     <string name="crash_report_device">设备：%1$s</string>
@@ -2204,7 +2204,7 @@
     <string name="plugins_store_update">更新</string>
     <string name="plugins_store_installed">已安装</string>
     <string name="plugins_store_incompatible">不兼容</string>
-    <string name="plugins_store_requires_min_version">要求 AiCode >= %1$s</string>
+    <string name="plugins_store_requires_min_version">要求 Guru >= %1$s</string>
     <string name="plugins_store_retry">重试</string>
     <string name="plugins_store_error_network">无法连接索引仓库，请检查网络或地址。</string>
     <string name="plugins_store_error_invalid">索引内容无效，已拒绝加载。</string>
@@ -2310,7 +2310,7 @@
     <string name="plugins_enable">启用插件</string>
     <string name="plugins_enable_hint">关闭后，它提供的技能、子代理、工具和页面都不再生效。</string>
     <string name="plugins_hint_damaged">插件文件已损坏或丢失，无法启用。请卸载后重新导入。</string>
-    <string name="plugins_hint_incompatible">这个插件与当前版本的 AiCode 不兼容，无法启用。</string>
+    <string name="plugins_hint_incompatible">这个插件与当前版本的 Guru 不兼容，无法启用。</string>
     <string name="plugins_section_summary">简介</string>
     <string name="plugins_section_info">信息</string>
     <string name="plugins_section_dependencies">依赖环境</string>
@@ -2345,7 +2345,7 @@
     <string name="plugins_error_manifest_version">不支持的清单版本：%1$s</string>
     <string name="plugins_error_unsupported_field">此版本不支持的字段：%1$s</string>
     <string name="plugins_error_unsupported_contribution">此版本暂不支持的内容类型：%1$s</string>
-    <string name="plugins_error_api_incompatible">插件要求的插件接口版本（%1$s）与当前 AiCode 不兼容。</string>
+    <string name="plugins_error_api_incompatible">插件要求的插件接口版本（%1$s）与当前 Guru 不兼容。</string>
     <string name="plugins_error_duplicate_id">重复的 ID：%1$s</string>
     <string name="plugins_error_file_missing">清单引用的文件不存在：%1$s</string>
     <string name="plugins_error_content_invalid">内容无效：%1$s</string>

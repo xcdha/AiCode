@@ -432,7 +432,7 @@ class OpenAIAdapter @Inject constructor(
                                 finishReason = it
                             }
 
-                            val remoteMessageId = delta.get("aicode_message_id")
+                            val remoteMessageId = delta.get("guru_message_id")
                                 ?.takeIf {
                                     com.bysqh.guru.feature.plugin.runtime.PluginProviderIds.isPluginId(providerId) &&
                                         it.isJsonPrimitive && it.asJsonPrimitive.isString
