@@ -1611,6 +1611,23 @@ private fun FileTreeActionSheet(
                     onClick = onRename
                 )
             }
+            // [二开] 删除与移除文件夹排在插件分组之前：放到分组之后会被「插件」标题吞进那一组。
+            if (node.root == null) {
+                SheetActionRow(
+                    icon = FeatherIcons.Trash2,
+                    label = stringResource(R.string.common_delete),
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = onDelete
+                )
+            }
+            onRemoveLocalFolder?.let { action ->
+                SheetActionRow(
+                    icon = FeatherIcons.X,
+                    label = stringResource(R.string.file_browser_remove_folder),
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = action
+                )
+            }
             if (pluginEntries.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.settings_plugins),
@@ -1629,22 +1646,6 @@ private fun FileTreeActionSheet(
                         }
                     )
                 }
-            }
-            if (node.root == null) {
-                SheetActionRow(
-                    icon = FeatherIcons.Trash2,
-                    label = stringResource(R.string.common_delete),
-                    tint = MaterialTheme.colorScheme.error,
-                    onClick = onDelete
-                )
-            }
-            onRemoveLocalFolder?.let { action ->
-                SheetActionRow(
-                    icon = FeatherIcons.X,
-                    label = stringResource(R.string.file_browser_remove_folder),
-                    tint = MaterialTheme.colorScheme.error,
-                    onClick = action
-                )
             }
         }
     }
