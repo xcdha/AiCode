@@ -38,8 +38,8 @@ class BuiltinDocsSyncTest {
 
         assertEquals(BuiltinDocsSync.Result(true, 2, 0), result)
         assertEquals(listOf(STATE, "a.md", "c.md", STATE), backend.writes.map { it.first })
-        assertTrue(backend.writes.first().second.startsWith("aicode-docs-v1\tdirty\t"))
-        assertTrue(backend.writes.last().second.startsWith("aicode-docs-v1\tready\t"))
+        assertTrue(backend.writes.first().second.startsWith("guru-docs-v1\tdirty\t"))
+        assertTrue(backend.writes.last().second.startsWith("guru-docs-v1\tready\t"))
         assertEquals("new A", backend.text("a.md"))
         assertEquals("B", backend.text("b.md"))
     }
@@ -71,7 +71,7 @@ class BuiltinDocsSyncTest {
         assertEquals("custom", backend.text("user.md"))
         assertEquals("hello", backend.text("guide/deep/start.md"))
         assertEquals(BuiltinDocsSync.EntryType.DIRECTORY, backend.entries["guide/deep"]?.type)
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tready\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tready\t"))
     }
 
     @Test
@@ -115,7 +115,7 @@ class BuiltinDocsSyncTest {
         }
 
         assertEquals("user content", backend.text("a.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
     }
 
     @Test
@@ -232,7 +232,7 @@ class BuiltinDocsSyncTest {
         assertThrows(IOException::class.java) { BuiltinDocsSync(backend).sync(b) }
         assertEquals("new", backend.text("added.md"))
         assertEquals("B", backend.text("stable.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
         backend.failWrite = null
         backend.resetOperations()
 
@@ -243,7 +243,7 @@ class BuiltinDocsSyncTest {
         assertEquals("original", backend.text("removed.md"))
         assertFalse(backend.entries.containsKey("added.md"))
         assertTrue(backend.deletes.contains("added.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tready\t${a.fingerprint}"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tready\t${a.fingerprint}"))
     }
 
     @Test
@@ -279,7 +279,7 @@ class BuiltinDocsSyncTest {
         }
 
         assertEquals("A", backend.text("a.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tready\t${a.fingerprint}"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tready\t${a.fingerprint}"))
         assertTrue(backend.mutations.isEmpty())
     }
 
@@ -295,7 +295,7 @@ class BuiltinDocsSyncTest {
         }
 
         assertEquals("A", backend.text("a.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
         backend.failWrite = null
         assertTrue(BuiltinDocsSync(backend).sync(a).changed)
     }
@@ -308,7 +308,7 @@ class BuiltinDocsSyncTest {
 
         assertThrows(IOException::class.java) { BuiltinDocsSync(backend).sync(snapshot) }
         assertEquals("A", backend.text("a.md"))
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
         backend.failReady = false
 
         assertTrue(BuiltinDocsSync(backend).sync(snapshot).changed)
@@ -323,7 +323,7 @@ class BuiltinDocsSyncTest {
         backend.failDelete = "old.md"
 
         assertThrows(IOException::class.java) { BuiltinDocsSync(backend).sync(next) }
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
         backend.failDelete = null
 
         BuiltinDocsSync(backend).sync(next)
@@ -360,7 +360,7 @@ class BuiltinDocsSyncTest {
     fun unsafeManifestPaths_areRejectedWithoutMutation() {
         listOf("../outside.md", "/outside.md", "guide/../../outside.md", "guide\\outside.md").forEach { path ->
             val backend = FakeBackend()
-            backend.putFile(STATE, "aicode-docs-v1\tdirty\t${"0".repeat(64)}\n${"0".repeat(64)}\t$path\n")
+            backend.putFile(STATE, "guru-docs-v1\tdirty\t${"0".repeat(64)}\n${"0".repeat(64)}\t$path\n")
             backend.resetOperations()
 
             assertThrows(IllegalArgumentException::class.java) {
@@ -415,7 +415,7 @@ class BuiltinDocsSyncTest {
         assertEquals("old", backend.text("guide/old.md"))
         assertFalse(backend.stats.contains("guide/old.md"))
         assertTrue(backend.deletes.isEmpty())
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
     }
 
     @Test
@@ -450,7 +450,7 @@ class BuiltinDocsSyncTest {
             }.sync(snapshot)
         }
 
-        assertTrue(backend.text(STATE).startsWith("aicode-docs-v1\tdirty\t"))
+        assertTrue(backend.text(STATE).startsWith("guru-docs-v1\tdirty\t"))
         assertFalse(backend.entries.containsKey("b.md"))
         backend.afterWrite = {}
         BuiltinDocsSync(backend).sync(snapshot)
@@ -512,7 +512,7 @@ class BuiltinDocsSyncTest {
 
         override fun replaceAtomically(path: String, bytes: ByteArray) {
             val text = bytes.toString(Charsets.UTF_8)
-            if (path == failWrite || (failReady && path == STATE && text.startsWith("aicode-docs-v1\tready\t"))) {
+            if (path == failWrite || (failReady && path == STATE && text.startsWith("guru-docs-v1\tready\t"))) {
                 throw IOException("injected write failure")
             }
             entries[path] = Node(BuiltinDocsSync.EntryType.FILE, bytes.copyOf())

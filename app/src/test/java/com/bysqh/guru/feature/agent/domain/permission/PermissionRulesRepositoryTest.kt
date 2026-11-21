@@ -51,13 +51,13 @@ class PermissionRulesRepositoryTest {
         val changes: FileChangeHub = mockk()
         val filesDir = tmp.newFolder("files")
         workspaceDir = tmp.newFolder("workspace")
-        target = File(workspaceDir, "project/.aicode").apply { mkdirs() }
-        link = File(workspaceDir, ".aicode")
-        Files.createSymbolicLink(link.toPath(), File("/root/workspace/project/.aicode").toPath())
+        target = File(workspaceDir, "project/.guru").apply { mkdirs() }
+        link = File(workspaceDir, ".guru")
+        Files.createSymbolicLink(link.toPath(), File("/root/workspace/project/.guru").toPath())
         every { context.filesDir } returns filesDir
         every { workspace.currentPath() } returns workspaceDir.absolutePath
         every { workspace.current } returns MutableStateFlow(null)
-        every { installer.aicodeDir } returns File(filesDir, "aicode")
+        every { installer.guruDir } returns File(filesDir, "guru")
         every { installer.rootfsDirFor(any()) } returns File(filesDir, "rootfs")
         every { settings.activeProfileIdFlow } returns emptyFlow()
         every { home.home() } returns "/root"

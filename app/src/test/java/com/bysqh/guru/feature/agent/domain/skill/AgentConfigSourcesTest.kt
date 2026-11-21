@@ -57,7 +57,7 @@ class AgentConfigSourcesTest {
             override fun agentConfigSnapshot(path: String, kind: AgentConfigKind, forceRefresh: Boolean): AgentConfigSnapshot =
                 throw IOException("offline")
         }
-        assertThrows(IOException::class.java) { SkillDirectoryScanner.scan(provider, "~/.aicode/skills") }
+        assertThrows(IOException::class.java) { SkillDirectoryScanner.scan(provider, "~/.guru/skills") }
     }
 
     @Test

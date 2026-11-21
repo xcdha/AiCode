@@ -101,7 +101,7 @@ class PluginWebBridgeTest {
         val fileAccess = mockk<FileAccessProvider>(relaxed = true)
         val home = mockk<PathHomeResolver>(relaxed = true)
         every { home.home() } returns "/root"
-        every { home.aicodeRoot() } returns "/root/.aicode"
+        every { home.guruRoot() } returns "/root/.guru"
         val environment = mockk<PluginPageEnvironment>(relaxed = true)
         every { environment.contextKey() } returns "workspace-a"
         every { environment.changes } returns MutableSharedFlow()

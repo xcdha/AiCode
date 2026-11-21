@@ -37,7 +37,7 @@ class ProjectAicodeRootTest {
     private fun setup(
         remoteConfig: RemoteConnectionConfig? = null
     ): Triple<ExecutionBackendRegistry, ProjectAicodeRoot, File> {
-        val aicodeDir = tmp.newFolder("aicode")
+        val guruDir = tmp.newFolder("guru")
         val sshConnection = mockk<RemoteSshConnection> {
             every { config } returns remoteConfig
         }
@@ -48,34 +48,34 @@ class ProjectAicodeRootTest {
             every { currentPath() } returns "/ws/my-app"
         }
         val installer = mockk<ContainerInstaller> {
-            every { this@mockk.aicodeDir } returns aicodeDir
+            every { this@mockk.guruDir } returns guruDir
         }
         val root = ProjectAicodeRoot(workspaceRepo, ExecutionModeHolder(registry), installer)
-        return Triple(registry, root, aicodeDir)
+        return Triple(registry, root, guruDir)
     }
 
     @Test
     fun localBackend_resolvesInsideWorkspaceDir() {
         val (_, root, _) = setup()
-        assertEquals(File("/ws/my-app", ".aicode"), root.current())
+        assertEquals(File("/ws/my-app", ".guru"), root.current())
     }
 
     @Test
     fun remoteSshBackend_resolvesInAppPrivateDirWithHostPortKey() {
-        val (registry, root, aicodeDir) = setup(
+        val (registry, root, guruDir) = setup(
             RemoteConnectionConfig("10.0.0.1", 22, "dev", RemoteAuth.Password(""), "/srv")
         )
         registry.setActiveBackend(ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID)
 
         val resolved = root.current()
-        assertEquals(File(aicodeDir, "projects"), resolved.parentFile)
+        assertEquals(File(guruDir, "projects"), resolved.parentFile)
         assertTrue(resolved.name.startsWith("my-app-"))
         assertEquals(resolved.name, root.projectKey("/ws/my-app"))
     }
 
     @Test
     fun pluginBackend_respectsProjectConfigLocationAndProjectConfigKey() {
-        val (registry, root, aicodeDir) = setup()
+        val (registry, root, guruDir) = setup()
         val pluginBackend = object : ExecutionBackend {
             override val id: String = "demo.cloud:sandbox"
             override val displayName: String = "Cloud Sandbox"
@@ -94,7 +94,7 @@ class ProjectAicodeRootTest {
         registry.register(pluginBackend)
         registry.setActiveBackend(pluginBackend.id)
 
-        assertEquals(File(File(aicodeDir, "projects"), "custom-plugin-key"), root.current())
+        assertEquals(File(File(guruDir, "projects"), "custom-plugin-key"), root.current())
         assertEquals("custom-plugin-key", root.projectKey("/ws/my-app"))
     }
 }

@@ -27,7 +27,7 @@ class RemoteAgentConfigSshTransportTest {
     @get:Rule val temporary = TemporaryFolder()
     private val connection = mockk<RemoteSshConnection>()
     private val cfg = mockk<RemoteConnectionConfig>()
-    private val key = RemoteAgentConfigKey("host", 22, "user", "/home/user", "/srv/project", AgentConfigKind.AGENTS, "~/workspace/.aicode/agents", "/srv/project/.aicode/agents", 4)
+    private val key = RemoteAgentConfigKey("host", 22, "user", "/home/user", "/srv/project", AgentConfigKind.AGENTS, "~/workspace/.guru/agents", "/srv/project/.guru/agents", 4)
     private fun transport(timeoutMillis: Long = 5000) = SshAgentConfigTransport(connection, { "/srv/project" }, timeoutMillis)
     private fun encoded(value: String) = Base64.getEncoder().encodeToString(value.toByteArray())
 
@@ -55,8 +55,8 @@ class RemoteAgentConfigSshTransportTest {
     @Test
     fun twoExecBatchesKeepStderrSeparateAndPassOnlyEncodedPathsOnStdin() {
         val hash = RemoteAgentConfigProtocol.sha256("body".toByteArray())
-        val manifest = command("AICODE_CONFIG_1 M\nF\t${encoded("中文 name\n.md")}\t$hash\t4\nEND\n".toByteArray(), stderr = "warning\n".toByteArray())
-        val body = command("AICODE_CONFIG_1 B\nB\t${encoded("中文 name\n.md")}\t${encoded("body")}\nEND\n".toByteArray())
+        val manifest = command("GURU_CONFIG_1 M\nF\t${encoded("中文 name\n.md")}\t$hash\t4\nEND\n".toByteArray(), stderr = "warning\n".toByteArray())
+        val body = command("GURU_CONFIG_1 B\nB\t${encoded("中文 name\n.md")}\t${encoded("body")}\nEND\n".toByteArray())
         val stdin = ByteArrayOutputStream()
         every { body.outputStream } returns stdin
         every { connection.startExecSessionWithStdin(any()) } returnsMany listOf(manifest, body)
@@ -72,7 +72,7 @@ class RemoteAgentConfigSshTransportTest {
     @Test
     fun nonzeroOrMissingExitStatusIsNotAnEmptySnapshot() {
         listOf<Int?>(7, null).forEach { status ->
-            val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray(), status)
+            val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray(), status)
             every { connection.startExecSessionWithStdin(any()) } returns session
             assertThrows(IOException::class.java) { transport().manifest(key) }
             verify(exactly = 1) { session.close() }
@@ -81,7 +81,7 @@ class RemoteAgentConfigSshTransportTest {
 
     @Test
     fun connectionSwitchOrAbaGenerationChangeIsRejectedAndClosesSession() {
-        val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray())
+        val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray())
         every { connection.startExecSessionWithStdin(any()) } answers {
             every { connection.connectionGeneration } returns 6
             session
@@ -159,12 +159,12 @@ class RemoteAgentConfigSshTransportTest {
         every { context.cacheDir } returns temporary.root
         every { workspace.currentPath() } returns key.workspace
         val cache = RemoteAgentConfigCache(context, connection, workspace)
-        val root = "~/workspace/.aicode/agents 中文\n "
+        val root = "~/workspace/.guru/agents 中文\n "
         assertEquals(null, cache.cachedDirectory(root, AgentConfigKind.AGENTS))
         verify(exactly = 0) { connection.startExecSessionWithStdin(any()) }
-        val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray())
+        val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray())
         every { connection.startExecSessionWithStdin(any()) } returns session
         assertTrue(cache.directory(root, AgentConfigKind.AGENTS).files.isEmpty())
-        verify(exactly = 1) { connection.startExecSessionWithStdin(match { it.endsWith("'/srv/project/.aicode/agents 中文\n '") }) }
+        verify(exactly = 1) { connection.startExecSessionWithStdin(match { it.endsWith("'/srv/project/.guru/agents 中文\n '") }) }
     }
 }

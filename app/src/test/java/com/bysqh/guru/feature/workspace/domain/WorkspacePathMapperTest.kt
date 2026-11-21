@@ -17,7 +17,7 @@ import java.nio.file.Files
 
 /**
  * WorkspacePathMapper：容器路径 ↔ 宿主真实路径互转。
- * 固定环境：宿主工作区=/data/ws、AI 配置目录=/data/aicode、rootfs=/data/rootfs、容器 home=/root。
+ * 固定环境：宿主工作区=/data/ws、AI 配置目录=/data/guru、rootfs=/data/rootfs、容器 home=/root。
  * activeProfileIdFlow 用 emptyFlow()，让 init 协程的 collect 永不触发，避免真实 DataStore 调用
  * 与异步 profile 切换（extraBindings 挂载分支依赖该异步更新，纯 JVM 下竞态不稳定，不在本类覆盖）。
  */
@@ -29,7 +29,7 @@ class WorkspacePathMapperTest {
     private fun filesystemMapper(): WorkspacePathMapper {
         val mapper = newMapper()
         every { workspaceRepository.currentPath() } returns tmp.newFolder("workspace").absolutePath
-        every { containerInstaller.aicodeDir } returns tmp.newFolder("aicode")
+        every { containerInstaller.guruDir } returns tmp.newFolder("guru")
         every { containerInstaller.rootfsDirFor(any()) } returns tmp.newFolder("rootfs")
         return mapper
     }
@@ -40,13 +40,13 @@ class WorkspacePathMapperTest {
     private val pathHomeResolver: PathHomeResolver = mockk()
 
     private val wsRoot = "/data/ws"
-    private val aicodeDir = "/data/aicode"
+    private val guruDir = "/data/guru"
     private val rootfsDir = "/data/rootfs"
     private val home = "/root"
 
     private fun newMapper(): WorkspacePathMapper {
         every { workspaceRepository.currentPath() } returns wsRoot
-        every { containerInstaller.aicodeDir } returns File(aicodeDir)
+        every { containerInstaller.guruDir } returns File(guruDir)
         every { containerInstaller.rootfsDirFor(any()) } returns File(rootfsDir)
         every { containerSettingsRepository.activeProfileIdFlow } returns emptyFlow()
         every { pathHomeResolver.home() } returns home
@@ -83,13 +83,13 @@ class WorkspacePathMapperTest {
     }
 
     @Test
-    fun toHostFile_aicodeRoot_mapsToAicodeDir() {
-        assertEquals(File(aicodeDir), newMapper().toHostFile("/root/.aicode"))
+    fun toHostFile_guruRoot_mapsToAicodeDir() {
+        assertEquals(File(guruDir), newMapper().toHostFile("/root/.guru"))
     }
 
     @Test
-    fun toHostFile_aicodeChild_mapsUnderAicodeDir() {
-        assertEquals(File(aicodeDir, "skills/x/SKILL.md"), newMapper().toHostFile("/root/.aicode/skills/x/SKILL.md"))
+    fun toHostFile_guruChild_mapsUnderAicodeDir() {
+        assertEquals(File(guruDir, "skills/x/SKILL.md"), newMapper().toHostFile("/root/.guru/skills/x/SKILL.md"))
     }
 
     @Test
@@ -128,9 +128,9 @@ class WorkspacePathMapperTest {
     }
 
     @Test
-    fun toContainerPath_aicode_mapsToAicodeRootForm() {
-        assertEquals("/root/.aicode", newMapper().toContainerPath(aicodeDir))
-        assertEquals("/root/.aicode/skills/x/SKILL.md", newMapper().toContainerPath("$aicodeDir/skills/x/SKILL.md"))
+    fun toContainerPath_guru_mapsToAicodeRootForm() {
+        assertEquals("/root/.guru", newMapper().toContainerPath(guruDir))
+        assertEquals("/root/.guru/skills/x/SKILL.md", newMapper().toContainerPath("$guruDir/skills/x/SKILL.md"))
     }
 
     @Test
@@ -157,9 +157,9 @@ class WorkspacePathMapperTest {
     @Test
     fun resolveHostFile_projectPermissionsLink_mapsTargetAndMissingFile() {
         val mapper = filesystemMapper()
-        val target = mapper.toHostFile("project/.aicode").apply { mkdirs() }
-        Files.createSymbolicLink(mapper.toHostFile(".aicode").toPath(), File("/root/workspace/project/.aicode").toPath())
-        assertEquals(File(target, "permissions.json"), mapper.resolveHostFile(mapper.toHostFile(".aicode/permissions.json")))
+        val target = mapper.toHostFile("project/.guru").apply { mkdirs() }
+        Files.createSymbolicLink(mapper.toHostFile(".guru").toPath(), File("/root/workspace/project/.guru").toPath())
+        assertEquals(File(target, "permissions.json"), mapper.resolveHostFile(mapper.toHostFile(".guru/permissions.json")))
     }
 
     @Test
@@ -175,9 +175,9 @@ class WorkspacePathMapperTest {
     fun resolveFile_absoluteLinks_mapRootfsAndGlobalConfig() {
         val mapper = filesystemMapper()
         Files.createSymbolicLink(mapper.toHostFile("system").toPath(), File("/etc").toPath())
-        Files.createSymbolicLink(mapper.toHostFile("global").toPath(), File("/root/.aicode").toPath())
+        Files.createSymbolicLink(mapper.toHostFile("global").toPath(), File("/root/.guru").toPath())
         assertEquals(mapper.toHostFile("/etc/hosts"), mapper.resolveFile("system/hosts"))
-        assertEquals(mapper.toHostFile("/root/.aicode/permissions.json"), mapper.resolveFile("global/permissions.json"))
+        assertEquals(mapper.toHostFile("/root/.guru/permissions.json"), mapper.resolveFile("global/permissions.json"))
     }
 
     @Test

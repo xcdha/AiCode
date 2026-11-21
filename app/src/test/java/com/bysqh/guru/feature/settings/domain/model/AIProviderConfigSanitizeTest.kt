@@ -58,13 +58,13 @@ class AIProviderConfigSanitizeTest {
     fun textFields_keepInnerSpacesButDropLineBreaks() {
         val sanitized = config(
             name = " My\nProvider ",
-            dashboardScriptPath = " ~/.aicode/scripts/my panel.py \n",
+            dashboardScriptPath = " ~/.guru/scripts/my panel.py \n",
             proxyUsername = " user name\n",
             proxyPassword = " pa ss\r\n"
         ).sanitized()
 
         assertEquals("MyProvider", sanitized.name)
-        assertEquals("~/.aicode/scripts/my panel.py", sanitized.dashboardScriptPath)
+        assertEquals("~/.guru/scripts/my panel.py", sanitized.dashboardScriptPath)
         assertEquals("user name", sanitized.proxyUsername)
         assertEquals("pa ss", sanitized.proxyPassword)
     }
@@ -72,13 +72,13 @@ class AIProviderConfigSanitizeTest {
     @Test
     fun customHeaders_trimKeysStripLineBreaksAndDropEmptyKeys() {
         val sanitized = config().copy(customHeaders = mapOf(
-            " User-Agent " to " AiCode/1.0 (Android)\n",
+            " User-Agent " to " Guru/1.0 (Android)\n",
             "X-Session" to " sk-abc \n",
             "  " to "ignored"
         )).sanitized()
 
         assertEquals(
-            mapOf("User-Agent" to "AiCode/1.0 (Android)", "X-Session" to "sk-abc"),
+            mapOf("User-Agent" to "Guru/1.0 (Android)", "X-Session" to "sk-abc"),
             sanitized.customHeaders
         )
     }

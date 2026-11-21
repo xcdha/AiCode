@@ -36,7 +36,7 @@ class SessionUseCaseMoveTest {
 
     private val wsA = "/data/projects/alpha"
     private val wsB = "/data/projects/beta"
-    private val wsRemote = "/root/.aicode/workspaces/cloud-api"
+    private val wsRemote = "/root/.guru/workspaces/cloud-api"
 
     @Before
     fun setUp() {

@@ -43,20 +43,20 @@ class RemoteSftpFileAccessSafetyTest {
     @Test
     fun resolvePath_handlesAliasesAndLinkBeforeParent() {
         every { sftp.lstat("/root/workspace/link") } returns symlink
-        every { sftp.readlink("/root/workspace/link") } returns "/root/.aicode/plugins"
+        every { sftp.readlink("/root/workspace/link") } returns "/root/.guru/plugins"
         assertEquals("/root/workspace", access.resolvePath("/root//workspace/."))
-        assertEquals("/root/.aicode", access.resolvePath("link/.."))
+        assertEquals("/root/.guru", access.resolvePath("link/.."))
         assertEquals("/root/workspace/link", access.resolvePath("link", followFinalLink = false))
-        assertEquals("/root/.aicode/plugins", access.resolvePath("link/.", followFinalLink = false))
-        every { sftp.lstat("/root/.aicode/new") } throws SFTPException(StatusCode.NO_SUCH_FILE, "missing")
-        assertEquals("/root/.aicode/new/file", access.resolvePath("link/../new/file"))
+        assertEquals("/root/.guru/plugins", access.resolvePath("link/.", followFinalLink = false))
+        every { sftp.lstat("/root/.guru/new") } throws SFTPException(StatusCode.NO_SUCH_FILE, "missing")
+        assertEquals("/root/.guru/new/file", access.resolvePath("link/../new/file"))
     }
 
     @Test
     fun resolvePath_handlesRelativeLinksAndDoesNotHidePermissionErrors() {
         every { sftp.lstat("/root/workspace/link") } returns symlink
-        every { sftp.readlink("/root/workspace/link") } returns "../.aicode/plugins"
-        assertEquals("/root/.aicode", access.resolvePath("link/.."))
+        every { sftp.readlink("/root/workspace/link") } returns "../.guru/plugins"
+        assertEquals("/root/.guru", access.resolvePath("link/.."))
         every { sftp.lstat("/denied") } throws SFTPException(StatusCode.PERMISSION_DENIED, "denied")
         assertThrows(SFTPException::class.java) { access.resolvePath("/denied/file") }
     }

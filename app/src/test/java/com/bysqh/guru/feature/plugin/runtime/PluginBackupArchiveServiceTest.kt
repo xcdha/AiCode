@@ -101,7 +101,7 @@ class PluginBackupArchiveServiceTest {
             if (granted) mapOf(PLUGIN_ID to PluginBackupGrant(1_000L)) else emptyMap()
         )
         coEvery { permissionRepository.isGranted(PLUGIN_ID) } returns granted
-        every { homeResolver.aicodeRoot() } returns "/root/.aicode"
+        every { homeResolver.guruRoot() } returns "/root/.guru"
         every { fileAccess.deleteRecursively(any()) } just Runs
         every { fileAccess.mkdirs(any()) } just Runs
         coEvery { runtime.invoke(any(), any(), any(), any(), any(), any(), any()) } returns JsonNull
@@ -113,7 +113,7 @@ class PluginBackupArchiveServiceTest {
         val sections = service.prepareExport(setOf(PLUGIN_ID))
         assertEquals(1, sections.size)
         verify {
-            fileAccess.mkdirs("/root/.aicode/plugins/data/$PLUGIN_ID/backup-export")
+            fileAccess.mkdirs("/root/.guru/plugins/data/$PLUGIN_ID/backup-export")
         }
         coVerify {
             runtime.invoke(
@@ -143,7 +143,7 @@ class PluginBackupArchiveServiceTest {
         assertNull(service.importTarget(PLUGIN_ID))
         stub(granted = true)
         assertEquals(
-            "/root/.aicode/plugins/data/$PLUGIN_ID/backup-import",
+            "/root/.guru/plugins/data/$PLUGIN_ID/backup-import",
             service.importTarget(PLUGIN_ID)
         )
     }
@@ -151,7 +151,7 @@ class PluginBackupArchiveServiceTest {
     @Test
     fun finishImport_invokesHookWithStatsAndCleansDirectory() = runBlocking {
         stub(granted = true)
-        every { fileAccess.listFilesRecursive("/root/.aicode/plugins/data/$PLUGIN_ID/backup-import", 8) } returns
+        every { fileAccess.listFilesRecursive("/root/.guru/plugins/data/$PLUGIN_ID/backup-import", 8) } returns
             listOf("manifest.json")
         val stats = buildJsonObject { put("mcpServers", 1) }
 
@@ -171,12 +171,12 @@ class PluginBackupArchiveServiceTest {
                 timeoutMs = 60_000L
             )
         }
-        verify { fileAccess.deleteRecursively("/root/.aicode/plugins/data/$PLUGIN_ID/backup-import") }
+        verify { fileAccess.deleteRecursively("/root/.guru/plugins/data/$PLUGIN_ID/backup-import") }
     }
 
     @Test
     fun readExportFile_usesCallerLimitInsteadOfUnboundedRead() {
-        val directory = "/root/.aicode/plugins/data/$PLUGIN_ID/backup-export"
+        val directory = "/root/.guru/plugins/data/$PLUGIN_ID/backup-export"
         val section = PluginBackupArchiveService.Section(PLUGIN_ID, directory)
         every { fileAccess.readBytes("$directory/small.bin", 3L) } returns byteArrayOf(1, 2, 3)
         assertEquals(listOf<Byte>(1, 2, 3), service.readExportFile(section, "small.bin", 3).toList())

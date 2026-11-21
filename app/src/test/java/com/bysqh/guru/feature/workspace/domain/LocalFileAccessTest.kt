@@ -50,7 +50,7 @@ class LocalFileAccessTest {
         val settings: ContainerSettingsRepository = mockk()
         val home: PathHomeResolver = mockk()
         every { workspace.currentPath() } returns tmp.root.absolutePath
-        every { installer.aicodeDir } returns File(tmp.root, "global")
+        every { installer.guruDir } returns File(tmp.root, "global")
         every { installer.rootfsDirFor(any()) } returns File(tmp.root, "rootfs")
         every { settings.activeProfileIdFlow } returns emptyFlow()
         every { home.home() } returns "/root"
@@ -99,7 +99,7 @@ class LocalFileAccessTest {
         assertTrue(Files.isSymbolicLink(link))
         assertEquals(linkTarget, Files.readSymbolicLink(link))
         val leftovers = tmp.root.listFiles().orEmpty().map { it.name }
-            .filter { it.startsWith(".aicode-tmp-") }
+            .filter { it.startsWith(".guru-tmp-") }
         assertEquals(emptyList<String>(), leftovers)
     }
 
@@ -430,7 +430,7 @@ class LocalFileAccessTest {
         access.writeBytes("b.dat", byteArrayOf(1, 2, 3), overwrite = true)
 
         val leftovers = tmp.root.listFiles().orEmpty().map { it.name }
-            .filter { it.startsWith(".aicode-tmp-") }
+            .filter { it.startsWith(".guru-tmp-") }
         assertEquals("原子写不应留下临时文件，实际=$leftovers", emptyList<String>(), leftovers)
     }
 

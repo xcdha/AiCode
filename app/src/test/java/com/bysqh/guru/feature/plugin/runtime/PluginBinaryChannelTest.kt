@@ -531,7 +531,7 @@ class PluginBinaryChannelTest {
             pluginId = "test-plugin",
             engine = engine,
             profile = ContainerProfile.BUILTIN_ALPINE,
-            workingDir = "/root/.aicode/plugins/test",
+            workingDir = "/root/.guru/plugins/test",
             program = "node",
             programArgs = listOf("index.js"),
             extraEnv = emptyMap(),
@@ -605,7 +605,7 @@ class PluginBinaryChannelTest {
             pluginId = "test-plugin",
             engine = engine,
             profile = ContainerProfile.BUILTIN_ALPINE,
-            workingDir = "/root/.aicode/plugins/test",
+            workingDir = "/root/.guru/plugins/test",
             program = "node",
             programArgs = listOf("index.js"),
             extraEnv = emptyMap(),
@@ -649,10 +649,10 @@ class PluginBinaryChannelTest {
     fun runtimeManager_createIpcConfig_generatesShortSockPathAnd32HexToken() {
         val shortRoot = Files.createTempDirectory("ai-").toFile()
         val installerShort = mockk<ContainerInstaller>()
-        every { installerShort.aicodeDir } returns shortRoot
+        every { installerShort.guruDir } returns shortRoot
         every { installerShort.containerPathFor(any()) } answers {
             val f = firstArg<File>()
-            "/root/.aicode/ipc/${f.name}"
+            "/root/.guru/ipc/${f.name}"
         }
         val managerShort = createRuntimeManager(installerShort)
         val cfg = managerShort.createIpcConfig("demo")
@@ -661,13 +661,13 @@ class PluginBinaryChannelTest {
         assertTrue(cfg.hostSockFile.parentFile?.exists() == true)
         assertTrue(cfg.hostSockFile.name.endsWith(".sock"))
         assertTrue(cfg.hostSockFile.absolutePath.toByteArray(Charsets.UTF_8).size <= 100)
-        assertEquals("/root/.aicode/ipc/${cfg.hostSockFile.name}", cfg.containerSockPath)
+        assertEquals("/root/.guru/ipc/${cfg.hostSockFile.name}", cfg.containerSockPath)
         assertTrue(Regex("^[0-9a-f]{32}$").matches(cfg.token))
 
         // 路径超长 (>100 字节) 时自动禁用二进制 IPC
         val longDir = File(shortRoot, "x".repeat(90)).apply { mkdirs() }
         val installerLong = mockk<ContainerInstaller>()
-        every { installerLong.aicodeDir } returns longDir
+        every { installerLong.guruDir } returns longDir
         val managerLong = createRuntimeManager(installerLong)
         assertEquals(null, managerLong.createIpcConfig("demo"))
     }
@@ -676,15 +676,15 @@ class PluginBinaryChannelTest {
     fun runtimeDataDirectory_isLocalAndDoesNotCallTheActiveBackend() = runBlocking {
         val root = Files.createTempDirectory("plugin-data-").toFile()
         val installer = mockk<ContainerInstaller>()
-        every { installer.aicodeDir } returns root
+        every { installer.guruDir } returns root
         every { installer.containerPathFor(any()) } answers {
-            "/root/.aicode/" + firstArg<File>().relativeTo(root).invariantSeparatorsPath
+            "/root/.guru/" + firstArg<File>().relativeTo(root).invariantSeparatorsPath
         }
         val manager = createRuntimeManager(installer)
 
-        assertEquals("/root/.aicode/plugins/data/demo.cloud", manager.dataDirectory("demo.cloud"))
+        assertEquals("/root/.guru/plugins/data/demo.cloud", manager.dataDirectory("demo.cloud"))
         assertTrue(File(root, "plugins/data/demo.cloud").isDirectory)
-        assertEquals("/root/.aicode/plugins/data/demo.cloud", manager.dataDirectory("demo.cloud"))
+        assertEquals("/root/.guru/plugins/data/demo.cloud", manager.dataDirectory("demo.cloud"))
     }
 
     private fun createRuntimeManager(installer: ContainerInstaller): PluginRuntimeManager =

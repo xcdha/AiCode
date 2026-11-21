@@ -24,18 +24,18 @@ import java.nio.file.Files
 class PromptFragmentCatalogTest {
 
     private lateinit var root: File
-    private lateinit var aicodeDir: File
+    private lateinit var guruDir: File
     private lateinit var workspaceDir: File
     private lateinit var catalog: PromptFragmentCatalog
 
-    private val globalDir get() = File(aicodeDir, "prompts.custom")
-    private val localDir get() = File(aicodeDir, "prompts")
-    private val projectDir get() = File(File(workspaceDir, ".aicode"), "prompts.custom")
+    private val globalDir get() = File(guruDir, "prompts.custom")
+    private val localDir get() = File(guruDir, "prompts")
+    private val projectDir get() = File(File(workspaceDir, ".guru"), "prompts.custom")
 
     @Before
     fun setUp() {
         root = Files.createTempDirectory("prompt-catalog-test").toFile()
-        aicodeDir = File(root, "aicode").apply { mkdirs() }
+        guruDir = File(root, "guru").apply { mkdirs() }
         workspaceDir = File(root, "workspace").apply { mkdirs() }
         globalDir.mkdirs()
         localDir.mkdirs()
@@ -45,11 +45,12 @@ class PromptFragmentCatalogTest {
         every { context.assets } returns assets
         every { assets.list(any()) } returns arrayOf(BUILTIN_NAME)
         val installer = mockk<ContainerInstaller>()
-        every { installer.aicodeDir } returns aicodeDir
+        every { installer.guruDir } returns guruDir
         val projectRoot = mockk<ProjectAicodeRoot>()
-        every { projectRoot.forPath(any()) } returns File(workspaceDir, ".aicode")
+        every { projectRoot.forPath(any()) } returns File(workspaceDir, ".guru")
 
-        catalog = PromptFragmentCatalog(context, installer, projectRoot)
+        val toggleRepository = mockk<com.bysqh.guru.feature.settings.data.repository.PromptFragmentToggleRepository>(relaxed = true)
+        catalog = PromptFragmentCatalog(context, installer, projectRoot, toggleRepository)
     }
 
     @After

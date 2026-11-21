@@ -174,7 +174,7 @@ class PluginModelServiceTest {
 
         val homeResolver = mockk<PathHomeResolver>()
         every { homeResolver.home() } returns "/root"
-        every { homeResolver.aicodeRoot() } returns "/root/.aicode"
+        every { homeResolver.guruRoot() } returns "/root/.guru"
         every { homeResolver.expandHome(any()) } answers { firstArg<String>() }
 
         val workspaceRepository = mockk<WorkspaceRepository>(relaxed = true)

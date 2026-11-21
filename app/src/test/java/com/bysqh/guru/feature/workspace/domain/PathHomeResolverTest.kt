@@ -95,20 +95,20 @@ class PathHomeResolverTest {
         assertEquals("/root", resolver.home())
     }
 
-    // ---------- aicodeRoot()：执行环境 AI 配置根 ----------
+    // ---------- guruRoot()：执行环境 AI 配置根 ----------
 
     @Test
-    fun aicodeRoot_localMode() {
+    fun guruRoot_localMode() {
         val resolver = newResolver(ExecutionMode.LOCAL_PROOT)
         resolver.containerHome = "/root"
-        assertEquals("/root/.aicode", resolver.aicodeRoot())
+        assertEquals("/root/.guru", resolver.guruRoot())
     }
 
     @Test
-    fun aicodeRoot_remoteMode_usesRemoteHome() {
+    fun guruRoot_remoteMode_usesRemoteHome() {
         val resolver = newResolver(ExecutionMode.REMOTE_SSH)
         every { remoteSshConnection.remoteHome } returns "/home/dev/"
-        assertEquals("/home/dev/.aicode", resolver.aicodeRoot())
+        assertEquals("/home/dev/.guru", resolver.guruRoot())
     }
 
     // ---------- expandHome()：~ 展开 ----------
@@ -126,7 +126,7 @@ class PathHomeResolverTest {
         val resolver = newResolver(ExecutionMode.LOCAL_PROOT)
         resolver.containerHome = "/root"
         assertEquals("/root/workspace", resolver.expandHome("~/workspace"))
-        assertEquals("/root/.aicode/skills", resolver.expandHome("~/.aicode/skills"))
+        assertEquals("/root/.guru/skills", resolver.expandHome("~/.guru/skills"))
     }
 
     @Test

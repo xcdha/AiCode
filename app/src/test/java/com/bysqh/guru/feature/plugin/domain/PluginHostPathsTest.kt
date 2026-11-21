@@ -40,7 +40,7 @@ class PluginHostPathsTest {
     @Before
     fun setUp() {
         every { homeResolver.home() } returns HOME
-        every { homeResolver.aicodeRoot() } returns AICODE
+        every { homeResolver.guruRoot() } returns GURU
         every { homeResolver.expandHome(any()) } answers {
             val path = firstArg<String>()
             when {
@@ -305,7 +305,7 @@ class PluginHostPathsTest {
         for (recursive in listOf(false, true)) {
             assertCode("PATH_DENIED") { paths.watchTarget("/", { null }, recursive) }
             assertCode("PATH_DENIED") { paths.watchTarget(HOME, { null }, recursive) }
-            assertCode("PATH_DENIED") { paths.watchTarget(AICODE, { null }, recursive) }
+            assertCode("PATH_DENIED") { paths.watchTarget(GURU, { null }, recursive) }
             assertCode("PATH_DENIED") { paths.watchTarget("~", { null }, recursive) }
         }
         assertCode("PATH_DENIED") { paths.watchTarget("/root", { null }, recursive = true) }
@@ -318,8 +318,8 @@ class PluginHostPathsTest {
             paths.watchTarget("$WORKSPACE/src", { null }, recursive = true)
         )
         assertEquals(
-            PluginWatchTarget.Remote("$AICODE/memory"),
-            paths.watchTarget("$AICODE/memory", { null }, recursive = true)
+            PluginWatchTarget.Remote("$GURU/memory"),
+            paths.watchTarget("$GURU/memory", { null }, recursive = true)
         )
     }
 
@@ -344,7 +344,7 @@ class PluginHostPathsTest {
         val installer = mockk<ContainerInstaller>()
         val settings = mockk<ContainerSettingsRepository>()
         every { workspace.currentPath() } returns File(tmp.root, "workspace").apply { mkdirs() }.path
-        every { installer.aicodeDir } returns File(tmp.root, "aicode").apply { mkdirs() }
+        every { installer.guruDir } returns File(tmp.root, "guru").apply { mkdirs() }
         every { installer.rootfsDirFor(any()) } returns File(tmp.root, "rootfs").apply { mkdirs() }
         every { settings.activeProfileIdFlow } returns emptyFlow()
         val access = LocalFileAccess(WorkspacePathMapper(workspace, installer, settings, homeResolver))
@@ -356,7 +356,7 @@ class PluginHostPathsTest {
     @Test
     fun mutation_rejectsBackendRootAliases() {
         useBackendPathResolution()
-        val aliases = listOf(".", "./", "$AICODE/.", "/root//workspace", "$WORKSPACE/sub/..", "$WORKSPACE/../.aicode") +
+        val aliases = listOf(".", "./", "$GURU/.", "/root//workspace", "$WORKSPACE/sub/..", "$WORKSPACE/../.guru") +
             PROTECTED_ROOTS.flatMap { listOf("$it/.", "$it/child/..") }
         for (alias in aliases) {
             assertCode("PATH_DENIED") { paths.delete(alias) }
@@ -373,8 +373,8 @@ class PluginHostPathsTest {
     fun mutation_resolvesLinkBeforeParentAndPreservesFinalLinkOperations() {
         useBackendPathResolution()
         val workspace = File(tmp.root, "workspace")
-        File(tmp.root, "aicode/plugins").mkdirs()
-        Files.createSymbolicLink(File(workspace, "config").toPath(), File("$AICODE/plugins").toPath())
+        File(tmp.root, "guru/plugins").mkdirs()
+        Files.createSymbolicLink(File(workspace, "config").toPath(), File("$GURU/plugins").toPath())
         every { fileAccess.isDirectory("$WORKSPACE/config") } returns true
         assertCode("PATH_DENIED") { paths.delete("config/..") }
         assertCode("PATH_DENIED") { paths.delete("config/.") }
@@ -394,9 +394,9 @@ class PluginHostPathsTest {
         useBackendPathResolution()
         val workspace = File(tmp.root, "workspace")
         Files.createSymbolicLink(File(workspace, "home").toPath(), File(HOME).toPath())
-        Files.createSymbolicLink(File(workspace, "config").toPath(), File("$AICODE/plugins").toPath())
+        Files.createSymbolicLink(File(workspace, "config").toPath(), File("$GURU/plugins").toPath())
         for (recursive in listOf(false, true)) {
-            for (alias in listOf("//", "$HOME/.", "$AICODE/.", "home", "config/..")) {
+            for (alias in listOf("//", "$HOME/.", "$GURU/.", "home", "config/..")) {
                 assertCode("PATH_DENIED") { paths.watchTarget(alias, { null }, recursive) }
             }
         }
@@ -424,21 +424,21 @@ class PluginHostPathsTest {
 
     private companion object {
         const val HOME = "/root"
-        const val AICODE = "/root/.aicode"
+        const val GURU = "/root/.guru"
         const val WORKSPACE = "/root/workspace"
         const val PLUGIN_ID = "demo.test"
-        const val DATA = "$AICODE/plugins/data/$PLUGIN_ID"
+        const val DATA = "$GURU/plugins/data/$PLUGIN_ID"
         val PROTECTED_ROOTS = listOf(
             "/",
             HOME,
-            AICODE,
+            GURU,
             WORKSPACE,
             DATA,
-            "$AICODE/plugins",
-            "$AICODE/plugins/installed",
-            "$AICODE/plugins/staging",
-            "$AICODE/plugins/data",
-            "$AICODE/plugin-dev"
+            "$GURU/plugins",
+            "$GURU/plugins/installed",
+            "$GURU/plugins/staging",
+            "$GURU/plugins/data",
+            "$GURU/plugin-dev"
         )
     }
 }

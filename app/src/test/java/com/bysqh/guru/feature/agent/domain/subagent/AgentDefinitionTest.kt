@@ -36,20 +36,20 @@ class AgentDefinitionTest {
         activeGlobalRoot = tempFolder.newFolder("remote-global")
         projectRoot = tempFolder.newFolder("project-config")
         val installer = mockk<ContainerInstaller>()
-        every { installer.aicodeDir } returns localGlobalRoot
+        every { installer.guruDir } returns localGlobalRoot
         val projectAicodeRoot = mockk<ProjectAicodeRoot>()
         every { projectAicodeRoot.current() } returns projectRoot
         val hub = mockk<FileChangeHub>()
         every { hub.watchAicode(any(), any(), any(), any(), any()) } returns emptyFlow()
         every { hub.watchWorkspace(any(), any(), any(), any(), any()) } returns emptyFlow()
         fileAccess = mockk()
-        every { fileAccess.isFile("~/.aicode/agents.json") } answers {
+        every { fileAccess.isFile("~/.guru/agents.json") } answers {
             File(activeGlobalRoot, "agents.json").isFile
         }
-        every { fileAccess.readFile("~/.aicode/agents.json") } answers {
+        every { fileAccess.readFile("~/.guru/agents.json") } answers {
             File(activeGlobalRoot, "agents.json").readText()
         }
-        every { fileAccess.writeFile("~/.aicode/agents.json", any(), any(), any()) } answers {
+        every { fileAccess.writeFile("~/.guru/agents.json", any(), any(), any()) } answers {
             File(activeGlobalRoot, "agents.json").writeText(secondArg())
         }
         configRepository = AgentDefinitionConfigRepository(installer, projectAicodeRoot, hub, fileAccess)
@@ -82,7 +82,7 @@ class AgentDefinitionTest {
             setOf("project"),
             AgentDefinitionConfigRepository.parseDisabled(File(projectRoot, "agents.json").readText())
         )
-        verify(exactly = 2) { fileAccess.writeFile("~/.aicode/agents.json", any(), any(), any()) }
+        verify(exactly = 2) { fileAccess.writeFile("~/.guru/agents.json", any(), any(), any()) }
     }
 
     @Test

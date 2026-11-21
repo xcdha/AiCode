@@ -32,7 +32,7 @@ class RemoteSftpFileAccessMappingTest {
     @Test
     fun absolute_path_passes_through() {
         assertEquals("/etc/nginx/nginx.conf", remotePathFor("/etc/nginx/nginx.conf", wsRoot, home))
-        assertEquals("/root/.aicode/skills/x/SKILL.md", remotePathFor("/root/.aicode/skills/x/SKILL.md", wsRoot, home))
+        assertEquals("/root/.guru/skills/x/SKILL.md", remotePathFor("/root/.guru/skills/x/SKILL.md", wsRoot, home))
     }
 
     @Test
