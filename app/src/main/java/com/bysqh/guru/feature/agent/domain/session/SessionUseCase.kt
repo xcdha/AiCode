@@ -231,4 +231,13 @@ class SessionUseCase @Inject constructor(
     suspend fun isSessionEmpty(sessionId: String): Boolean {
         return !agentMessageDao.hasMessages(sessionId)
     }
+
+    suspend fun updateWorkflow(id: String, workflowId: String?, workflowState: String? = null) {
+        chatSessionDao.updateWorkflow(id, workflowId, workflowState)
+    }
+
+    suspend fun updateWorkflowState(id: String, workflowState: String?) {
+        chatSessionDao.updateWorkflowState(id, workflowState)
+    }
+
 }

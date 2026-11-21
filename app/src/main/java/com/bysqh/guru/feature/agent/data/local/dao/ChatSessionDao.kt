@@ -15,6 +15,12 @@ interface ChatSessionDao {
     @Query("SELECT * FROM chat_sessions WHERE workspacePath = :workspacePath ORDER BY isPinned DESC, updatedAt DESC")
     fun getAllSessionsByWorkspace(workspacePath: String): Flow<List<ChatSessionEntity>>
 
+    @Query("UPDATE chat_sessions SET workflowId = :workflowId, workflowState = :workflowState WHERE id = :id")
+    suspend fun updateWorkflow(id: String, workflowId: String?, workflowState: String? = null)
+
+    @Query("UPDATE chat_sessions SET workflowState = :workflowState WHERE id = :id")
+    suspend fun updateWorkflowState(id: String, workflowState: String?)
+
     @Query("SELECT * FROM chat_sessions WHERE workspacePath = :workspacePath AND parentId IS NULL ORDER BY isPinned DESC, updatedAt DESC")
     fun getRootSessionsByWorkspace(workspacePath: String): Flow<List<ChatSessionEntity>>
 
