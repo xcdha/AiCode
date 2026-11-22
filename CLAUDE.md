@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本仓库的 AI 协作规则（Claude Code、AiCode 等 AI 编程助手均读取本文件），优先级高于默认通用规则。
+本仓库的 AI 协作规则（Claude Code、Guru 等 AI 编程助手均读取本文件），优先级高于默认通用规则。
 
 ## 基本约定
 
@@ -39,7 +39,7 @@
 feature-based 分层 + DDD。入口 `AIEditorApp` 初始化日志 / 保活、MCP、插件工具与 hooks（`PluginToolManager` / `PluginHookDispatcher`）、配置热加载监听，并常驻进程级 `AgentRunManager`（Activity 回收后任务继续）。
 
 - **`core/`**：跨 feature 基础设施 —— `db/`（含 `MigrationLoader.kt`）、`net/`、`datastore/`（`preferencesCorruptionHandler` 统一兜底 DataStore 损坏）、`security/`（`KeystoreCipher`：AES-256-GCM + Android Keystore）、`watch/`（`FileChangeHub` / `RemoteFileWatchHub` 文件变更订阅）、`theme/`、`ui/`、`util/`（含 `FileLogger`）。
-- **`feature/`**（`app/src/main/java/com/aicode/feature/`）：
+- **`feature/`**（`app/src/main/java/com/bysqh/guru/feature/`）：
   - `agent`：AI agent 核心 —— 提示词、工具注册与权限、MCP、provider 适配（`data/remote/` 下 `anthropic` / `openai` / `gemini`）、会话 / 检查点 / 技能 / 子代理；运行态由 `presentation/run/AgentRunManager` 承接。
   - `terminal`：终端与会话。本地模式 Termux 组件 + PRoot（`LinuxContainerEngine`）；远程模式 sshj。
   - `workspace`：工作区与 DocumentsProvider，远程走 SFTP / FTP 同步（`RemoteSftpFileAccess`、`SftpSyncClient` / `FtpSyncClient`）。
@@ -56,7 +56,7 @@ feature-based 分层 + DDD。入口 `AIEditorApp` 初始化日志 / 保活、MCP
 
 ### 插件系统（预览）
 
-- **安装与清单**：`PluginManager` 校验 `.zip` 与 `plugin.json`，包 / 数据装在容器 `~/.aicode/plugins`，安装记录在宿主 `filesDir/plugin-registry.json`；字段以 `PluginManifest.kt` 为准，`PluginApi.VERSION`（当前 1.0.0）不兼容直接拒绝。**改插件 API 必须同步改 `plugins/sdk` 与页面 SDK（`app/src/main/assets/plugin-ui/aicode.js` / `aicode-ui-vue.js`）。** 插件贡献包括技能、子代理、工作区工具、槽位页面（`uiEntries`）、AI 工具、hooks、MCP、OpenAI 兼容提供商、外部会话源（`sessionSources`）、Shizuku、系统浮层、备份扩展、模型句柄与配置页。
+- **安装与清单**：`PluginManager` 校验 `.zip` 与 `plugin.json`，包 / 数据装在容器 `~/.guru/plugins`，安装记录在宿主 `filesDir/plugin-registry.json`；字段以 `PluginManifest.kt` 为准，`PluginApi.VERSION`（当前 1.0.0）不兼容直接拒绝。**改插件 API 必须同步改 `plugins/sdk` 与页面 SDK（`app/src/main/assets/plugin-ui/aicode.js` / `aicode-ui-vue.js`）。** 插件贡献包括技能、子代理、工作区工具、槽位页面（`uiEntries`）、AI 工具、hooks、MCP、OpenAI 兼容提供商、外部会话源（`sessionSources`）、Shizuku、系统浮层、备份扩展、模型句柄与配置页。
 - **运行时**：`PluginRuntimeManager` 在本地容器内以子进程运行 `runtime.entry`（JavaScript / Python），工具与 hooks 通过 JSON-RPC 调宿主；`PluginToolManager` 把生效插件的工具注册进 `ToolRegistry`，`PluginHookDispatcher` 派发 `app.started`、工具前后、HTTP、审批与备份等 hooks。
 - **商店标签（分类）**：`PluginTags`（`data/index/PluginIndexModels.kt`）固定 8 类 —— `provider` / `tool` / `skill` / `agent` / `mcp` / `ui` / `integration` / `other`；每个插件最多 4 个且不可重复；增删分类必须同步 `PluginIndexParser`、`plugin-index/schema/index.schema.json` 与索引 README。
 - **页面与浮层**：插件页面是 WebView HTML，经 `presentation/PluginWebBridge` 与 `assets/plugin-ui/aicode.js`（Vue 组件库 `aicode-ui-vue.js`）访问宿主能力；`overlay/` 管理可拖拽 / 吸附的系统浮层。SSH 模式下插件仍只在手机端运行；插件进程与 Bash 同级，宿主路径限制见 `PluginHostPaths`。
@@ -93,7 +93,7 @@ Room（`feature/agent/data/local/database/AgentDatabase.kt` + 各 DAO），迁�
 - **提供商预设只在仓库数据文件维护**：新增或调整内置 AI 供应商，**只改 `data/providers.json`**（App 启动时从仓库动态拉取的源）；**不要**同步改 `app/src/main/assets/providers.json`（内置兜底快照，随发版固化）与 `docs-site/` 文档。
 - **容器镜像目录由脚本生成，禁止手改**：`data/container-images.json` 由 CI（`sync-container-images.yml`，每日）跑 `scripts/sync-container-images.py` 抓上游生成后发布到 `data` 分支；`app/src/main/assets/container-images.json` 是内置兜底快照，**发版前用同一脚本刷新**（`python3 scripts/sync-container-images.py --out app/src/main/assets/container-images.json`）——它承载离线可用的版本号与 SHA-256 校验和，与 providers 快照「不维护」的策略刻意不同。要增删发行版或改镜像源，改脚本里的配置或 `sources` 表，不要改生成结果。
 
-**文档目录约定**：`docs-site/docs/` 是文档唯一事实源，`guide/` 放功能说明（核心工作流、模型与用量、执行环境、扩展能力、设置与维护等分类），`advanced/` 放环境搭建、设备调试、模型与推理、扩展开发（含 `advanced/plugin/` 插件开发）等进阶教程。构建时由 `syncAiDocs` task 复制到 `assets/docs/`，AI 在容器内看到的是 `~/.aicode/docs/` 下的完整目录（`guide/`、`advanced/`、根级协议页与 `en/`）。**面向用户书写**：讲清怎么做、会看到什么、出错怎么办；变量名、错误码、内部实现路径属于 `prompts/`，别写进用户文档。
+**文档目录约定**：`docs-site/docs/` 是文档唯一事实源，`guide/` 放功能说明（核心工作流、模型与用量、执行环境、扩展能力、设置与维护等分类），`advanced/` 放环境搭建、设备调试、模型与推理、扩展开发（含 `advanced/plugin/` 插件开发）等进阶教程。构建时由 `syncAiDocs` task 复制到 `assets/docs/`，AI 在容器内看到的是 `~/.guru/docs/` 下的完整目录（`guide/`、`advanced/`、根级协议页与 `en/`）。**面向用户书写**：讲清怎么做、会看到什么、出错怎么办；变量名、错误码、内部实现路径属于 `prompts/`，别写进用户文档。
 
 ## Git 提交规范
 

@@ -52,16 +52,23 @@ class SystemPromptProvider @Inject constructor(
     private inner class StaticRuleSource : PromptSource {
         // 每次都重新读盘：未编辑时字符串一致，KV Cache 照常命中；编辑后立即生效，无需重启。
         // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{GURU_*}} 变量承载。
-        override fun build(ctx: AgentContext): String {
-            // [二开] 角色身份提示词放在规则最前：选中哪个角色，就用它的身份对话。
-            // 角色身份为空时保持上游行为（只用内置片段）；非空时跳过内置 00-identity，
-            // 否则提示词里会出现两段「你是……」，互相削弱指令权重。
-            val identity = runCatching { roleRepository.current().identity }.getOrDefault("").trim()
-            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot, skipIdentity = identity.isNotEmpty())
-            if (identity.isEmpty()) return rules
-            return "$identity\n\n$rules"
-        }
+        override fun build(ctx: AgentContext): String = build(ctx, roleIdentity().isNotEmpty())
+
+        /** [hasIdentity] 由调用方传入，避免重复读角色文件。 */
+        fun build(ctx: AgentContext, hasIdentity: Boolean): String =
+            promptFragmentCatalog.renderStatic(ctx.projectRoot, skipIdentity = hasIdentity)
     }
+
+    /**
+     * [二开] 当前角色的身份文本。非空时优先于内置 00-identity 片段。
+     *
+     * 必须放在 [build] 的最外层拼接，不能只塞进 [StaticRuleSource]：
+     * `.no-builtin` 生效时主提示词走 [buildCustomOnly]，拿不到任何内置 Source，
+     * 角色身份若仍挂在 StaticRuleSource 上就会被静默丢弃——
+     * 表现为「开了角色但等于没开」，提示词里没有任何身份约束。
+     */
+    private fun roleIdentity(): String =
+        runCatching { roleRepository.current().identity }.getOrDefault("").trim()
 
     private inner class ActiveSkillsSource : PromptSource {
         // 会话级缓存：同一 (sessionId, projectRoot) 内只扫一次磁盘，保持 system prompt 稳定以命中 KV 缓存；
@@ -284,12 +291,14 @@ class SystemPromptProvider @Inject constructor(
     fun build(agentContext: AgentContext): String {
         agentContext.agentDefinition?.let { return buildForSubAgent(it, agentContext) }
 
+        val identity = roleIdentity()
+
         if (PromptFragmentResolver.isBuiltinDisabled(customDir)) {
-            return buildCustomOnly(agentContext)
+            return prependIdentity(identity, buildCustomOnly(agentContext))
         }
 
         // 1. 获取各个 Source 的基线快照。
-        val rawStatic = staticRuleSource.build(agentContext)
+        val rawStatic = staticRuleSource.build(agentContext, hasIdentity = identity.isNotEmpty())
         val skillsContent = activeSkillsSource.build(agentContext)
         val subAgentsContent = subAgentListSource.build(agentContext)
         val memories = memoryListSource.build(agentContext)
@@ -313,7 +322,14 @@ class SystemPromptProvider @Inject constructor(
         )
 
         // 4. 压缩空清单展开留下的多余空行；稳定基线在前、动态内容集中在末尾片段，均利于 KV Cache。
-        return collapseBlankLines(staticContent)
+        return prependIdentity(identity, collapseBlankLines(staticContent))
+    }
+
+    /** 角色身份置于提示词最前；为空时原样返回（保持上游行为）。 */
+    private fun prependIdentity(identity: String, body: String): String = when {
+        identity.isEmpty() -> body
+        body.isEmpty() -> identity
+        else -> "$identity\n\n$body"
     }
 
     /**
