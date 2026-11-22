@@ -295,9 +295,18 @@ class SystemPromptProvider @Inject constructor(
 
         if (PromptFragmentResolver.isBuiltinDisabled(customDir)) {
             val customOnly = buildCustomOnly(agentContext)
-            // 角色身份能补上就不算空；两者都没有时必须回落，否则模型没有任何约束。
-            if (customOnly.isNotEmpty() || identity.isNotEmpty()) {
+            if (customOnly.isNotEmpty()) {
                 return prependIdentity(identity, customOnly)
+            }
+            if (identity.isNotEmpty()) {
+                // 只有身份而没有内置规则：能跑，但工作纪律与安全边界不在提示词里，
+                // 用 INFO 留下现场，便于排查「行为异常但看不出原因」。
+                FileLogger.i(
+                    TAG,
+                    "已启用 ${PromptFragmentResolver.DISABLE_BUILTIN_FILE} 且无自定义片段，" +
+                        "系统提示词仅含角色身份，内置规则未注入"
+                )
+                return identity
             }
             FileLogger.w(
                 TAG,
@@ -353,13 +362,9 @@ class SystemPromptProvider @Inject constructor(
      */
     private fun buildCustomOnly(ctx: AgentContext): String {
         val content = promptFragmentCatalog.renderCustomOnly(ctx.projectRoot)
-        if (content.isEmpty()) {
-            FileLogger.w(
-                TAG,
-                "已启用 ${PromptFragmentResolver.DISABLE_BUILTIN_FILE}，但 $customDir 下没有 <两位数字>-<名称>.md 片段，系统提示词为空"
-            )
-            return ""
-        }
+        // 这里不记「提示词为空」：本函数只负责自定义片段，角色身份由 build() 在外层拼接，
+        // 在这里判定空会误报（角色非空时提示词其实不为空）。空判定统一放 build()。
+        if (content.isEmpty()) return ""
         val memories = memoryListSource.build(ctx)
         val projectRules = projectRuleSource.build(ctx)
         return renderVariables(
