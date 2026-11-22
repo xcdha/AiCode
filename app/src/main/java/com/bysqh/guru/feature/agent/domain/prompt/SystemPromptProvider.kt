@@ -3,9 +3,7 @@ package com.bysqh.guru.feature.agent.domain.prompt
 import android.content.Context
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
-import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
 import com.bysqh.guru.feature.agent.domain.memory.MemoryRepository
-import com.bysqh.guru.feature.agent.domain.role.RoleRepository
 import com.bysqh.guru.feature.agent.domain.memory.MemoryScope
 import com.bysqh.guru.feature.agent.domain.model.AgentContext
 import com.bysqh.guru.feature.agent.domain.model.AgentMode
@@ -14,10 +12,10 @@ import com.bysqh.guru.feature.agent.domain.skill.SkillRepository
 import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinition
 import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionRepository
 import com.bysqh.guru.feature.agent.domain.subagent.InjectPart
-import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,10 +39,7 @@ class SystemPromptProvider @Inject constructor(
     private val promptFragmentCatalog: PromptFragmentCatalog,
     private val containerInstaller: ContainerInstaller,
     private val agentDefinitionRepository: AgentDefinitionRepository,
-    private val executionModeHolder: ExecutionModeHolder,
-    private val remoteSshConnection: RemoteSshConnection,
-    // [二开] 角色身份：当前角色优先于内置 00-identity 片段（移植自 Muse）
-    private val roleRepository: RoleRepository
+    private val executionModeHolder: ExecutionModeHolder
 ) {
     // 抽象独立的 Source
     interface PromptSource {
@@ -54,15 +49,7 @@ class SystemPromptProvider @Inject constructor(
     private inner class StaticRuleSource : PromptSource {
         // 每次都重新读盘：未编辑时字符串一致，KV Cache 照常命中；编辑后立即生效，无需重启。
         // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{GURU_*}} 变量承载。
-        override fun build(ctx: AgentContext): String {
-            // [二开] 角色身份提示词放在规则最前：选中哪个角色，就用它的身份对话。
-            // 角色身份为空时保持上游行为（只用内置片段）；非空时跳过内置 00-identity，
-            // 否则提示词里会出现两段「你是……」，互相削弱指令权重。
-            val identity = runCatching { roleRepository.current().identity }.getOrDefault("").trim()
-            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot, skipIdentity = identity.isNotEmpty())
-            if (identity.isEmpty()) return rules
-            return "$identity\n\n$rules"
-        }
+        override fun build(ctx: AgentContext): String = promptFragmentCatalog.renderStatic(ctx.projectRoot)
     }
 
     private inner class ActiveSkillsSource : PromptSource {
@@ -74,7 +61,10 @@ class SystemPromptProvider @Inject constructor(
             val key = SourceCacheKey(ctx.sessionId, ctx.projectRoot, environment = cacheEnvironment())
             val cached = cachedByKey[key]
             if (cached != null) return cached.ifEmpty { null }
-            val skills = try { skillRepository.listSkills() } catch (e: Exception) { return null }
+            val skills = try { skillRepository.listSkills() } catch (e: Exception) {
+                if (e is IOException) throw e
+                return null
+            }
             if (skills.isEmpty()) {
                 cachedByKey[key] = ""
                 return null
@@ -127,6 +117,7 @@ class SystemPromptProvider @Inject constructor(
                 if (e !is com.bysqh.guru.feature.workspace.domain.RemoteAgentConfigIdentityChangedException) {
                     FileLogger.w(TAG, "扫描子代理定义失败: ${e.message}", e)
                 }
+                if (e is IOException) throw e
                 return null
             }
             if (entries.isEmpty()) {
@@ -207,10 +198,7 @@ class SystemPromptProvider @Inject constructor(
 
     private inner class EnvironmentSource : PromptSource {
         override fun build(ctx: AgentContext): String =
-            when (executionModeHolder.currentMode()) {
-                ExecutionMode.LOCAL_PROOT -> "本地容器（PRoot）"
-                ExecutionMode.REMOTE_SSH -> "远程 SSH 服务器"
-            }
+            executionModeHolder.currentBackend().environmentDescription()
     }
 
     /** 记忆清单拆分为全局/项目两组纯列表，供 `{{GURU_MEMORY_GLOBAL}}` / `{{GURU_MEMORY_PROJECT}}` 变量使用。 */
@@ -261,13 +249,8 @@ class SystemPromptProvider @Inject constructor(
         val environment: String
     )
 
-    /** 远程连接身份参与缓存键：换服务器/换账号后必须重建，否则会命中旧主机的清单。 */
-    private fun cacheEnvironment(): String {
-        if (executionModeHolder.currentMode() != ExecutionMode.REMOTE_SSH) return "local"
-        val config = remoteSshConnection.config ?: return "remote:disconnected"
-        return listOf(config.host, config.port.toString(), config.username, remoteSshConnection.remoteHome.orEmpty(), config.remoteWorkspacePath)
-            .joinToString("\u0000")
-    }
+    private fun cacheEnvironment(): String =
+        executionModeHolder.currentBackend().environmentCacheKey()
 
     private val staticRuleSource = StaticRuleSource()
     private val subAgentBaseSource = SubAgentBaseSource()

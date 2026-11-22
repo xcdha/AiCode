@@ -55,8 +55,8 @@ class RemoteAgentConfigSshTransportTest {
     @Test
     fun twoExecBatchesKeepStderrSeparateAndPassOnlyEncodedPathsOnStdin() {
         val hash = RemoteAgentConfigProtocol.sha256("body".toByteArray())
-        val manifest = command("AICODE_CONFIG_1 M\nF\t${encoded("中文 name\n.md")}\t$hash\t4\nEND\n".toByteArray(), stderr = "warning\n".toByteArray())
-        val body = command("AICODE_CONFIG_1 B\nB\t${encoded("中文 name\n.md")}\t${encoded("body")}\nEND\n".toByteArray())
+        val manifest = command("GURU_CONFIG_1 M\nF\t${encoded("中文 name\n.md")}\t$hash\t4\nEND\n".toByteArray(), stderr = "warning\n".toByteArray())
+        val body = command("GURU_CONFIG_1 B\nB\t${encoded("中文 name\n.md")}\t${encoded("body")}\nEND\n".toByteArray())
         val stdin = ByteArrayOutputStream()
         every { body.outputStream } returns stdin
         every { connection.startExecSessionWithStdin(any()) } returnsMany listOf(manifest, body)
@@ -72,7 +72,7 @@ class RemoteAgentConfigSshTransportTest {
     @Test
     fun nonzeroOrMissingExitStatusIsNotAnEmptySnapshot() {
         listOf<Int?>(7, null).forEach { status ->
-            val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray(), status)
+            val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray(), status)
             every { connection.startExecSessionWithStdin(any()) } returns session
             assertThrows(IOException::class.java) { transport().manifest(key) }
             verify(exactly = 1) { session.close() }
@@ -81,7 +81,7 @@ class RemoteAgentConfigSshTransportTest {
 
     @Test
     fun connectionSwitchOrAbaGenerationChangeIsRejectedAndClosesSession() {
-        val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray())
+        val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray())
         every { connection.startExecSessionWithStdin(any()) } answers {
             every { connection.connectionGeneration } returns 6
             session
@@ -162,7 +162,7 @@ class RemoteAgentConfigSshTransportTest {
         val root = "~/workspace/.guru/agents 中文\n "
         assertEquals(null, cache.cachedDirectory(root, AgentConfigKind.AGENTS))
         verify(exactly = 0) { connection.startExecSessionWithStdin(any()) }
-        val session = command("AICODE_CONFIG_1 M\nEND\n".toByteArray())
+        val session = command("GURU_CONFIG_1 M\nEND\n".toByteArray())
         every { connection.startExecSessionWithStdin(any()) } returns session
         assertTrue(cache.directory(root, AgentConfigKind.AGENTS).files.isEmpty())
         verify(exactly = 1) { connection.startExecSessionWithStdin(match { it.endsWith("'/srv/project/.guru/agents 中文\n '") }) }

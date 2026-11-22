@@ -289,7 +289,7 @@ class RemoteSftpFileAccess @Inject constructor(
 
     override fun writeBytes(path: String, bytes: ByteArray, overwrite: Boolean) {
         val remote = toRemotePath(path)
-        // 与 writeStream 同构：先写 .aicode-part 再改名，避免原地 TRUNC 让并发读者看到半截内容，
+        // 与 writeStream 同构：先写 .guru-part 再改名，避免原地 TRUNC 让并发读者看到半截内容，
         // 也避免中途断开时在目标位置留下半个文件。
         val tmp = tmpPathFor(remote)
         withSftp { sftp ->
@@ -326,7 +326,7 @@ class RemoteSftpFileAccess @Inject constructor(
 
     override fun writeStream(path: String, input: InputStream, overwrite: Boolean): Long {
         val remote = toRemotePath(path)
-        // 先落到 .aicode-part 再改名：传输中途断开时不会在目标位置留下半截文件
+        // 先落到 .guru-part 再改名：传输中途断开时不会在目标位置留下半截文件
         val tmp = tmpPathFor(remote)
         val written = withSftp { sftp ->
             if (sftp.statExistence(remote) != null && !overwrite) throw FileAlreadyExistsException(File(remote))
@@ -358,7 +358,7 @@ class RemoteSftpFileAccess @Inject constructor(
 
     override fun copyToLocal(path: String): File {
         val remote = toRemotePath(path)
-        val tempFile = File.createTempFile("aicode_remote_", ".copy").apply { deleteOnExit() }
+        val tempFile = File.createTempFile("guru_remote_", ".copy").apply { deleteOnExit() }
         return try {
             withSftp { sftp ->
                 if (sftp.statExistence(remote) == null) throw NoSuchFileException(File(remote))
@@ -543,7 +543,7 @@ class RemoteSftpFileAccess @Inject constructor(
 
     private companion object {
         /** 原子写临时文件后缀（远端用「目标名 + 后缀」，与本地 `File.createTempFile` 策略不同）。 */
-        const val TMP_FILE_SUFFIX = ".aicode-part"
+        const val TMP_FILE_SUFFIX = ".guru-part"
     }
 }
 

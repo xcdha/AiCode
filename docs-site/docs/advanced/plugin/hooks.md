@@ -61,7 +61,7 @@ const handlers = {
   },
   'hooks.onImport': async (payload) => {
     const file = await hostCall('host.fs.read', {path: payload.dir + '/global/memory/note.md'});
-    await hostCall('host.fs.write', {path: '~/.aicode/memory/note.md', content: file.content});
+    await hostCall('host.fs.write', {path: '~/.guru/memory/note.md', content: file.content});
     return {logs: [`restored ${payload.files} files`]};
   }
 };

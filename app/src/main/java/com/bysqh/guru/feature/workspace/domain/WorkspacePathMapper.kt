@@ -200,12 +200,12 @@ class WorkspacePathMapper @Inject constructor(
      * - 位于 rootfs 内 → 去掉 rootfs 前缀的容器绝对路径（如 `/etc/apk/repositories`）；
      * - 其余原样返回（极少出现）。
      *
-     * 工作区在 `filesDir/projects`、AI 配置在 `filesDir/aicode`、rootfs 在 `filesDir/rootfs`，三者互不重叠，
+     * 工作区在 `filesDir/projects`、AI 配置在 `filesDir/guru`、rootfs 在 `filesDir/rootfs`，三者互不重叠，
      * 判断顺序无歧义。
      */
     fun toContainerPath(hostPath: String): String {
         val rootPath = hostRoot().absolutePath.replace('\\', '/')
-        val aicodePath = guruRoot().absolutePath.replace('\\', '/')
+        val guruPath = guruRoot().absolutePath.replace('\\', '/')
         val rootfsPath = rootfsRoot().absolutePath.replace('\\', '/')
         val abs = File(hostPath).absolutePath.replace('\\', '/')
         val raw = hostPath.trim().replace('\\', '/')
@@ -217,8 +217,8 @@ class WorkspacePathMapper @Inject constructor(
             raw == resolvedWs || abs == resolvedWs -> CONTAINER_ROOT
             raw.startsWith("$resolvedWs/") -> CONTAINER_ROOT + "/" + raw.removePrefix("$resolvedWs/")
             abs.startsWith("$resolvedWs/") -> CONTAINER_ROOT + "/" + abs.removePrefix("$resolvedWs/")
-            abs == aicodePath -> GURU_ROOT
-            abs.startsWith("$aicodePath/") -> GURU_ROOT + "/" + abs.removePrefix("$aicodePath/")
+            abs == guruPath -> GURU_ROOT
+            abs.startsWith("$guruPath/") -> GURU_ROOT + "/" + abs.removePrefix("$guruPath/")
             abs == rootfsPath -> "/"
             abs.startsWith("$rootfsPath/") -> "/" + abs.removePrefix("$rootfsPath/")
             else -> WorkspacePathMapper.localFolderContainerPathFor(abs) ?: mountedContainerPath(abs) ?: hostPath

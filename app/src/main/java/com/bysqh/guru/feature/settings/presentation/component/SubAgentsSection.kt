@@ -37,8 +37,8 @@ import com.bysqh.guru.core.theme.Radius
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.BatchDeleteConfirmDialog
+import com.bysqh.guru.core.ui.FloatingSelectionBar
 import com.bysqh.guru.core.ui.ListSelectionState
-import com.bysqh.guru.core.ui.SelectionActionBar
 import com.bysqh.guru.core.ui.SelectionActionButton
 import com.bysqh.guru.core.ui.SelectionActionIconButton
 import com.bysqh.guru.core.ui.SwipeToDeleteRow
@@ -138,54 +138,29 @@ internal fun SubAgentsSection(
     val allSelected = selection.selectedCount > 0 && selection.selectedCount == allKeys.size
     val selectedEntries: List<SubAgentUiEntry> = selection.selectedKeys.mapNotNull { keyToEntry[it] }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (selection.isActive) {
-            val enabled = selection.selectedCount > 0
-            SelectionActionBar(
-                selectedCount = selection.selectedCount,
-                allSelected = allSelected,
-                onToggleSelectAll = {
-                    if (allSelected) selection.clear() else selection.replaceAll(allKeys)
-                },
-                onExit = { selection.exit() }
-            ) {
-                SelectionActionButton(
-                    text = stringResource(R.string.common_batch_enable),
-                    enabled = enabled,
-                    onClick = { onBatchSetEnabled(selectedEntries, true) }
-                )
-                SelectionActionButton(
-                    text = stringResource(R.string.common_batch_disable),
-                    enabled = enabled,
-                    onClick = { onBatchSetEnabled(selectedEntries, false) }
-                )
-                SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
-                    contentDescription = stringResource(R.string.common_batch_delete),
-                    enabled = enabled,
-                    onClick = { showBatchDeleteConfirm = true },
-                    tint = MaterialTheme.colorScheme.error
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 批量删除期间给一行文字提示：远程模式下逐条删除可能持续数秒，没有反馈会以为没生效。
+            if (deletingInProgress) {
+                Text(
+                    text = stringResource(R.string.common_batch_deleting),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(start = Spacing.lg, bottom = Spacing.xs)
                 )
             }
-        }
 
-        // 批量删除期间给一行文字提示：远程模式下逐条删除可能持续数秒，没有反馈会以为没生效。
-        if (deletingInProgress) {
-            Text(
-                text = stringResource(R.string.common_batch_deleting),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(start = Spacing.lg, bottom = Spacing.xs)
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, bottom = Spacing.xl),
-            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(
+                    start = Spacing.lg,
+                    end = Spacing.lg,
+                    bottom = if (selection.isActive) 88.dp else Spacing.xl
+                ),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+            ) {
             item(key = "project-header", contentType = "header") {
                 CollapsibleGroupHeader(
                     text = if (projectName != null) {
@@ -281,6 +256,38 @@ internal fun SubAgentsSection(
                     }
                 }
             }
+        }
+        }
+
+        FloatingSelectionBar(
+            visible = selection.isActive,
+            selectedCount = selection.selectedCount,
+            allSelected = allSelected,
+            onToggleSelectAll = {
+                if (allSelected) selection.clear() else selection.replaceAll(allKeys)
+            },
+            onExit = { selection.exit() },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            val enabled = selection.selectedCount > 0
+            SelectionActionButton(
+                text = stringResource(R.string.common_batch_enable),
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = { onBatchSetEnabled(selectedEntries, true) }
+            )
+            SelectionActionButton(
+                text = stringResource(R.string.common_batch_disable),
+                enabled = enabled,
+                onClick = { onBatchSetEnabled(selectedEntries, false) }
+            )
+            SelectionActionIconButton(
+                icon = FeatherIcons.Trash2,
+                contentDescription = stringResource(R.string.common_batch_delete),
+                enabled = enabled,
+                onClick = { showBatchDeleteConfirm = true },
+                tint = MaterialTheme.colorScheme.error
+            )
         }
     }
 

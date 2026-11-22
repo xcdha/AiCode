@@ -11,7 +11,7 @@ AI 助手与开发者可以依据此规范，编写面板脚本（Python / Node 
 ## 1. 脚本存放路径与管理方式
 
 ### 1.1 默认存放路径
-- **统一脚本目录**：`~/.aicode/scripts/`。本地模式下即容器内 `/root/.aicode/scripts/`，映射至宿主 App 数据目录、容器升级重装时保留；远程模式下为服务器用户 home 下的 `~/.aicode/scripts/`（以远端为准，读写都在远端）。
+- **统一脚本目录**：`~/.guru/scripts/`。本地模式下即容器内 `/root/.guru/scripts/`，映射至宿主 App 数据目录、容器升级重装时保留；远程模式下为服务器用户 home 下的 `~/.guru/scripts/`（以远端为准，读写都在远端）。
 
 ### 1.2 脚本编写与语言支持
 脚本只需将标准 JSON 结果输出到**标准输出 (stdout)** 即可：
@@ -22,9 +22,9 @@ AI 助手与开发者可以依据此规范，编写面板脚本（Python / Node 
 
 ### 1.3 路径解析规则
 在供应商设置项「面板脚本」中，支持以下几种路径填写方式：
-1. **纯文件名**（推荐，如 `demo_balance.py`）：自动在 `~/.aicode/scripts/` 目录下查找；
-2. **相对路径**（如 `scripts/my_panel.py` 或 `.aicode/scripts/my_panel.py`）：自动从 `~/.aicode/` 展开；
-3. **波浪号路径**（如 `~/.aicode/scripts/my_panel.py` 或 `~/my_script.py`）：自动展开为当前执行环境的 home（本地容器为 `/root`，远程为服务器用户 home）；
+1. **纯文件名**（推荐，如 `demo_balance.py`）：自动在 `~/.guru/scripts/` 目录下查找；
+2. **相对路径**（如 `scripts/my_panel.py` 或 `.guru/scripts/my_panel.py`）：自动从 `~/.guru/` 展开；
+3. **波浪号路径**（如 `~/.guru/scripts/my_panel.py` 或 `~/my_script.py`）：自动展开为当前执行环境的 home（本地容器为 `/root`，远程为服务器用户 home）；
 4. **容器内绝对路径**（如 `/root/workspace/scripts/quota.py`）。
 
 ---
@@ -37,36 +37,36 @@ AI 助手与开发者可以依据此规范，编写面板脚本（Python / Node 
 
 > **关于「输入 Token」的说明**：`LAST_INPUT_TOKENS` 和 `TOTAL_INPUT_TOKENS` 均为 API 返回的**总输入 Token**（即 `input_tokens` / `prompt_tokens` / `promptTokenCount`），**已包含缓存命中部分**。`LAST_CACHED_TOKENS` 是其中命中服务端缓存的部分（子集）。因此，纯新增输入 = `LAST_INPUT_TOKENS` - `LAST_CACHED_TOKENS`。
 >
-> **关于模型变量的说明**：下表 `AICODE_MODEL_*` 系列都跟着**当前渠道**取——你在供应商 → 模型里给该模型填的自定义窗口、单价与能力开关会直接生效，没填的才回退自动识别结果。
+> **关于模型变量的说明**：下表 `GURU_MODEL_*` 系列都跟着**当前渠道**取——你在供应商 → 模型里给该模型填的自定义窗口、单价与能力开关会直接生效，没填的才回退自动识别结果。
 
 | 环境变量名 | 示例值 | 说明 |
 | :--- | :--- | :--- |
-| `AICODE_MODEL` | `claude-3-7-sonnet` | 当前选中的生效模型名称 |
-| `AICODE_SESSION_ID` | `sess_98a7bc21` | 当前会话 ID |
-| `AICODE_LAST_INPUT_TOKENS` | `1420` | 最近一次单次 LLM 请求的输入 Token（API 返回的总输入，**含缓存命中**） |
-| `AICODE_LAST_OUTPUT_TOKENS` | `365` | 最近一次单次 LLM 请求生成的输出 Token |
-| `AICODE_LAST_CACHED_TOKENS` | `1024` | 最近一次请求中命中服务端缓存的部分（如 OpenAI `cached_tokens` / Anthropic `cache_read_input_tokens`）。是 `LAST_INPUT_TOKENS` 的子集，取不到时为 0 |
-| `AICODE_TOTAL_INPUT_TOKENS` | `28540` | 当前会话累计的输入 Token（API 返回的总输入，**含缓存命中**） |
-| `AICODE_TOTAL_OUTPUT_TOKENS` | `5420` | 当前会话累计生成的输出 Token |
-| `AICODE_MODEL_CONTEXT_TOKENS` | `200000` | 当前模型的上下文窗口大小（Token）。若模型元数据未获取到则为 0 |
-| `AICODE_MODEL_MAX_INPUT_TOKENS` | `200000` | 模型最大输入 Token 限制。未获取到则为 0 |
-| `AICODE_MODEL_MAX_OUTPUT_TOKENS` | `8192` | 模型最大输出 Token 限制。未获取到则为 0 |
-| `AICODE_MODEL_INPUT_COST_USD_PER_M` | `3.0` | 模型输入单价（美元 / 百万 Token）。未获取到则为 0 |
-| `AICODE_MODEL_OUTPUT_COST_USD_PER_M` | `15.0` | 模型输出单价（美元 / 百万 Token）。未获取到则为 0 |
-| `AICODE_MODEL_CACHE_READ_COST_USD_PER_M` | `0.3` | 模型缓存读取单价（美元 / 百万 Token）。未获取到则为 0 |
-| `AICODE_MODEL_SUPPORTS_TOOLS` | `true` | 模型是否支持工具调用（`true` / `false`） |
-| `AICODE_MODEL_SUPPORTS_VISION` | `false` | 模型是否支持图片输入（`true` / `false`） |
-| `AICODE_MODEL_SUPPORTS_REASONING` | `true` | 模型是否支持思考/推理模式（`true` / `false`） |
-| `AICODE_MESSAGE_COUNT` | `12` | 当前会话的消息总数（含用户和助手消息） |
+| `GURU_MODEL` | `claude-3-7-sonnet` | 当前选中的生效模型名称 |
+| `GURU_SESSION_ID` | `sess_98a7bc21` | 当前会话 ID |
+| `GURU_LAST_INPUT_TOKENS` | `1420` | 最近一次单次 LLM 请求的输入 Token（API 返回的总输入，**含缓存命中**） |
+| `GURU_LAST_OUTPUT_TOKENS` | `365` | 最近一次单次 LLM 请求生成的输出 Token |
+| `GURU_LAST_CACHED_TOKENS` | `1024` | 最近一次请求中命中服务端缓存的部分（如 OpenAI `cached_tokens` / Anthropic `cache_read_input_tokens`）。是 `LAST_INPUT_TOKENS` 的子集，取不到时为 0 |
+| `GURU_TOTAL_INPUT_TOKENS` | `28540` | 当前会话累计的输入 Token（API 返回的总输入，**含缓存命中**） |
+| `GURU_TOTAL_OUTPUT_TOKENS` | `5420` | 当前会话累计生成的输出 Token |
+| `GURU_MODEL_CONTEXT_TOKENS` | `200000` | 当前模型的上下文窗口大小（Token）。若模型元数据未获取到则为 0 |
+| `GURU_MODEL_MAX_INPUT_TOKENS` | `200000` | 模型最大输入 Token 限制。未获取到则为 0 |
+| `GURU_MODEL_MAX_OUTPUT_TOKENS` | `8192` | 模型最大输出 Token 限制。未获取到则为 0 |
+| `GURU_MODEL_INPUT_COST_USD_PER_M` | `3.0` | 模型输入单价（美元 / 百万 Token）。未获取到则为 0 |
+| `GURU_MODEL_OUTPUT_COST_USD_PER_M` | `15.0` | 模型输出单价（美元 / 百万 Token）。未获取到则为 0 |
+| `GURU_MODEL_CACHE_READ_COST_USD_PER_M` | `0.3` | 模型缓存读取单价（美元 / 百万 Token）。未获取到则为 0 |
+| `GURU_MODEL_SUPPORTS_TOOLS` | `true` | 模型是否支持工具调用（`true` / `false`） |
+| `GURU_MODEL_SUPPORTS_VISION` | `false` | 模型是否支持图片输入（`true` / `false`） |
+| `GURU_MODEL_SUPPORTS_REASONING` | `true` | 模型是否支持思考/推理模式（`true` / `false`） |
+| `GURU_MESSAGE_COUNT` | `12` | 当前会话的消息总数（含用户和助手消息） |
 
 ### 会话状态变量
 
 | 环境变量名 | 示例值 | 说明 |
 | :--- | :--- | :--- |
-| `AICODE_AGENT_STATE` | `streaming` | 当前 Agent 工作状态：`idle`（空闲）/ `loading`（加载中）/ `streaming`（流式输出中）/ `result`（完成）/ `error`（出错） |
-| `AICODE_SESSION_MODE` | `build` | 当前会话模式：`build`（构建）/ `plan`（计划）/ `auto`（自动） |
-| `AICODE_REASONING_EFFORT` | `high` | 当前思考强度档位：`none` / `minimal` / `low` / `medium` / `high` / `xhigh` / `max` |
-| `AICODE_REFRESH_REASON` | `llm` | 本次面板刷新的触发原因：`session`（进入/切换会话，数据就绪后触发）、`llm`（LLM 请求返回后自动刷新）、`done`（AI 一轮任务完成后自动刷新，此时 `AICODE_AGENT_STATE` 为最终状态）、`manual`（手动点击刷新/错误重试）、`button`（卡片内刷新按钮触发） |
+| `GURU_AGENT_STATE` | `streaming` | 当前 Agent 工作状态：`idle`（空闲）/ `loading`（加载中）/ `streaming`（流式输出中）/ `result`（完成）/ `error`（出错） |
+| `GURU_SESSION_MODE` | `build` | 当前会话模式：`build`（构建）/ `plan`（计划）/ `auto`（自动） |
+| `GURU_REASONING_EFFORT` | `high` | 当前思考强度档位：`none` / `minimal` / `low` / `medium` / `high` / `xhigh` / `max` |
+| `GURU_REFRESH_REASON` | `llm` | 本次面板刷新的触发原因：`session`（进入/切换会话，数据就绪后触发）、`llm`（LLM 请求返回后自动刷新）、`done`（AI 一轮任务完成后自动刷新，此时 `GURU_AGENT_STATE` 为最终状态）、`manual`（手动点击刷新/错误重试）、`button`（卡片内刷新按钮触发） |
 
 ### 工作区变量
 
@@ -79,10 +79,10 @@ AI 助手与开发者可以依据此规范，编写面板脚本（Python / Node 
 
 | 环境变量名 | 示例值 | 说明 |
 | :--- | :--- | :--- |
-| `AICODE_PROVIDER_NAME` | `OpenAI API` | 供应商名称 |
-| `AICODE_PROVIDER_TYPE` | `OPENAI` | 上游格式（OPENAI / ANTHROPIC / GEMINI） |
-| `AICODE_PROVIDER_API_KEY` | `sk-...` | 供应商 API Key |
-| `AICODE_PROVIDER_BASE_URL` | `https://api.openai.com/` | 供应商 Base URL |
+| `GURU_PROVIDER_NAME` | `OpenAI API` | 供应商名称 |
+| `GURU_PROVIDER_TYPE` | `OPENAI` | 上游格式（OPENAI / ANTHROPIC / GEMINI） |
+| `GURU_PROVIDER_API_KEY` | `sk-...` | 供应商 API Key |
+| `GURU_PROVIDER_BASE_URL` | `https://api.openai.com/` | 当前 Key 使用的 Base URL（该 Key 配了自定义地址时用它，否则用供应商 Base URL） |
 
 #### 自定义脚本参数（面板 / DIY 脚本）
 
@@ -100,7 +100,7 @@ AI 助手与开发者可以依据此规范，编写面板脚本（Python / Node 
 | {{PROVIDER_ID}} | 供应商记录 ID |
 | {{PROVIDER_NAME}} | 供应商名称 |
 | {{PROVIDER_TYPE}} | 上游格式（OPENAI / ANTHROPIC / GEMINI） |
-| {{BASE_URL}} | 供应商 Base URL |
+| {{BASE_URL}} | 当前 Key 使用的 Base URL（含该 Key 的自定义地址覆盖） |
 | {{DEFAULT_MODEL}} | 默认模型 |
 | {{SELECTED_MODEL}} | 当前选中的模型 |
 | {{MODEL}} | 实际生效的模型（优先选中，其次默认） |
@@ -606,7 +606,7 @@ Adaptive Cards 使用语义色彩系统，确保在亮色模式（Light Mode）�
 ## 8. AI 助手编写面板脚本的设计建议
 
 1. **利用传入的环境变量**：
-   通过 `os.environ.get("AICODE_LAST_INPUT_TOKENS", "0")` 等读取每次单次请求的真实 Token 数据，无缝拼装出当次请求的 Token 消耗、缓存命中率或费用估算。
+   通过 `os.environ.get("GURU_LAST_INPUT_TOKENS", "0")` 等读取每次单次请求的真实 Token 数据，无缝拼装出当次请求的 Token 消耗、缓存命中率或费用估算。
 2. **信息分层**：
    - `compact` 保持单行精炼（如 `[🟢 正常] 5h: 80% | $18.42`）；
    - `body` 提供多列展开、账单细则与操作按钮。

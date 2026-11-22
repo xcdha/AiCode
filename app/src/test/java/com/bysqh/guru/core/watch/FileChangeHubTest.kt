@@ -1,6 +1,8 @@
 package com.bysqh.guru.core.watch
 
 import android.os.FileObserver
+import com.bysqh.guru.feature.agent.domain.container.BuiltinLocalProotBackend
+import com.bysqh.guru.feature.agent.domain.container.BuiltinRemoteSshBackend
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
 import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
@@ -86,6 +88,10 @@ class FileChangeHubTest {
         observerDispatcher: CoroutineDispatcher = mainDispatcher
     ): FileChangeHub {
         every { executionModeHolder.currentMode() } returns mode
+        every { executionModeHolder.capabilities() } returns when (mode) {
+            ExecutionMode.LOCAL_PROOT -> BuiltinLocalProotBackend.CAPABILITIES
+            ExecutionMode.REMOTE_SSH -> BuiltinRemoteSshBackend.CAPABILITIES
+        }
         every { workspaceRepository.currentPath() } returns workspace
         return FileChangeHub(
             workspaceRepository,

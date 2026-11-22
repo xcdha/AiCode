@@ -2,6 +2,7 @@ package com.bysqh.guru.feature.settings.presentation.component
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +32,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -57,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -92,46 +96,9 @@ import com.bysqh.guru.feature.settings.presentation.SkillImportState
 import com.bysqh.guru.feature.settings.presentation.SkillUiEntry
 import com.bysqh.guru.feature.agent.domain.skill.SkillImportError
 import com.bysqh.guru.feature.agent.domain.skill.SkillScope
+import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionScope
 import com.bysqh.guru.feature.settings.presentation.SubAgentUiEntry
-import compose.icons.FeatherIcons
-import compose.icons.feathericons.Smile
-import compose.icons.feathericons.User
-import compose.icons.feathericons.Database
-import compose.icons.feathericons.ArrowLeft
-import compose.icons.feathericons.BarChart2
-import compose.icons.feathericons.Book
-import compose.icons.feathericons.BookOpen
-import compose.icons.feathericons.Box
-import compose.icons.feathericons.Cloud
-import compose.icons.feathericons.Cpu
-import compose.icons.feathericons.Download
-import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Globe
-import compose.icons.feathericons.HardDrive
-import compose.icons.feathericons.Image
-import compose.icons.feathericons.Info
-import compose.icons.feathericons.Lock
-import compose.icons.feathericons.Moon
-import compose.icons.feathericons.MessageSquare
-import compose.icons.feathericons.Edit2
-import compose.icons.feathericons.PieChart
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.RefreshCw
-import compose.icons.feathericons.RotateCcw
-import compose.icons.feathericons.Save
-import compose.icons.feathericons.Server
-import compose.icons.feathericons.Settings
-import compose.icons.feathericons.Shield
-import compose.icons.feathericons.Sliders
-import compose.icons.feathericons.Terminal
-import compose.icons.feathericons.Trash2
-import compose.icons.feathericons.Users
-import compose.icons.feathericons.Zap
-import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
-import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
-import com.bysqh.guru.feature.settings.data.local.ProviderPreset
-import com.bysqh.guru.feature.terminal.data.repository.TerminalSettings
-import com.bysqh.guru.feature.terminal.presentation.component.TerminalSettingsSheet
+import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.feature.plugin.domain.PluginPage
 import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
 import com.bysqh.guru.feature.plugin.domain.PluginUiSlots
@@ -153,12 +120,52 @@ import com.bysqh.guru.feature.plugin.presentation.PluginsSection
 import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
 import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
 import com.bysqh.guru.feature.plugin.presentation.displayName
-import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.delay
-import com.bysqh.guru.core.util.FileLogger
+import compose.icons.FeatherIcons
+import compose.icons.feathericons.ArrowLeft
+import compose.icons.feathericons.BarChart2
+import compose.icons.feathericons.Book
+import compose.icons.feathericons.BookOpen
+import compose.icons.feathericons.Box
+import compose.icons.feathericons.Cloud
+import compose.icons.feathericons.Cpu
+import compose.icons.feathericons.Database
+import compose.icons.feathericons.Download
+import compose.icons.feathericons.FileText
+import compose.icons.feathericons.Globe
+import compose.icons.feathericons.HardDrive
+import compose.icons.feathericons.Heart
+import compose.icons.feathericons.Image
+import compose.icons.feathericons.Info
+import compose.icons.feathericons.Lock
+import compose.icons.feathericons.Moon
+import compose.icons.feathericons.MessageSquare
+import compose.icons.feathericons.MoreVertical
+import compose.icons.feathericons.Package
+import compose.icons.feathericons.Edit2
+import compose.icons.feathericons.PieChart
+import compose.icons.feathericons.Plus
+import compose.icons.feathericons.RefreshCw
+import compose.icons.feathericons.RotateCcw
+import compose.icons.feathericons.Save
+import compose.icons.feathericons.Server
+import compose.icons.feathericons.Settings
+import compose.icons.feathericons.Share2
+import compose.icons.feathericons.Shield
+import compose.icons.feathericons.Sliders
+import compose.icons.feathericons.Terminal
+import compose.icons.feathericons.Trash2
+import compose.icons.feathericons.Users
+import compose.icons.feathericons.User
+import compose.icons.feathericons.Zap
+import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
+import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
+import com.bysqh.guru.feature.settings.data.local.ProviderPreset
+import com.bysqh.guru.feature.terminal.data.repository.TerminalSettings
+import com.bysqh.guru.feature.terminal.presentation.component.TerminalSettingsSheet
 
 /** 使用手册在线文档站地址。 */
-private const val USER_GUIDE_DOCS_URL = "https://aicode.murk.top"
+private const val USER_GUIDE_DOCS_URL = "https://guru.murk.top"
 
 /** 大屏设置页左侧常驻菜单宽度。 */
 private val SettingsMenuWidth = 320.dp
@@ -171,13 +178,10 @@ private val SettingsMenuWidth = 320.dp
  */
 private val SettingsTwoPaneMinWidth = 840.dp
 
-/** 设置页内部二级菜单分区。Menu 为首页菜单，其余为各自的二级页。 */
-private val PluginPackageMimeTypes = arrayOf(
-    "application/zip",
-    "application/x-zip-compressed",
-    "application/octet-stream"
-)
+/** 插件包选择器接受的类型：部分文件管理器会把 .zip 报成 octet-stream。 */
+private val PluginPackageMimeTypes = arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
 
+/** 设置页内部二级菜单分区。Menu 为首页菜单，其余为各自的二级页。 */
 internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     Menu(R.string.settings_title),
     General(R.string.settings_general),
@@ -186,18 +190,17 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     DefaultModels(R.string.settings_default_models),
     Mcp(R.string.settings_mcp),
     Skills(R.string.settings_skills),
-    // [二开] 记忆与角色（移植自 Muse）
+    // [二开] 记忆与角色
     Memory(R.string.settings_memory),
+    Roles(R.string.settings_roles),
     Prompts(R.string.prompts_title),
     PromptDetail(R.string.prompts_title),
     PromptEditor(R.string.prompts_title),
-    Roles(R.string.settings_roles),
     SkillDetail(R.string.settings_skills),
     SkillEditor(R.string.settings_skills),
     SubAgents(R.string.settings_subagents),
     SubAgentDetail(R.string.settings_subagents),
     SubAgentEditor(R.string.settings_subagents),
-    // 插件：列表、详情、商店、开发、插件页面
     Plugins(R.string.settings_plugins),
     PluginDetail(R.string.settings_plugins),
     PluginStoreDetail(R.string.settings_plugins),
@@ -213,9 +216,12 @@ internal enum class SettingsSection(@param:StringRes val titleRes: Int) {
     // [二开] 外观与主题整页
     Appearance(R.string.appearance_title),
     RemoteServers(R.string.settings_remote_servers),
+    SessionManagement(R.string.settings_session_management),
+    SessionDetail(R.string.settings_session_detail),
     Storage(R.string.settings_storage),
     TokenStats(R.string.settings_token_stats_title),
     Backup(R.string.settings_backup),
+    Sponsor(R.string.settings_sponsor),
     About(R.string.settings_about)
 }
 
@@ -236,6 +242,10 @@ private fun SettingsSection.depth(): Int = when (this) {
     SettingsSection.PromptDetail,
     SettingsSection.SkillDetail,
     SettingsSection.SubAgentDetail,
+    SettingsSection.SessionDetail,
+    SettingsSection.PluginDetail,
+    SettingsSection.PluginStoreDetail,
+    SettingsSection.PluginDevDetail,
     SettingsSection.ContainerDownloads,
     SettingsSection.Log -> 2
     else -> 1
@@ -247,12 +257,16 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
     onStopAllAndCloseTerminal: () -> Unit = {},
+    onOpenSessionInWorkspace: (com.bysqh.guru.feature.workspace.domain.model.Workspace, String) -> Unit = { _, _ -> },
+    onFollowMovedSession: (com.bysqh.guru.feature.workspace.domain.model.Workspace, String) -> Unit = { _, _ -> },
+    onSessionsMutated: () -> Unit = {},
     onRerunOnboarding: () -> Unit = {},
+    onShowStarPrompt: () -> Unit = {},
+    /** [二开] 首次进入时直接落到指定分区名（侧边栏「角色」入口用，避免暴露 internal 枚举）。 */
+    initialSectionName: String? = null,
     onboardingStep: OnboardingStep? = null,
     onOnboardingModelAdded: (() -> Unit)? = null,
-    onOnboardingDismissFetchDialog: (() -> Unit)? = null,
-    /** [二开] 从外部（如聊天侧边栏）直接跳到某个二级页；null 回菜单首页。 */
-    initialSectionKey: String? = null
+    onOnboardingDismissFetchDialog: (() -> Unit)? = null
 ) {
     val providers by viewModel.providers.collectAsStateWithLifecycle()
     val logLevel by viewModel.logLevel.collectAsStateWithLifecycle()
@@ -295,8 +309,6 @@ fun SettingsScreen(
     val dynamicColorEnabled by viewModel.dynamicColorEnabled.collectAsStateWithLifecycle()
     val backgroundImagePath by viewModel.backgroundImagePath.collectAsStateWithLifecycle()
     val backgroundAlpha by viewModel.backgroundAlpha.collectAsStateWithLifecycle()
-    // [二开] 背景类型（静态图 / GIF / MP4）与亮度
-    val backgroundKind by viewModel.backgroundKind.collectAsStateWithLifecycle()
     val languageTag by viewModel.languageTag.collectAsStateWithLifecycle()
     val visionProviderId by viewModel.visionProviderId.collectAsStateWithLifecycle()
     val visionModel by viewModel.visionModel.collectAsStateWithLifecycle()
@@ -310,6 +322,8 @@ fun SettingsScreen(
     val modelMetadata by viewModel.modelMetadata.collectAsStateWithLifecycle()
     val containerProfiles by viewModel.profiles.collectAsStateWithLifecycle()
     val activeProfileId by viewModel.activeProfileId.collectAsStateWithLifecycle()
+    val pluginExecutionBackends by viewModel.pluginExecutionBackends.collectAsStateWithLifecycle()
+    val activeBackendId by viewModel.activeBackendId.collectAsStateWithLifecycle()
     val defaultContainerId by viewModel.defaultContainerId.collectAsStateWithLifecycle()
     val containerOsMap by viewModel.containerOsMap.collectAsStateWithLifecycle()
     val remoteConnections by viewModel.remoteConnections.collectAsStateWithLifecycle()
@@ -343,16 +357,12 @@ fun SettingsScreen(
     }
 
 
-    // [二开] 侧边栏快捷入口：直接落到角色页，返回时回设置菜单。
-    val shortcutEntrySection = remember(initialSectionKey) {
-        when (initialSectionKey) {
-            "roles" -> SettingsSection.Roles
-            "memory" -> SettingsSection.Memory
-            else -> null
-        }
-    }
-    var section by remember(initialSectionKey) {
-        mutableStateOf(shortcutEntrySection ?: SettingsSection.Menu)
+    var section by remember {
+        mutableStateOf(
+            initialSectionName?.let { name ->
+                SettingsSection.entries.firstOrNull { it.name == name }
+            } ?: SettingsSection.Menu
+        )
     }
     var logReturnSection by remember { mutableStateOf(SettingsSection.Menu) }
     // 各列表页的多选状态：顶栏「多选」开关在本页 Scaffold 里，所以状态必须提到这里统一持有。
@@ -463,9 +473,6 @@ fun SettingsScreen(
         ?: selectedDevProject
     var showPluginSettingsSheet by remember { mutableStateOf(false) }
     var showPluginUninstallConfirm by remember { mutableStateOf(false) }
-    val pluginZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) pluginsViewModel.import(uri)
-    }
     val selectedPlugin = plugins.firstOrNull { it.id == selectedPluginId }
     val pluginLanguageTag = currentLanguageTag()
     // 直接从插件快照算入口，不走 PluginManager.ensureLoaded：组合期间不能同步读盘。
@@ -486,7 +493,10 @@ fun SettingsScreen(
                 plugin.content.uiEntries.filter { it.slot == PluginUiSlots.BACKUP_DATA }
             }
     }
-    var activePluginPage by remember { mutableStateOf<com.bysqh.guru.feature.plugin.domain.PluginPage?>(null) }
+    var activePluginPage by remember { mutableStateOf<PluginPage?>(null) }
+    val pluginZipLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) pluginsViewModel.import(uri)
+    }
     // 进入设置后预热最近打开的插件页：提前创建 WebView，打开入口时直接 attach。
     // 设置页首帧之后再执行，避免 Chromium 拉起阻塞进入动画。
     // 不在这里加载页面：此时 WebView 还没挂到窗口，0×0 视口会让页面按错误尺寸完成首次布局
@@ -558,6 +568,11 @@ fun SettingsScreen(
     var showBackgroundSheet by remember { mutableStateOf(false) }
     var showLanguageSheet by remember { mutableStateOf(false) }
     var showResetTokenStats by remember { mutableStateOf(false) }
+    var showLogLevelSheet by remember { mutableStateOf(false) }
+    var showLogShareMenu by remember { mutableStateOf(false) }
+    var showLogMoreMenu by remember { mutableStateOf(false) }
+    var showLogPathDialog by remember { mutableStateOf(false) }
+    var clearLogsConfirmCurrentOnly by remember { mutableStateOf<Boolean?>(null) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
     val expanded = maxWidth >= SettingsTwoPaneMinWidth
@@ -578,21 +593,10 @@ fun SettingsScreen(
         SettingsSection.PluginDetail -> SettingsSection.Plugins
         SettingsSection.PluginStoreDetail -> SettingsSection.Plugins
         SettingsSection.PluginDevDetail -> SettingsSection.Plugins
+        SettingsSection.SessionDetail -> SettingsSection.SessionManagement
         SettingsSection.PluginPage -> if (expanded) null else SettingsSection.Menu
         SettingsSection.ContainerDownloads -> SettingsSection.Container
         else -> if (expanded) null else SettingsSection.Menu
-    }
-
-    // 商店 / 开发中详情依赖内存里的选中项；没有选中项时退回插件列表。
-    LaunchedEffect(selectedStoreItem, section) {
-        if (section == SettingsSection.PluginStoreDetail && selectedStoreItem == null) {
-            section = SettingsSection.Plugins
-        }
-    }
-    LaunchedEffect(selectedDevProject, section) {
-        if (section == SettingsSection.PluginDevDetail && selectedDevProject == null) {
-            section = SettingsSection.Plugins
-        }
     }
 
     // 有上一层时系统返回键先回上一层；没有则交还给上层导航。
@@ -621,6 +625,40 @@ fun SettingsScreen(
         subAgents.firstOrNull { it.name.equals(target, ignoreCase = true) }?.let { fresh ->
             selectedSubAgent = fresh
             pendingSubAgentName = null
+        }
+    }
+
+    // 在详情页卸载插件（或记录消失）后回到列表，别停在一个空页面。
+    LaunchedEffect(selectedPlugin, section) {
+        if (section == SettingsSection.PluginDetail && selectedPlugin == null) section = SettingsSection.Plugins
+    }
+
+    // 商店 / 开发中详情依赖内存里的选中项；没有选中项时退回插件列表。
+    LaunchedEffect(selectedStoreItem, section) {
+        if (section == SettingsSection.PluginStoreDetail && selectedStoreItem == null) {
+            section = SettingsSection.Plugins
+        }
+    }
+    LaunchedEffect(selectedDevProject, section) {
+        if (section == SettingsSection.PluginDevDetail && selectedDevProject == null) {
+            section = SettingsSection.Plugins
+        }
+    }
+
+    // 离开插件列表 / 详情时收起对应弹层，避免返回时意外重新弹出。
+    LaunchedEffect(section) {
+        if (section != SettingsSection.Plugins) showPluginSettingsSheet = false
+        if (section != SettingsSection.PluginDetail) showPluginUninstallConfirm = false
+    }
+
+    // 插件停用 / 卸载后入口消失，当前停留的插件页要退回菜单。
+    LaunchedEffect(pluginPages, section) {
+        if (section == SettingsSection.PluginPage) {
+            val active = activePluginPage
+            if (active == null || pluginPages.none { it.key == active.key && it.cacheKey == active.cacheKey }) {
+                activePluginPage = null
+                section = SettingsSection.Menu
+            }
         }
     }
 
@@ -657,7 +695,6 @@ fun SettingsScreen(
             currentLanguageDisplayName = currentLanguageDisplayName,
             backgroundImagePath = backgroundImagePath,
             backgroundAlpha = backgroundAlpha,
-            backgroundKind = backgroundKind,
             onOpenThemeSheet = { showThemeSheet = true },
             onOpenTerminalSettingsSheet = { showTerminalSettingsSheet = true },
             onOpenBackgroundSheet = { showBackgroundSheet = true },
@@ -669,7 +706,6 @@ fun SettingsScreen(
             },
             onRerunOnboarding = onRerunOnboarding,
             pluginPages = pluginPages,
-            pluginLanguageTag = pluginLanguageTag,
             onOpenPluginPage = { page ->
                 activePluginPage = page
                 section = SettingsSection.PluginPage
@@ -733,7 +769,10 @@ fun SettingsScreen(
                 viewModel = viewModel,
                 initialProvider = editingProvider,
                 presetPrefill = providerPresetPrefill,
-                initialTab = if (onboardingStep == OnboardingStep.PROVIDER_FETCH_MODELS || onboardingStep == OnboardingStep.SIMULATE_FETCH_DIALOG) 1 else 0,
+                initialTab = if (
+                    onboardingStep == OnboardingStep.PROVIDER_FETCH_MODELS ||
+                    onboardingStep == OnboardingStep.SIMULATE_FETCH_DIALOG
+                ) 1 else 0,
                 onboardingStep = onboardingStep,
                 onOnboardingModelAdded = onOnboardingModelAdded,
                 onOnboardingDismissFetchDialog = onOnboardingDismissFetchDialog,
@@ -816,7 +855,7 @@ fun SettingsScreen(
                     // 不渲染大屏「从左侧选择」占位，避免返回瞬间闪一下空态。
                     if (expanded) SettingsDetailPlaceholder()
                 } else {
-                    com.bysqh.guru.feature.plugin.presentation.PluginPageHost(
+                    PluginPageHost(
                         page = page,
                         languageTag = pluginLanguageTag,
                         pluginsViewModel = pluginsViewModel,
@@ -849,7 +888,13 @@ fun SettingsScreen(
             val stateKey: String = when (current) {
                 SettingsSection.SkillDetail -> "SkillDetail:${selectedSkill?.name.orEmpty()}"
                 SettingsSection.SubAgentDetail -> "SubAgentDetail:${selectedSubAgent?.name.orEmpty()}"
+                SettingsSection.PluginDetail -> "PluginDetail:${selectedPluginId.orEmpty()}"
+                SettingsSection.PluginStoreDetail ->
+                    "PluginStoreDetail:${selectedStoreItem?.source?.id.orEmpty()}:${selectedStoreItem?.plugin?.id.orEmpty()}"
+                SettingsSection.PluginDevDetail -> "PluginDevDetail:${selectedDevProject?.dirName.orEmpty()}"
+                SettingsSection.PluginPage -> "PluginPage:${activePluginPage?.key.orEmpty()}"
                 SettingsSection.PromptDetail -> "PromptDetail:${selectedPrompt?.number ?: 0}"
+                SettingsSection.SessionDetail -> "SessionDetail"
                 else -> current.name
             }
             sectionStateHolder.SaveableStateProvider(stateKey) {
@@ -857,6 +902,15 @@ fun SettingsScreen(
             // 它的构造即触发一次全盘统计，不能提到 SettingsScreen 顶层（那样每次进设置页都会扫盘）。
             val storageViewModel: com.bysqh.guru.feature.settings.presentation.StorageViewModel? =
                 if (current == SettingsSection.Storage) androidx.hilt.navigation.compose.hiltViewModel() else null
+            val sponsorViewModel: com.bysqh.guru.feature.settings.presentation.SponsorViewModel? =
+                if (current == SettingsSection.Sponsor) androidx.hilt.navigation.compose.hiltViewModel() else null
+            val sponsorState = sponsorViewModel?.uiState?.collectAsStateWithLifecycle()?.value
+            val sessionManagementViewModel: com.bysqh.guru.feature.settings.presentation.SessionManagementViewModel? =
+                if (current == SettingsSection.SessionManagement || current == SettingsSection.SessionDetail) {
+                    androidx.hilt.navigation.compose.hiltViewModel()
+                } else null
+            val sessionDetailState = sessionManagementViewModel?.detailState?.collectAsStateWithLifecycle()?.value
+            val sessionBuckets = sessionManagementViewModel?.allBuckets?.collectAsStateWithLifecycle()?.value.orEmpty()
             Scaffold(
         containerColor = settingsPageBackground(),
         topBar = {
@@ -867,6 +921,18 @@ fun SettingsScreen(
                             selectedSkill?.name ?: stringResource(current.titleRes)
                         } else if (current == SettingsSection.SubAgentDetail) {
                             selectedSubAgent?.name ?: stringResource(current.titleRes)
+                        } else if (current == SettingsSection.PluginDetail) {
+                            selectedPlugin?.displayName(pluginLanguageTag) ?: stringResource(current.titleRes)
+                        } else if (current == SettingsSection.PluginStoreDetail) {
+                            selectedStoreItem?.plugin?.name?.resolve(pluginLanguageTag)
+                                ?: stringResource(current.titleRes)
+                        } else if (current == SettingsSection.PluginDevDetail) {
+                            currentDevProject?.let { it.name?.resolve(pluginLanguageTag) ?: it.dirName }
+                                ?: stringResource(current.titleRes)
+                        } else if (current == SettingsSection.PluginPage) {
+                            activePluginPage?.title?.resolve(pluginLanguageTag) ?: stringResource(current.titleRes)
+                        } else if (current == SettingsSection.SessionDetail) {
+                            sessionDetailState?.session?.title ?: stringResource(current.titleRes)
                         } else if (expanded && current == SettingsSection.Menu) {
                             // 大屏左栏顶部已经写着「设置」，右栏空态不再重复
                             ""
@@ -981,17 +1047,19 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.SkillDetail -> selectedSkill?.let { entry ->
-                            IconButton(onClick = {
-                                editingSkill = entry
-                                skillEditorReturn = SettingsSection.SkillDetail
-                                section = SettingsSection.SkillEditor
-                            }) {
-                                Icon(
-                                    FeatherIcons.Edit2,
-                                    contentDescription = stringResource(R.string.skills_edit),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            if (entry.scope != SkillScope.PLUGIN) {
+                                IconButton(onClick = {
+                                    editingSkill = entry
+                                    skillEditorReturn = SettingsSection.SkillDetail
+                                    section = SettingsSection.SkillEditor
+                                }) {
+                                    Icon(
+                                        FeatherIcons.Edit2,
+                                        contentDescription = stringResource(R.string.skills_edit),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                         SettingsSection.SubAgents -> {
@@ -1012,17 +1080,19 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.SubAgentDetail -> selectedSubAgent?.let { entry ->
-                            IconButton(onClick = {
-                                editingSubAgent = entry
-                                subAgentEditorReturn = SettingsSection.SubAgentDetail
-                                section = SettingsSection.SubAgentEditor
-                            }) {
-                                Icon(
-                                    FeatherIcons.Edit2,
-                                    contentDescription = stringResource(R.string.subagent_edit),
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                            if (entry.scope != AgentDefinitionScope.PLUGIN) {
+                                IconButton(onClick = {
+                                    editingSubAgent = entry
+                                    subAgentEditorReturn = SettingsSection.SubAgentDetail
+                                    section = SettingsSection.SubAgentEditor
+                                }) {
+                                    Icon(
+                                        FeatherIcons.Edit2,
+                                        contentDescription = stringResource(R.string.subagent_edit),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                         SettingsSection.Plugins -> {
@@ -1054,8 +1124,123 @@ fun SettingsScreen(
                             }
                         }
                         SettingsSection.Log -> {
+                            Box {
+                                IconButton(onClick = { showLogShareMenu = true }) {
+                                    Icon(
+                                        FeatherIcons.Share2,
+                                        contentDescription = stringResource(R.string.log_share),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showLogShareMenu,
+                                    onDismissRequest = { showLogShareMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.log_share_current)) },
+                                        leadingIcon = {
+                                            Icon(FeatherIcons.FileText, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        },
+                                        enabled = logViewerState.selectedFileName != null,
+                                        onClick = {
+                                            showLogShareMenu = false
+                                            viewModel.prepareShareCurrentLog(
+                                                onReady = { intent ->
+                                                    context.startActivity(
+                                                        Intent.createChooser(intent, context.getString(R.string.log_share_chooser))
+                                                    )
+                                                },
+                                                onError = { msg ->
+                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                }
+                                            )
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.log_share_all_zip)) },
+                                        leadingIcon = {
+                                            Icon(FeatherIcons.Package, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        },
+                                        onClick = {
+                                            showLogShareMenu = false
+                                            viewModel.prepareShareAllLogs(
+                                                onReady = { intent ->
+                                                    context.startActivity(
+                                                        Intent.createChooser(intent, context.getString(R.string.log_share_chooser))
+                                                    )
+                                                },
+                                                onError = { msg ->
+                                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                }
+                                            )
+                                        }
+                                    )
+                                }
+                            }
                             IconButton(onClick = { viewModel.refreshLogs() }) {
-                                Icon(FeatherIcons.RefreshCw, contentDescription = stringResource(R.string.settings_refresh_logs))
+                                Icon(
+                                    FeatherIcons.RefreshCw,
+                                    contentDescription = stringResource(R.string.settings_refresh_logs),
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Box {
+                                IconButton(onClick = { showLogMoreMenu = true }) {
+                                    Icon(
+                                        FeatherIcons.MoreVertical,
+                                        contentDescription = stringResource(R.string.log_more_actions),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = showLogMoreMenu,
+                                    onDismissRequest = { showLogMoreMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.log_path_info)) },
+                                        leadingIcon = {
+                                            Icon(FeatherIcons.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        },
+                                        onClick = {
+                                            showLogMoreMenu = false
+                                            showLogPathDialog = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.log_clear_current)) },
+                                        leadingIcon = {
+                                            Icon(FeatherIcons.Trash2, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        },
+                                        enabled = logViewerState.files.isNotEmpty(),
+                                        onClick = {
+                                            showLogMoreMenu = false
+                                            clearLogsConfirmCurrentOnly = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(R.string.log_clear_all),
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                FeatherIcons.Trash2,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        },
+                                        onClick = {
+                                            showLogMoreMenu = false
+                                            clearLogsConfirmCurrentOnly = false
+                                        }
+                                    )
+                                }
                             }
                         }
                         SettingsSection.TokenStats -> {
@@ -1133,6 +1318,29 @@ fun SettingsScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
+                        }
+                        SettingsSection.Sponsor -> {
+                            IconButton(
+                                onClick = { sponsorViewModel?.refresh() },
+                                enabled = sponsorState?.isRefreshing != true
+                            ) {
+                                if (sponsorState?.isRefreshing == true) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(
+                                        FeatherIcons.RefreshCw,
+                                        contentDescription = stringResource(R.string.sponsor_refresh),
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                        }
+                        SettingsSection.SessionManagement -> {
+                            SelectionToggleAction(
+                                selectionFor(SettingsSection.SessionManagement),
+                                enabled = sessionBuckets.any { it.sessions.isNotEmpty() }
+                            )
                         }
                         else -> {}
                     }
@@ -1228,6 +1436,31 @@ fun SettingsScreen(
                     onBatchSetEnabled = { targets, enabled -> viewModel.setMcpServersEnabled(targets, enabled) },
                     onBatchReconnect = { names -> viewModel.reconnectMcpServers(names) }
                 )
+                // [二开] 记忆页
+                SettingsSection.Memory -> MemorySection(
+                    viewModel = androidx.hilt.navigation.compose.hiltViewModel()
+                )
+                // [二开] 角色页
+                SettingsSection.Roles -> {
+                    val rolesViewModel: com.bysqh.guru.feature.settings.presentation.RolesViewModel =
+                        androidx.hilt.navigation.compose.hiltViewModel()
+                    val rolesState by rolesViewModel.state.collectAsStateWithLifecycle()
+                    val pendingCrop by rolesViewModel.pendingCrop.collectAsStateWithLifecycle()
+                    RolesSection(
+                        state = rolesState,
+                        pendingCrop = pendingCrop,
+                        onSelect = rolesViewModel::select,
+                        onCreate = rolesViewModel::create,
+                        onSave = rolesViewModel::save,
+                        onDelete = rolesViewModel::delete,
+                        onPickAvatar = rolesViewModel::pickAvatar,
+                        onCancelCrop = rolesViewModel::cancelCrop,
+                        onCommitCrop = rolesViewModel::commitAvatar,
+                        onRemoveAvatar = rolesViewModel::removeAvatar
+                    )
+                }
+                // [二开] 外观与主题整页
+                SettingsSection.Appearance -> AppearanceSettingsSection(viewModel = viewModel)
                 SettingsSection.Skills -> SkillsSection(
                     projectName = currentProjectName,
                     entries = skills,
@@ -1250,9 +1483,8 @@ fun SettingsScreen(
                     val promptsViewModel: com.bysqh.guru.feature.settings.presentation.PromptsViewModel =
                         androidx.hilt.navigation.compose.hiltViewModel()
                     val promptsState by promptsViewModel.state.collectAsStateWithLifecycle()
-                    // [二开] 片段开关状态
-                    val promptsDisabled by promptsViewModel.disabledNumbers.collectAsStateWithLifecycle()
                     LaunchedEffect(Unit) { promptsViewModel.refresh() }
+                    val disabledPromptNumbers by promptsViewModel.disabledNumbers.collectAsStateWithLifecycle()
                     PromptsSection(
                         state = promptsState,
                         selection = selectionFor(SettingsSection.Prompts),
@@ -1265,8 +1497,8 @@ fun SettingsScreen(
                         onReorder = promptsViewModel::reorderFragments,
                         onToggleBuiltinDisabled = promptsViewModel::setBuiltinDisabled,
                         onBatchDeleteFragments = promptsViewModel::deleteFragments,
-                        disabledNumbers = promptsDisabled,
-                        onToggleEnabled = promptsViewModel::setFragmentEnabled
+                        disabledNumbers = disabledPromptNumbers,
+                        onToggleFragmentEnabled = promptsViewModel::setFragmentEnabled
                     )
                     if (showResetPrompts) {
                         AlertDialog(
@@ -1346,6 +1578,9 @@ fun SettingsScreen(
                     showAddSheetExternal = showContainerAddSheet,
                     onDismissAddSheet = { showContainerAddSheet = false },
                     onSelect = { viewModel.setActiveContainerProfile(it) },
+                    pluginBackends = pluginExecutionBackends,
+                    activeBackendId = activeBackendId,
+                    onSelectPluginBackend = { viewModel.setActiveExecutionBackend(it) },
                     onSetDefaultContainer = { viewModel.setDefaultContainerId(it) },
                     onSaveCustom = { viewModel.saveCustomContainerProfile(it) },
                     onEditCustom = { viewModel.editCustomContainerProfile(it) },
@@ -1392,10 +1627,16 @@ fun SettingsScreen(
                 )
                 SettingsSection.Log -> LogSection(
                     current = logLevel,
-                    onSelect = { viewModel.setLogLevel(it) },
+                    onOpenLevelSheet = { showLogLevelSheet = true },
                     state = logViewerState,
+                    onSelectSource = { viewModel.selectLogSource(it) },
                     onSelectFile = { viewModel.selectLogFile(it) },
-                    onClearFilter = { viewModel.refreshLogs(filterServerName = null) },
+                    onDeleteFile = { viewModel.deleteLogFile(it) },
+                    onSelectLevelFilter = { viewModel.setLogLevelFilter(it) },
+                    onSelectTagFilter = { viewModel.setLogTagFilter(it) },
+                    onClearMcpFilter = { viewModel.refreshLogs(filterServerName = null) },
+                    onLoadEarlier = { viewModel.loadEarlierLogs() },
+                    onLoadAiDetail = { viewModel.loadAiBlockDetail(it) },
                     onRefresh = { viewModel.refreshLogs(silent = true) }
                 )
                 SettingsSection.Permissions -> PermissionsSection(
@@ -1431,31 +1672,6 @@ fun SettingsScreen(
                     approvalNotificationEnabled = approvalNotificationEnabled,
                     onToggleApprovalNotification = { viewModel.setApprovalNotificationEnabled(it) }
                 )
-                // [二开] 外观与主题整页
-                SettingsSection.Appearance -> AppearanceSettingsSection(viewModel = viewModel)
-                // [二开] 记忆页（移植自 Muse）
-                SettingsSection.Memory -> MemorySection(
-                    viewModel = androidx.hilt.navigation.compose.hiltViewModel()
-                )
-                // [二开] 角色页（移植自 Muse）
-                SettingsSection.Roles -> {
-                    val rolesViewModel: com.bysqh.guru.feature.settings.presentation.RolesViewModel =
-                        androidx.hilt.navigation.compose.hiltViewModel()
-                    val rolesState by rolesViewModel.state.collectAsStateWithLifecycle()
-                    val pendingCrop by rolesViewModel.pendingCrop.collectAsStateWithLifecycle()
-                    RolesSection(
-                        state = rolesState,
-                        pendingCrop = pendingCrop,
-                        onSelect = rolesViewModel::select,
-                        onCreate = rolesViewModel::create,
-                        onSave = rolesViewModel::save,
-                        onDelete = rolesViewModel::delete,
-                        onPickAvatar = rolesViewModel::pickAvatar,
-                        onCancelCrop = rolesViewModel::cancelCrop,
-                        onCommitCrop = rolesViewModel::commitAvatar,
-                        onRemoveAvatar = rolesViewModel::removeAvatar
-                    )
-                }
                 SettingsSection.TokenStats -> TokenStatsSection(
                     state = tokenStats,
                     onSelectPeriod = { viewModel.setTokenStatsPeriod(it) },
@@ -1467,6 +1683,27 @@ fun SettingsScreen(
                     onClearFilters = { viewModel.clearTokenStatsFilters() }
                 )
                 SettingsSection.Storage -> storageViewModel?.let { StorageSectionHost(viewModel = it) }
+                SettingsSection.SessionManagement -> sessionManagementViewModel?.let { vm ->
+                    SessionManagementSectionHost(
+                        viewModel = vm,
+                        selection = selectionFor(SettingsSection.SessionManagement),
+                        onOpenDetail = { section = SettingsSection.SessionDetail },
+                        onOpenInChat = onOpenSessionInWorkspace,
+                        onFollowMovedSession = onFollowMovedSession,
+                        onStopAllAndCloseTerminal = onStopAllAndCloseTerminal,
+                        onSessionsMutated = onSessionsMutated
+                    )
+                }
+                SettingsSection.SessionDetail -> sessionManagementViewModel?.let { vm ->
+                    SessionDetailSectionHost(
+                        viewModel = vm,
+                        onOpenInChat = onOpenSessionInWorkspace,
+                        onFollowMovedSession = onFollowMovedSession,
+                        onStopAllAndCloseTerminal = onStopAllAndCloseTerminal,
+                        onSessionsMutated = onSessionsMutated,
+                        onDeletedNavigateBack = { section = SettingsSection.SessionManagement }
+                    )
+                }
                 SettingsSection.ProviderEditor -> {} // 已在上方 early return 处理
                 SettingsSection.SkillEditor -> {} // 已在上方 early return 处理
                 SettingsSection.SubAgentEditor -> {} // 已在上方 early return 处理
@@ -1549,7 +1786,7 @@ fun SettingsScreen(
                         onInstall = { pluginsViewModel.installDevProject(project) }
                     )
                 }
-                SettingsSection.PluginPage -> {} // 已在外层全屏分支处理
+                SettingsSection.Sponsor -> sponsorViewModel?.let { SponsorSectionHost(viewModel = it) }
                 SettingsSection.About -> AboutSection(
                     updateCheckEnabled = updateCheckEnabled,
                     updateCheckChannel = updateCheckChannel,
@@ -1557,8 +1794,10 @@ fun SettingsScreen(
                     onToggleUpdateCheck = { viewModel.setUpdateCheckEnabled(it) },
                     onSelectChannel = { viewModel.setUpdateCheckChannel(it) },
                     onSelectMirror = { viewModel.setUpdateCheckMirror(it) },
-                    onCheckUpdate = { viewModel.checkUpdate(manual = true) }
+                    onCheckUpdate = { viewModel.checkUpdate(manual = true) },
+                    onShowStarPrompt = onShowStarPrompt
                 )
+                SettingsSection.PluginPage -> {} // 已在外层全屏分支处理
             }
         }
     }
@@ -1706,7 +1945,6 @@ fun SettingsScreen(
     if (showBackgroundSheet) {
         BackgroundImageSheet(
             imagePath = backgroundImagePath,
-            kind = backgroundKind,
             alpha = backgroundAlpha,
             onPickImage = { uri, mime -> viewModel.setBackgroundImage(uri, mime) },
             onAlphaChange = { viewModel.setBackgroundAlpha(it) },
@@ -1745,6 +1983,67 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showResetTokenStats = false }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
+    }
+
+    if (showLogLevelSheet) {
+        LogLevelSheet(
+            current = logLevel,
+            onSelect = {
+                viewModel.setLogLevel(it)
+                showLogLevelSheet = false
+            },
+            onDismiss = { showLogLevelSheet = false }
+        )
+    }
+
+    if (showLogPathDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogPathDialog = false },
+            title = { Text(stringResource(R.string.log_path_info)) },
+            text = { Text(stringResource(R.string.log_path_info_body, context.packageName)) },
+            confirmButton = {
+                TextButton(onClick = { showLogPathDialog = false }) {
+                    Text(stringResource(R.string.common_got_it))
+                }
+            }
+        )
+    }
+
+    clearLogsConfirmCurrentOnly?.let { currentOnly ->
+        AlertDialog(
+            onDismissRequest = { clearLogsConfirmCurrentOnly = null },
+            title = {
+                Text(
+                    stringResource(
+                        if (currentOnly) R.string.log_clear_current else R.string.log_clear_all
+                    )
+                )
+            },
+            text = {
+                Text(
+                    stringResource(
+                        if (currentOnly) R.string.log_clear_current_confirm else R.string.log_clear_all_confirm
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearLogs(currentSourceOnly = currentOnly)
+                    clearLogsConfirmCurrentOnly = null
+                    Toast.makeText(context, R.string.log_cleared, Toast.LENGTH_SHORT).show()
+                }) {
+                    Text(
+                        text = stringResource(R.string.common_delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearLogsConfirmCurrentOnly = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             }
         )
     }
@@ -2019,18 +2318,17 @@ internal fun SettingsMenu(
     currentLanguageDisplayName: String,
     backgroundImagePath: String?,
     backgroundAlpha: Float,
-    backgroundKind: BackgroundSettingsRepository.Kind,
     onOpenThemeSheet: () -> Unit,
     onOpenTerminalSettingsSheet: () -> Unit,
     onOpenBackgroundSheet: () -> Unit,
     onOpenLanguageSheet: () -> Unit,
     onOpenManual: () -> Unit,
     onRerunOnboarding: () -> Unit,
-    pluginPages: List<com.bysqh.guru.feature.plugin.domain.PluginPage> = emptyList(),
-    pluginLanguageTag: String = "zh-CN",
-    onOpenPluginPage: (com.bysqh.guru.feature.plugin.domain.PluginPage) -> Unit = {},
+    pluginPages: List<PluginPage>,
+    onOpenPluginPage: (PluginPage) -> Unit,
     onOpen: (SettingsSection) -> Unit
 ) {
+    val pluginLanguageTag = currentLanguageTag()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -2048,10 +2346,10 @@ internal fun SettingsMenu(
                 onClick = { onOpen(SettingsSection.General) }
             )
             SettingsDivider()
+            // [二开] 统一入口：外观与主题整页（配色 / 界面样式 / 效果）
             SettingsRow(
                 icon = FeatherIcons.Moon,
-                title = stringResource(R.string.settings_theme_title),
-                // [二开] 升级为整页「外观与主题」
+                title = stringResource(R.string.appearance_title),
                 onClick = { onOpen(SettingsSection.Appearance) },
                 trailing = {
                     val colorLabel = if (dynamicColorEnabled && isDynamicColorSupported) {
@@ -2086,18 +2384,8 @@ internal fun SettingsMenu(
                 onClick = onOpenBackgroundSheet,
                 trailing = {
                     Text(
-                        text = if (backgroundImagePath != null) {                            // [二开] 非静态图时带上类型前缀，一眼能看出当前是动图/视频还是图片。
-                            val kindLabel = when (backgroundKind) {
-                                BackgroundSettingsRepository.Kind.GIF -> stringResource(R.string.settings_background_kind_gif)
-                                BackgroundSettingsRepository.Kind.MP4 -> stringResource(R.string.settings_background_kind_mp4)
-                                BackgroundSettingsRepository.Kind.MOTION_PHOTO -> stringResource(R.string.settings_background_kind_motion)
-                                BackgroundSettingsRepository.Kind.IMAGE -> null
-                            }
-                            val percent = "${BackgroundSettingsRepository.alphaToSlider(backgroundAlpha).toInt()}%"
-                            if (kindLabel != null) "$kindLabel · $percent" else percent
-                        } else {
-                            stringResource(R.string.settings_background_image_none)
-                        },
+                        text = if (backgroundImagePath != null) "${BackgroundSettingsRepository.alphaToSlider(backgroundAlpha).toInt()}%"
+                        else stringResource(R.string.settings_background_image_none),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.semanticColors.subtleText
                     )
@@ -2141,17 +2429,17 @@ internal fun SettingsMenu(
                 onClick = { onOpen(SettingsSection.Mcp) }
             )
             SettingsDivider()
-            SettingsRow(
-                icon = FeatherIcons.Book,
-                title = stringResource(SettingsSection.Skills.titleRes),
-                onClick = { onOpen(SettingsSection.Skills) }
-            )
-            SettingsDivider()
-            // [二开] 记忆页
+            // [二开] 记忆：全局 / 项目记忆的查看与增删
             SettingsRow(
                 icon = FeatherIcons.Database,
                 title = stringResource(SettingsSection.Memory.titleRes),
                 onClick = { onOpen(SettingsSection.Memory) }
+            )
+            SettingsDivider()
+            SettingsRow(
+                icon = FeatherIcons.Book,
+                title = stringResource(SettingsSection.Skills.titleRes),
+                onClick = { onOpen(SettingsSection.Skills) }
             )
             SettingsDivider()
             SettingsRow(
@@ -2161,7 +2449,7 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
-                icon = FeatherIcons.Box,
+                icon = FeatherIcons.Package,
                 title = stringResource(SettingsSection.Plugins.titleRes),
                 onClick = { onOpen(SettingsSection.Plugins) }
             )
@@ -2224,6 +2512,12 @@ internal fun SettingsMenu(
         SettingsGroupHeader(text = stringResource(R.string.settings_category_data))
         SettingsGroup {
             SettingsRow(
+                icon = FeatherIcons.MessageSquare,
+                title = stringResource(SettingsSection.SessionManagement.titleRes),
+                onClick = { onOpen(SettingsSection.SessionManagement) }
+            )
+            SettingsDivider()
+            SettingsRow(
                 icon = FeatherIcons.BarChart2,
                 title = stringResource(SettingsSection.TokenStats.titleRes),
                 onClick = { onOpen(SettingsSection.TokenStats) }
@@ -2265,6 +2559,12 @@ internal fun SettingsMenu(
             )
             SettingsDivider()
             SettingsRow(
+                icon = FeatherIcons.Heart,
+                title = stringResource(SettingsSection.Sponsor.titleRes),
+                onClick = { onOpen(SettingsSection.Sponsor) }
+            )
+            SettingsDivider()
+            SettingsRow(
                 icon = FeatherIcons.Info,
                 title = stringResource(SettingsSection.About.titleRes),
                 onClick = { onOpen(SettingsSection.About) }
@@ -2278,15 +2578,15 @@ internal fun SettingsMenu(
 /** 插件槽位入口行：按槽位追加到对应分组末尾，副标题标明来源。 */
 @Composable
 private fun PluginSettingsRows(
-    pages: List<com.bysqh.guru.feature.plugin.domain.PluginPage>,
+    pages: List<PluginPage>,
     slot: String,
     languageTag: String,
-    onOpen: (com.bysqh.guru.feature.plugin.domain.PluginPage) -> Unit
+    onOpen: (PluginPage) -> Unit
 ) {
     pages.filter { it.slot == slot }.forEach { page ->
         SettingsDivider()
         SettingsRow(
-            icon = com.bysqh.guru.feature.plugin.presentation.pluginPageIcon(page.icon),
+            icon = pluginPageIcon(page.icon),
             title = page.title.resolve(languageTag),
             subtitle = stringResource(R.string.plugins_ext_entry_subtitle, page.pluginId),
             onClick = { onOpen(page) }

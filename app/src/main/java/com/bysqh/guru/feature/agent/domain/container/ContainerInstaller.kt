@@ -138,7 +138,7 @@ class ContainerInstaller @Inject constructor(
          *
          * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/git-credential-guru，
          * 由容器初始化菜单（provision.sh）在 `.gitconfig` 里登记为第二个 credential.helper，
-         * 排在 `store` 之后兜底未登录（双保险）。helper 详行为见 assets/aicode/git-credential-guru。
+         * 排在 `store` 之后兜底未登录（双保险）。helper 详行为见 assets/guru/git-credential-guru。
          *
          * 启动即提取、独立于 provisioning 成败：provisioning 失败时 git 没装上，helper 配置不存在也无所谓；
          * 一旦 git 装好且配置登记，helper 立即可用。提取失败仅告警不抛（helper 缺席仅导致未登录时无弹窗，
@@ -185,11 +185,11 @@ class ContainerInstaller @Inject constructor(
         }
 
         /**
-         * 从 assets 提取环境工具（`aicode` 命令 + 共享库 lib/）到 ~/.guru/bin 与 ~/.guru/lib 并赋可执行位。
+         * 从 assets 提取环境工具（`guru` 命令 + 共享库 lib/）到 ~/.guru/bin 与 ~/.guru/lib 并赋可执行位。
          *
-         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/bin/aicode（在 PATH 中，见
+         * 经 [LinuxContainerEngine] 的 -b 绑定即容器内 /root/.guru/bin/guru（在 PATH 中，见
          * buildContainerEnv）与 /root/.guru/lib/（env-common.sh、android-sdk.sh 与 scenarios/ 子目录），
-         * 供用户随时执行 `aicode` 安装开发环境（场景化）。每次覆盖写（随 App 版本更新）；提取失败仅告警
+         * 供用户随时执行 `guru` 安装开发环境（场景化）。每次覆盖写（随 App 版本更新）；提取失败仅告警
          * 不抛：缺工具时容器初始化菜单（provision.sh）会提示未就绪，用户重启 App 即可重新提取。
          */
         fun extractEnvTool(context: Context) {
@@ -419,7 +419,7 @@ class ContainerInstaller @Inject constructor(
     /**
      * 按 [profile] 解压安装 rootfs。内置走 assets 全流程（rootfs/resolv/apk 源）；自定义本地镜像只解压
      * tar.gz + 写 DNS（不写 apk 源）。两者都不自动装包——基础工具由进入终端时的
-     * 初始化菜单（assets/aicode/provision.sh）引导用户选择安装。远程 SSH profile 无本地 rootfs，直接返回
+     * 初始化菜单（assets/guru/provision.sh）引导用户选择安装。远程 SSH profile 无本地 rootfs，直接返回
      * （命令执行走 [RemoteSshEngine]，不需本地 rootfs）。
      */
     suspend fun installRootfsIfNeed(
@@ -619,7 +619,7 @@ class ContainerInstaller @Inject constructor(
     /** 从 assets 提取容器初始化依赖安装脚本到 ~/.guru/provision.sh 并赋可执行位。 */
     fun extractProvisionScript() = extractProvisionScript(context)
 
-    /** 从 assets 提取环境工具（aicode 命令 + 共享库）到 ~/.guru/{bin,lib} 并赋可执行位。 */
+    /** 从 assets 提取环境工具（guru 命令 + 共享库）到 ~/.guru/{bin,lib} 并赋可执行位。 */
     fun extractEnvTool() = extractEnvTool(context)
 
     /** 解压 alpine-minirootfs.tar.gz，正确处理目录/文件/符号链接/硬链接与权限位；返回解压条目数。 */

@@ -1,14 +1,10 @@
 package com.bysqh.guru
 
-import android.graphics.SurfaceTexture
-import android.media.MediaPlayer
 import android.os.Build
-import android.content.Context
 import android.os.Bundle
-import android.view.Surface
-import android.view.TextureView
-import android.view.WindowManager
+import android.content.Context
 import android.view.inputmethod.InputMethodManager
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -21,16 +17,20 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -48,19 +48,32 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import android.graphics.SurfaceTexture
+import android.media.MediaPlayer
+import android.view.Surface
+import android.view.TextureView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -72,7 +85,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bysqh.guru.core.theme.AIEditorTheme
 import com.bysqh.guru.core.theme.AppThemePreset
+import com.bysqh.guru.core.theme.LocalSystemDensity
 import com.bysqh.guru.core.ui.BetaWatermark
+import com.bysqh.guru.core.ui.EndModalDrawer
 import com.bysqh.guru.core.ui.ImageSource
 import com.bysqh.guru.core.ui.ImageViewerHost
 import com.bysqh.guru.core.ui.ImageViewerRequest
@@ -83,6 +98,7 @@ import com.bysqh.guru.core.ui.drawerWidth
 import com.bysqh.guru.core.ui.isExpandedWidth
 import com.bysqh.guru.core.ui.pageEnter
 import com.bysqh.guru.core.ui.pageExit
+import com.bysqh.guru.core.ui.rememberEndDrawerState
 import com.bysqh.guru.core.ui.rememberImageViewerState
 import com.bysqh.guru.core.ui.rememberViewerDecodeSpec
 import com.bysqh.guru.core.util.ApkInstaller
@@ -99,6 +115,22 @@ import com.bysqh.guru.feature.editor.presentation.EditorLeaveGuard
 import com.bysqh.guru.feature.browser.presentation.BrowserScreen
 import com.bysqh.guru.feature.git.presentation.GitViewModel
 import com.bysqh.guru.feature.credentials.presentation.component.CredentialScreen
+import com.bysqh.guru.feature.plugin.presentation.PluginWebViewCache
+import com.bysqh.guru.feature.plugin.presentation.PluginOverlayController
+import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
+import com.bysqh.guru.feature.plugin.domain.PluginPage
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntryKind
+import com.bysqh.guru.feature.plugin.domain.PluginUiSlots
+import com.bysqh.guru.feature.plugin.presentation.PluginEntryContext
+import com.bysqh.guru.feature.plugin.presentation.PluginPageHost
+import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
+import com.bysqh.guru.feature.plugin.presentation.displayName
+import com.bysqh.guru.feature.plugin.presentation.drawer.AllToolsScreen
+import com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsDrawer
+import com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsViewModel
+import com.bysqh.guru.feature.plugin.presentation.drawer.ToolDetailScreen
+import com.bysqh.guru.feature.plugin.presentation.drawer.ToolUnavailableScreen
 import com.bysqh.guru.feature.git.presentation.component.GitScreen
 import com.bysqh.guru.feature.onboarding.data.OnboardingStatus
 import com.bysqh.guru.feature.onboarding.domain.OnboardingCoordinator
@@ -122,42 +154,22 @@ import com.bysqh.guru.feature.settings.presentation.component.UpdateCheckDialog
 import com.bysqh.guru.feature.settings.presentation.component.decodeBackgroundBitmap
 import com.bysqh.guru.feature.settings.presentation.component.openUrl
 import com.bysqh.guru.feature.settings.presentation.component.settingsPageBackground
+import com.bysqh.guru.feature.starprompt.domain.StarPromptCoordinator
+import com.bysqh.guru.feature.starprompt.domain.StarPromptUiGate
+import com.bysqh.guru.feature.starprompt.presentation.StarPromptDialog
 import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
 import com.bysqh.guru.feature.terminal.presentation.TerminalViewModel
 import com.bysqh.guru.feature.terminal.presentation.component.TerminalScreen
 import com.bysqh.guru.feature.workspace.presentation.WorkspaceViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import com.bysqh.guru.R
-import com.bysqh.guru.feature.plugin.presentation.PluginOverlayController
-import com.bysqh.guru.feature.plugin.presentation.PluginsViewModel
-import com.bysqh.guru.feature.plugin.domain.PluginPage
-import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
-import com.bysqh.guru.feature.plugin.presentation.PluginEntryContext
-import com.bysqh.guru.feature.plugin.presentation.PluginPageHost
-import com.bysqh.guru.feature.plugin.presentation.currentLanguageTag
-import com.bysqh.guru.feature.plugin.presentation.displayName
-import com.bysqh.guru.feature.plugin.domain.PluginUiSlots
-import com.bysqh.guru.feature.plugin.domain.PluginUiEntryKind
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.graphicsLayer
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -171,6 +183,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var backgroundSettings: BackgroundSettingsRepository
+    // [二开] MP4 壁纸：window 层 TextureView + MediaPlayer
+    private var wallpaperView: TextureView? = null
+    private var wallpaperPlayer: MediaPlayer? = null
+    private var wallpaperSurface: Surface? = null
+    private var wallpaperPath: String? = null
+
 
     /** 屏幕常亮开关：只在 App 前台约束屏幕，切后台由系统自动失效。 */
     @Inject
@@ -199,13 +217,10 @@ class MainActivity : ComponentActivity() {
     lateinit var agreementRepository: com.bysqh.guru.feature.agreement.data.AgreementRepository
 
     @Inject
-    lateinit var browserManager: com.bysqh.guru.feature.agent.domain.tool.browser.BrowserManager
+    lateinit var starPromptCoordinator: StarPromptCoordinator
 
-    /** [二开] MP4 壁纸画在 Compose 窗口后面，不进 Compose 的硬件层，抽屉动画才不会把视频闪成白屏。 */
-    private var wallpaperView: TextureView? = null
-    private var wallpaperPlayer: MediaPlayer? = null
-    private var wallpaperSurface: Surface? = null
-    private var wallpaperPath: String? = null
+    @Inject
+    lateinit var browserManager: com.bysqh.guru.feature.agent.domain.tool.browser.BrowserManager
 
     override fun attachBaseContext(newBase: android.content.Context) {
         // 在 Activity 创建前同步应用用户选择的语言，确保冷启动也生效。
@@ -225,7 +240,7 @@ class MainActivity : ComponentActivity() {
     @Suppress("DEPRECATION") // 全局更新 application resources locale，createConfigurationContext 无法替代
     override fun onCreate(savedInstanceState: Bundle?) {
         // 从冷启动闪屏主题恢复为应用主主题
-        setTheme(R.style.Theme_AICode)
+        setTheme(R.style.Theme_Guru)
         // 绘制到系统状态栏/导航栏之下，让应用背景与系统栏融为一体（消除割裂的色块）。
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -277,7 +292,7 @@ class MainActivity : ComponentActivity() {
             val themeMode by themeSettings.themeModeFlow.collectAsStateWithLifecycle(initialValue = AppThemeMode.AUTO)
             val themePresetId by themeSettings.themePresetIdFlow.collectAsStateWithLifecycle(initialValue = null)
             val dynamicColor by themeSettings.dynamicColorFlow.collectAsStateWithLifecycle(initialValue = false)
-            // [二开] 外观选项（参考 Eta）
+            // [二开] 外观选项：强调色 / 色彩风格 / 界面样式 / 纯黑 / 界面缩放
             val accentColor by themeSettings.accentColorFlow.collectAsStateWithLifecycle(
                 initialValue = com.bysqh.guru.core.theme.AccentColor.SYSTEM
             )
@@ -288,16 +303,13 @@ class MainActivity : ComponentActivity() {
                 initialValue = com.bysqh.guru.core.theme.UiStyle.STANDARD
             )
             val pureBlack by themeSettings.pureBlackFlow.collectAsStateWithLifecycle(initialValue = false)
-            val interfaceScale by themeSettings.interfaceScaleFlow.collectAsStateWithLifecycle(
+            // distinctUntilChanged：DataStore 首次发射与重读都会推同一个值，
+            // 不去重会让 LocalDensity 被重设一次，抽屉打开瞬间的阴影因此闪断。
+            val interfaceScale by remember {
+                themeSettings.interfaceScaleFlow.distinctUntilChanged()
+            }.collectAsStateWithLifecycle(
                 initialValue = com.bysqh.guru.core.theme.AppearanceOptions.DEFAULT_SCALE
             )
-            // [二开] 背景状态。主题与界面配色完全不受背景影响。
-            val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
-            val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
-            val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.Kind.IMAGE)
-            val bgPathSnapshot = bgPath
-            val bgActive = bgPathSnapshot != null && bgAlpha > 0f
-
             val systemDarkTheme = isSystemInDarkTheme()
             val darkTheme = when (themeMode) {
                 AppThemeMode.AUTO -> systemDarkTheme
@@ -315,71 +327,77 @@ class MainActivity : ComponentActivity() {
                 browserManager.setAppDarkTheme(darkTheme)
             }
 
-            LaunchedEffect(bgActive, bgKind, bgPathSnapshot, bgAlpha) {
-                val videoPath = when {
-                    !bgActive -> null
-                    bgKind == BackgroundSettingsRepository.Kind.MP4 -> bgPathSnapshot
-                    // 动态照片：JPEG 容器里嵌了一段 MP4，MediaPlayer 读不了 JPEG 中间的一段，
-                    // 先提取到 cache 再交给播放器。
-                    bgKind == BackgroundSettingsRepository.Kind.MOTION_PHOTO -> withContext(Dispatchers.IO) {
-                        BackgroundSettingsRepository.extractMotionPhotoVideo(
-                            java.io.File(bgPathSnapshot!!),
-                            cacheDir
-                        )
-                    }?.absolutePath
-                    else -> null
-                }
-                setWallpaperVideo(videoPath, bgAlpha)
-            }
-
             AIEditorTheme(
                 darkTheme = darkTheme,
                 preset = AppThemePreset.findById(themePresetId),
                 dynamicColor = dynamicColor,
-                appearance = com.bysqh.guru.core.theme.AppearanceOptions(
-                    accent = accentColor,
-                    paletteStyle = paletteStyle,
-                    uiStyle = uiStyle,
-                    pureBlack = pureBlack,
-                    interfaceScale = interfaceScale
-                ),
+                // 必须 remember：AppearanceOptions 每次重组都是新实例，
+                // 直接内联会让主题里的 remember(appearance) 全部失效，配色与 Density
+                // 每帧重建，抽屉阴影与过渡动画随之闪断。
+                appearance = remember(accentColor, paletteStyle, uiStyle, pureBlack, interfaceScale) {
+                    com.bysqh.guru.core.theme.AppearanceOptions(
+                        accent = accentColor,
+                        paletteStyle = paletteStyle,
+                        uiStyle = uiStyle,
+                        pureBlack = pureBlack,
+                        interfaceScale = interfaceScale
+                    )
+                }
             ) {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // 全局自定义背景图：叠加在所有页面内容之上（水印效果），透明度可调。
+                    // 不拦截触摸事件；弹窗（Dialog 独立窗口）不受层级影响。
+                    val bgPath by backgroundSettings.imagePathFlow.collectAsStateWithLifecycle(initialValue = null)
+                    val bgAlpha by backgroundSettings.alphaFlow.collectAsStateWithLifecycle(initialValue = BackgroundSettingsRepository.DEFAULT_ALPHA)
+                    val bgKind by backgroundSettings.kindFlow.collectAsStateWithLifecycle(
+                        initialValue = BackgroundSettingsRepository.Kind.IMAGE
+                    )
+                    val bgPathSnapshot = bgPath
                     Box(modifier = Modifier.fillMaxSize()) {
-                        AgreementGate(repository = agreementRepository) { agreementAccepted ->
-                                AppNavigation(
-                                    onboardingRepository = onboardingRepository,
-                                    agreementAccepted = agreementAccepted
-                                )
-                                if (agreementAccepted) {
-                                    // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
-                                    com.bysqh.guru.feature.credentials.presentation.component.GlobalCredentialDialogHost(
-                                        bridge = credentialRequestBridge
-                                    )
-                                }
+                        // [二开] MP4 / 动态照片由 window 层 TextureView 播放
+                        LaunchedEffect(bgPathSnapshot, bgKind, bgAlpha) {
+                            val videoPath = when {
+                                bgPathSnapshot == null || bgAlpha <= 0f -> null
+                                bgKind == BackgroundSettingsRepository.Kind.MP4 -> bgPathSnapshot
+                                bgKind == BackgroundSettingsRepository.Kind.MOTION_PHOTO ->
+                                    withContext(Dispatchers.IO) {
+                                        BackgroundSettingsRepository.extractMotionPhotoVideo(
+                                            java.io.File(bgPathSnapshot),
+                                            cacheDir
+                                        )
+                                    }?.absolutePath
+                                else -> null
                             }
-
-                        // [二开] 全局自定义背景：叠加在所有页面内容之上（水印效果）。
-                        if (bgActive) {
+                            setWallpaperVideo(videoPath, bgAlpha)
+                        }
+                        AgreementGate(repository = agreementRepository) { agreementAccepted ->
+                            AppNavigation(
+                                onboardingRepository = onboardingRepository,
+                                starPromptCoordinator = starPromptCoordinator,
+                                agreementAccepted = agreementAccepted
+                            )
+                            if (agreementAccepted) {
+                                // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
+                                com.bysqh.guru.feature.credentials.presentation.component.GlobalCredentialDialogHost(
+                                    bridge = credentialRequestBridge
+                                )
+                            }
+                        }
+                        // [二开] 按类型分发：GIF 走动图，MP4/动态照片由 window 层播放，静态图走上游实现
+                        if (bgPathSnapshot != null && bgAlpha > 0f) {
                             when (bgKind) {
                                 BackgroundSettingsRepository.Kind.GIF ->
-                                    GifBackgroundView(path = bgPathSnapshot!!, alpha = bgAlpha)
-
-                                // MP4 与动态照片由 window 层的 TextureView 播放（见 setWallpaperVideo）。
+                                    GifBackgroundView(path = bgPathSnapshot, alpha = bgAlpha)
                                 BackgroundSettingsRepository.Kind.MP4,
                                 BackgroundSettingsRepository.Kind.MOTION_PHOTO -> Unit
-
-                                // 静态图走 BackgroundImageOverlay：在插件悬浮窗区域挖洞，
-                                // 宠物这类弹层周围不会出现一圈背景色方框。
                                 BackgroundSettingsRepository.Kind.IMAGE ->
                                     BackgroundImageOverlay(path = bgPathSnapshot, imageAlpha = bgAlpha)
                             }
                         }
-
+                        // beta 包全局水印，置于最上层，不拦截触摸。
                         BetaWatermark()
                     }
                 }
@@ -397,7 +415,10 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         // 远程模式回到前台时，若 SSH 断了立即触发重连，不等 supervisor 轮询
-        if (executionModeHolder.currentMode() == com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
+        val backend = executionModeHolder.currentBackend()
+        if (backend.id == com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID &&
+            backend.capabilities.isRemoteEnvironment
+        ) {
             lifecycleScope.launch {
                 runCatching { remoteSshConnection.tryReconnectIfDisconnected() }
             }
@@ -405,9 +426,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        releaseWallpaper()
         browserManager.detachHiddenHost()
-        com.bysqh.guru.feature.plugin.presentation.PluginWebViewCache.clear()
+        PluginWebViewCache.clear()
         super.onDestroy()
     }
 
@@ -514,17 +534,6 @@ class MainActivity : ComponentActivity() {
 
 }
 
-/**
- * [二开] 壁纸专用 TextureView：完全不接管触摸。
- *
- * 只在 onTouchEvent 里返回 false 不够——TextureView 仍会被当作可命中的子 View，
- * 部分 ROM 上整屏就此失去响应。这里在 dispatchTouchEvent 阶段直接拒绝，
- * 保证父容器把事件继续分发给下面的 ComposeView。
- */
-private class WallpaperTextureView(context: android.content.Context) : TextureView(context) {
-    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean = false
-}
-
 /** 大屏右栏默认占宽比，以及拖拽分栏的上下限——两边都至少留 30% 宽度。 */
 private const val DEFAULT_PANE_SPLIT = 0.5f
 private const val MIN_PANE_SPLIT = 0.3f
@@ -547,9 +556,12 @@ private const val MAX_PANE_SPLIT = 0.7f
 @Composable
 fun AppNavigation(
     onboardingRepository: com.bysqh.guru.feature.onboarding.data.OnboardingRepository,
+    starPromptCoordinator: StarPromptCoordinator,
     agreementAccepted: Boolean
 ) {
     val navController = rememberNavController()
+    // 抽屉几何用原始密度（见 LocalSystemDensity 说明），内容仍用当前缩放密度
+    val interfaceDensity = LocalDensity.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -565,18 +577,19 @@ fun AppNavigation(
     // Activity 级别的 ViewModel——Drawer 和 AIChatPanel 共享同一个实例。
     val agentViewModel: AIAgentViewModel = hiltViewModel()
     val settingsViewModel: SettingsViewModel = hiltViewModel()
+    // [二开] 侧边栏「角色」入口：记录要直达的设置分区，进设置页后消费一次
+    var pendingSettingsSection by remember { mutableStateOf<String?>(null) }
+    // 离开设置页后清空，下次从侧边栏「设置」进入回到菜单首页
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != "settings") pendingSettingsSection = null
+    }
+    // [二开] 导航手势偏好：横移返回 / 预测性返回
+    val swipeBackEnabled by settingsViewModel.swipeBackEnabled.collectAsStateWithLifecycle()
+    val predictiveBackEnabled by settingsViewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
     val workspaceViewModel: WorkspaceViewModel = hiltViewModel()
+    val projectToolsViewModel: ProjectToolsViewModel = hiltViewModel()
     val pluginsViewModel: PluginsViewModel = hiltViewModel()
-    val projectToolsViewModel: com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsViewModel = hiltViewModel()
     val installedPlugins by pluginsViewModel.plugins.collectAsStateWithLifecycle()
-    val pluginSessionGroups by agentViewModel.pluginSessionGroups.collectAsStateWithLifecycle()
-    val activePluginSession by agentViewModel.activePluginSession.collectAsStateWithLifecycle()
-    LaunchedEffect(installedPlugins) {
-        agentViewModel.refreshPluginSessions()
-    }
-    LaunchedEffect(drawerState.isOpen) {
-        if (drawerState.isOpen) agentViewModel.refreshPluginSessions()
-    }
     val pluginLanguageTag = currentLanguageTag()
     // 入口直接从已加载的插件快照算，不在组合期读盘；顺序按插件显示名，重装后仍稳定。
     val pluginSlotEntries = remember(installedPlugins, pluginLanguageTag) {
@@ -606,9 +619,7 @@ fun AppNavigation(
     val editorPluginEntries = remember(pluginSlotEntries) {
         pluginSlotEntries.filter { it.slot == PluginUiSlots.EDITOR_SELECTION_MENU }
     }
-    var activeSlotPage by remember { mutableStateOf<PluginPage?>(null) }
-    var activeSlotContext by remember { mutableStateOf(PluginEntryContext()) }
-    var pendingPluginAction by remember { mutableStateOf<Pair<PluginUiEntry, PluginEntryContext>?>(null) }
+    val rightDrawerState = rememberEndDrawerState()
 
     // ── 首次启动引导 ──
     val onboardingStateHolder = remember { OnboardingStateHolder() }
@@ -624,11 +635,16 @@ fun AppNavigation(
             scope = onboardingScope
         )
     }
+    var onboardingChecked by remember { mutableStateOf(false) }
     // 启动判断：IN_PROGRESS 则激活引导。
     LaunchedEffect(agreementAccepted) {
-        if (!agreementAccepted) return@LaunchedEffect
+        if (!agreementAccepted) {
+            onboardingChecked = false
+            return@LaunchedEffect
+        }
         val status = onboardingRepository.status()
         onboardingCoordinator.initialize(status ?: OnboardingStatus.IN_PROGRESS)
+        onboardingChecked = true
     }
 
     // 自动检查更新：进入主页时异步检测（开关开启且每天最多一次，失败静默）
@@ -664,6 +680,9 @@ fun AppNavigation(
             drawerFocusManager.clearFocus(force = true)
         }
     }
+    BackHandler(enabled = rightDrawerState.isOpen) {
+        scope.launch { rightDrawerState.close() }
+    }
 
     // 侧边栏需要的数据。
     val currentWorkspace by workspaceViewModel.current.collectAsStateWithLifecycle()
@@ -674,6 +693,14 @@ fun AppNavigation(
     }
 
     val sessions by agentViewModel.sessions.collectAsStateWithLifecycle()
+    val externalSessionGroups by agentViewModel.externalSessionGroups.collectAsStateWithLifecycle()
+    val activeExternalSession by agentViewModel.activeExternalSession.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) {
+        agentViewModel.refreshExternalSessions()
+    }
+    LaunchedEffect(drawerState.isOpen) {
+        if (drawerState.isOpen) agentViewModel.refreshExternalSessions()
+    }
     val currentSessionId by agentViewModel.currentSessionId.collectAsStateWithLifecycle()
     val agentStates by agentViewModel.agentStates.collectAsStateWithLifecycle()
     val awaitingPermissionSessionIds by agentViewModel.awaitingPermissionSessionIds.collectAsStateWithLifecycle()
@@ -726,12 +753,6 @@ fun AppNavigation(
     // 那样大屏远程模式下文件树只能靠手动刷新按钮。改取「侧栏可见」：窄窗看抽屉开没开，
     // 大屏看是否停在聊天页（侧栏只在聊天页展开）。
     val sidebarVisible = if (permanentDrawer) currentRoute == "chat" else drawerState.isOpen
-    // [二开] 设置页快捷入口：从侧边栏直达角色页 / 记忆页；null 回设置菜单
-    var settingsEntryKey by remember { mutableStateOf<String?>(null) }
-
-    // [二开] 导航手势开关
-    val swipeBackEnabled by settingsViewModel.swipeBackEnabled.collectAsStateWithLifecycle()
-    val predictiveBackEnabled by settingsViewModel.predictiveBackEnabled.collectAsStateWithLifecycle()
     LaunchedEffect(sidebarVisible) {
         if (sidebarVisible) agentViewModel.refreshBrowse()
     }
@@ -740,6 +761,17 @@ fun AppNavigation(
     var paneKind by rememberSaveable { mutableStateOf(WorkbenchPaneKind.NONE) }
     var paneEditorPath by rememberSaveable { mutableStateOf("") }
     var paneEditorLine by rememberSaveable { mutableIntStateOf(0) }
+    var panePluginKey by rememberSaveable { mutableStateOf("") }
+    var panePluginContext by remember { mutableStateOf(PluginEntryContext()) }
+    // 右栏插件页只存 key，页面对象从插件快照重新解析；插件更新或卸载后不会继续用旧页面。
+    val panePluginEntry = remember(pluginSlotEntries, panePluginKey) {
+        pluginSlotEntries.firstOrNull { it.key == panePluginKey }
+    }
+    val panePluginPage = panePluginEntry?.page
+    var activeSlotPage by remember { mutableStateOf<PluginPage?>(null) }
+    var activeSlotContext by remember { mutableStateOf(PluginEntryContext()) }
+    // 需要确认的动作入口：确认后再交给插件 runtime。
+    var pendingPluginAction by remember { mutableStateOf<Pair<PluginUiEntry, PluginEntryContext>?>(null) }
     var paneSplit by rememberSaveable { mutableFloatStateOf(DEFAULT_PANE_SPLIT) }
     // 右栏编辑器有未保存修改时，换文件前先弹保存提示（窄窗全屏编辑器由返回键拦截，不经过这里）。
     val editorLeaveGuard = remember { EditorLeaveGuard() }
@@ -830,38 +862,26 @@ fun AppNavigation(
         }
     }
 
-    var panePluginKey by rememberSaveable { mutableStateOf("") }
-    var panePluginContext by remember { mutableStateOf(PluginEntryContext()) }
-    // 右栏插件页只存 key，页面对象从插件快照重新解析；插件更新或卸载后不会继续用旧页面。
-    val panePluginEntry = remember(pluginSlotEntries, panePluginKey) {
-        pluginSlotEntries.firstOrNull { it.key == panePluginKey }
-    }
-    val panePluginPage = panePluginEntry?.page
-
-    val rightDrawerState = com.bysqh.guru.core.ui.rememberEndDrawerState()
-    var reopenRightDrawerOnDetailBack by remember { mutableStateOf(false) }
-    val projectToolsListState = androidx.compose.foundation.lazy.rememberLazyListState()
-
-    // 从右侧工具抽屉进入详情时，返回后恢复抽屉与列表位置；从全部工具页进入则不恢复。
-    val returnFromToolDetail: () -> Unit = {
-        if (reopenRightDrawerOnDetailBack) {
-            reopenRightDrawerOnDetailBack = false
-            scope.launch { rightDrawerState.open() }
-        }
-        navController.popBackStack()
-    }
-
     // 插件槽位入口：页面进右栏或全屏；提示词填草稿；动作交给插件 runtime。
     val openPluginEntryPage: (PluginUiEntry, PluginEntryContext) -> Unit = { entry, context ->
         val page = entry.page
         if (page != null) {
+            if (rightDrawerState.isOpen) scope.launch { rightDrawerState.close() }
             if (drawerState.isOpen) scope.launch { drawerState.close() }
             if (expanded && currentRoute == "chat") {
-                activeSlotPage = null
-                activeSlotContext = PluginEntryContext()
-                panePluginKey = entry.key
-                panePluginContext = context
-                paneKind = WorkbenchPaneKind.PLUGIN
+                val openInPane = {
+                    activeSlotPage = null
+                    activeSlotContext = PluginEntryContext()
+                    panePluginKey = entry.key
+                    panePluginContext = context
+                    paneKind = WorkbenchPaneKind.PLUGIN
+                }
+                // 右栏编辑器可能还有未保存修改，和切换终端/Git 一样先走离开确认。
+                if (paneKind == WorkbenchPaneKind.EDITOR) {
+                    editorLeaveGuard.requestLeave(openInPane)
+                } else {
+                    openInPane()
+                }
             } else {
                 activeSlotPage = page
                 activeSlotContext = context
@@ -871,16 +891,18 @@ fun AppNavigation(
     val showPluginActionResult: (String?) -> Unit = { message ->
         if (!message.isNullOrBlank()) Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
+    // 文件树/编辑器给的是当前执行环境的真实路径，插件直接交给 fs.* 即可。
     val runPluginEntry: (PluginUiEntry, PluginEntryContext) -> Unit = { entry, context ->
         if (drawerState.isOpen) scope.launch { drawerState.close() }
+        val entryContext = context
         when (entry.kind) {
-            PluginUiEntryKind.PAGE -> openPluginEntryPage(entry, context)
+            PluginUiEntryKind.PAGE -> openPluginEntryPage(entry, entryContext)
             PluginUiEntryKind.DATA -> Unit
             PluginUiEntryKind.ACTION -> {
-                val actionContext = if (context.sessionId == null) {
-                    context.copy(sessionId = agentViewModel.currentSessionId.value)
+                val actionContext = if (entryContext.sessionId == null) {
+                    entryContext.copy(sessionId = agentViewModel.currentSessionId.value)
                 } else {
-                    context
+                    entryContext
                 }
                 if (entry.confirm) {
                     pendingPluginAction = entry to actionContext
@@ -891,7 +913,14 @@ fun AppNavigation(
         }
     }
 
-    // 插件停用 / 卸载或更新后，全屏页不能继续抱着旧页面。
+    // 插件停用 / 卸载或更新后，右栏与全屏页都不能继续抱着旧页面。
+    LaunchedEffect(pluginSlotEntries, panePluginKey) {
+        val entry = pluginSlotEntries.firstOrNull { it.key == panePluginKey }
+        if (paneKind == WorkbenchPaneKind.PLUGIN && entry?.page == null) {
+            paneKind = WorkbenchPaneKind.NONE
+            panePluginContext = PluginEntryContext()
+        }
+    }
     LaunchedEffect(pluginSlotEntries, activeSlotPage) {
         val active = activeSlotPage ?: return@LaunchedEffect
         if (pluginSlotEntries.none { it.page?.key == active.key && it.cacheKey == active.cacheKey }) {
@@ -901,40 +930,19 @@ fun AppNavigation(
     }
 
     // 侧栏内容：modal 抽屉与大屏常驻栏共用同一份，不在两处重复几十行参数。
-    val rightDrawerSheet: @Composable () -> Unit = {
-        ModalDrawerSheet(
-            drawerShape = RectangleShape,
-            drawerContainerColor = MaterialTheme.colorScheme.surface,
-            drawerTonalElevation = 0.dp,
-            modifier = Modifier.width(drawerWidth())
-        ) {
-            val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
-            val activeTools by projectToolsViewModel.activePluginTools.collectAsStateWithLifecycle()
-            val toolsMap = remember(activeTools) { activeTools.associateBy { it.key } }
-
-            com.bysqh.guru.feature.plugin.presentation.drawer.ProjectToolsDrawer(
-                workspacePath = projectToolsViewModel.currentWorkspacePath,
-                tools = tools,
-                pluginToolsMap = toolsMap,
-                listState = projectToolsListState,
-                onOpenToolDetail = { tool, _ ->
-                    reopenRightDrawerOnDetailBack = true
-                    scope.launch { rightDrawerState.close() }
-                    projectToolsViewModel.selectTool(tool)
-                    navController.navigate("plugin_tool_detail/${tool.key}")
-                },
-                onOpenAllTools = {
-                    scope.launch { rightDrawerState.close() }
-                    navController.navigate("plugin_all_tools")
-                }
-            )
-        }
-    }
-
     val drawerBody: @Composable (Boolean) -> Unit = { animationsEnabled ->
         CompositionLocalProvider(LocalChatAnimationsEnabled provides animationsEnabled) {
         ChatDrawerContent(
             sessions = sessions,
+            externalSessionGroups = externalSessionGroups,
+            currentExternalSessionId = activeExternalSession?.id,
+            onSelectExternalSession = { session ->
+                agentViewModel.openExternalSession(session)
+                if (!permanentDrawer) scope.launch { drawerState.close() }
+            },
+            onDeleteExternalSession = { session -> agentViewModel.deleteExternalSession(session) },
+            onRenameExternalSession = { session, title -> agentViewModel.renameExternalSession(session, title) },
+            onTogglePinExternalSession = { session -> agentViewModel.togglePinExternalSession(session) },
             currentSessionId = currentSessionId,
             agentStates = agentStates,
             awaitingPermissionSessionIds = awaitingPermissionSessionIds,
@@ -1014,21 +1022,19 @@ fun AppNavigation(
                 openWorkbench(WorkbenchPaneKind.BROWSER)
                 if (!permanentDrawer) scope.launch { drawerState.close() }
             },
+            // [二开] 侧边栏角色入口：直达设置里的角色页
+            onNavigateToRoles = {
+                pendingSettingsSection = "Roles"
+                navController.navigate("settings")
+                if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
+            },
             onNavigateToSettings = {
-                // 普通入口：清掉快捷页标记，进设置菜单首页
-                settingsEntryKey = null
                 navController.navigate("settings")
                 if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
             },
             pluginEntries = drawerPluginEntries,
             pluginLanguageTag = pluginLanguageTag,
             onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
-            pluginSessionGroups = pluginSessionGroups,
-            currentPluginSessionId = activePluginSession?.id,
-            onSelectPluginSession = { session ->
-                agentViewModel.openPluginSession(session)
-                if (!permanentDrawer) scope.launch { drawerState.close() }
-            },
             sessionPluginEntries = sessionPluginEntries,
             onSessionPluginEntry = { session, entry ->
                 runPluginEntry(entry, PluginEntryContext(sessionId = session.id))
@@ -1043,12 +1049,6 @@ fun AppNavigation(
                     )
                 )
             },
-            // [二开] 侧边栏角色入口：直达设置里的角色页
-            onNavigateToRoles = {
-                settingsEntryKey = "roles"
-                navController.navigate("settings")
-                if (!permanentDrawer) scope.launch { drawerState.snapTo(DrawerValue.Closed) }
-            },
             searchQuery = chatSearchQuery,
             searchState = chatSearchState,
             onSearchQueryChange = { agentViewModel.updateChatSearchQuery(it) },
@@ -1059,6 +1059,17 @@ fun AppNavigation(
             }
         )
         }
+    }
+
+    var reopenRightDrawerOnDetailBack by remember { mutableStateOf(false) }
+
+    // 从右侧工具抽屉进入详情时，返回后恢复抽屉与列表位置；从全部工具页进入则不恢复。
+    val returnFromToolDetail: () -> Unit = {
+        if (reopenRightDrawerOnDetailBack) {
+            reopenRightDrawerOnDetailBack = false
+            scope.launch { rightDrawerState.open() }
+        }
+        navController.popBackStack()
     }
 
     // 页面主体（NavHost）：大屏放进 Row 的右侧，窄窗放进 modal 抽屉容器里。
@@ -1115,14 +1126,12 @@ fun AppNavigation(
                                     showMenuButton = !permanentDrawer,
                                     onNavigateToTerminal = { openWorkbench(WorkbenchPaneKind.TERMINAL) },
                                     onNavigateToGit = { openWorkbench(WorkbenchPaneKind.GIT) },
-                                    onNavigateToBrowser = { openWorkbench(WorkbenchPaneKind.BROWSER) },
-                                    terminalActive = paneOpen && paneKind == WorkbenchPaneKind.TERMINAL,
-                                    gitActive = paneOpen && paneKind == WorkbenchPaneKind.GIT,
-                                    browserActive = paneOpen && paneKind == WorkbenchPaneKind.BROWSER,
                                     pluginEntries = headerPluginEntries,
                                     pluginLanguageTag = pluginLanguageTag,
-                                    welcomePluginEntries = welcomePluginEntries,
                                     onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
+                                    welcomePluginEntries = welcomePluginEntries,
+                                    terminalActive = paneOpen && paneKind == WorkbenchPaneKind.TERMINAL,
+                                    gitActive = paneOpen && paneKind == WorkbenchPaneKind.GIT,
                                     onboardingStep = if (onboardingUiState.active) onboardingUiState.step else null,
                                     onSelectModelInOnboarding = {
                                         if (onboardingUiState.active && onboardingUiState.step == OnboardingStep.SIMULATE_CHOOSE_MODEL) {
@@ -1154,8 +1163,13 @@ fun AppNavigation(
                                     }
                                 },
                                 editorPluginEntries = editorPluginEntries,
-                                onEditorPluginEntry = { entry, context -> runPluginEntry(entry, context) },
-                                onClose = { paneKind = WorkbenchPaneKind.NONE },
+                                onEditorPluginEntry = { entry, entryContext ->
+                                    runPluginEntry(entry, entryContext)
+                                },
+                                onClose = {
+                                    paneKind = WorkbenchPaneKind.NONE
+                                    panePluginContext = PluginEntryContext()
+                                },
                                 onOpenFile = { path -> openFile(path, 0, false) },
                                 // rc5 的平板右栏脏状态确认：主分支把调用重构进了 if (paneOpen)，
                                 // 故把该参数落在这里，而不是保留旧位置那份重复调用
@@ -1183,13 +1197,29 @@ fun AppNavigation(
                 // 这是侧边栏点设置「卡一下」的主因。
                 SettingsScreen(
                     viewModel = settingsViewModel,
-                    initialSectionKey = settingsEntryKey,
+                    initialSectionName = pendingSettingsSection,
                     onNavigateBack = {
                         navController.popBackStack()
                         // 大屏返回聊天页后侧栏本就常驻，不再弹 modal 抽屉。
                         if (!expanded) scope.launch { drawerState.open() }
                     },
                     onStopAllAndCloseTerminal = { agentViewModel.stopAllAndCloseTerminal() },
+                    onOpenSessionInWorkspace = { targetWs, sessionId ->
+                        agentViewModel.prepareFollowSession(targetWs.path, sessionId)
+                        if (currentWorkspace?.ref != targetWs.ref) {
+                            workspaceViewModel.selectWorkspace(targetWs.ref)
+                        }
+                        navController.popBackStack()
+                    },
+                    onFollowMovedSession = { targetWs, sessionId ->
+                        agentViewModel.prepareFollowSession(targetWs.path, sessionId)
+                        if (currentWorkspace?.ref != targetWs.ref) {
+                            workspaceViewModel.selectWorkspace(targetWs.ref)
+                        }
+                    },
+                    onSessionsMutated = {
+                        agentViewModel.ensureCurrentSessionStillInWorkspace()
+                    },
                     onRerunOnboarding = {
                         // 从设置页「重新运行引导」：清状态回 in_progress、激活引导并回聊天页。
                         scope.launch {
@@ -1200,6 +1230,7 @@ fun AppNavigation(
                             }
                         }
                     },
+                    onShowStarPrompt = { starPromptCoordinator.showManual() },
                     onboardingStep = onboardingUiState.step.takeIf { onboardingUiState.active },
                     onOnboardingModelAdded = {
                         if (onboardingUiState.active && onboardingUiState.step == OnboardingStep.SIMULATE_FETCH_DIALOG) {
@@ -1232,53 +1263,6 @@ fun AppNavigation(
                     browserManager = browserViewModel.browserManager,
                     onNavigateBack = { navController.popBackStack() }
                 )
-            }
-            composable("plugin_all_tools") {
-                val allTools by projectToolsViewModel.allPluginTools.collectAsStateWithLifecycle()
-                val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
-                val enabledKeys = remember(tools) { tools.map { it.toolKey }.toSet() }
-
-                com.bysqh.guru.feature.plugin.presentation.drawer.AllToolsScreen(
-                    availableTools = allTools,
-                    enabledToolKeys = enabledKeys,
-                    onBack = { navController.popBackStack() },
-                    onAddTool = { tool -> projectToolsViewModel.addToolToProject(tool) },
-                    onRemoveTool = { tool -> projectToolsViewModel.removeToolFromProject(tool.key) },
-                    onViewDetail = { tool ->
-                        projectToolsViewModel.selectTool(tool)
-                        navController.navigate("plugin_tool_detail/${tool.key}")
-                    }
-                )
-            }
-            composable("plugin_tool_detail/{toolKey}") { backStackEntry ->
-                val toolKey = backStackEntry.arguments?.getString("toolKey").orEmpty()
-                androidx.compose.runtime.LaunchedEffect(toolKey) {
-                    projectToolsViewModel.selectToolByKey(toolKey)
-                }
-                val tool by projectToolsViewModel.selectedTool.collectAsStateWithLifecycle()
-
-                BackHandler { returnFromToolDetail() }
-                if (tool != null) {
-                    val languageTag = currentLanguageTag()
-                    val pageDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-                    com.bysqh.guru.feature.plugin.presentation.drawer.ToolDetailScreen(
-                        tool = tool!!,
-                        languageTag = languageTag,
-                        bridgeFactory = { page, post, onClose ->
-                            pluginsViewModel.createWebBridge(
-                                page = page,
-                                pluginVersion = page.pluginVersion,
-                                languageTag = languageTag,
-                                theme = { if (pageDark) "dark" else "light" },
-                                onClosePage = onClose,
-                                post = post
-                            )
-                        },
-                        onBack = returnFromToolDetail
-                    )
-                } else {
-                    com.bysqh.guru.feature.plugin.presentation.drawer.ToolUnavailableScreen(onBack = returnFromToolDetail)
-                }
             }
             composable("git") {
                 val gitViewModel: GitViewModel = hiltViewModel()
@@ -1330,7 +1314,86 @@ fun AppNavigation(
                     }
                 )
             }
+            composable("plugin_all_tools") {
+                val allTools by projectToolsViewModel.allPluginTools.collectAsStateWithLifecycle()
+                val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
+                val enabledKeys = remember(tools) { tools.map { it.toolKey }.toSet() }
+
+                AllToolsScreen(
+                    availableTools = allTools,
+                    enabledToolKeys = enabledKeys,
+                    onBack = { navController.popBackStack() },
+                    onAddTool = { tool -> projectToolsViewModel.addToolToProject(tool) },
+                    onRemoveTool = { tool -> projectToolsViewModel.removeToolFromProject(tool.key) },
+                    onViewDetail = { tool ->
+                        projectToolsViewModel.selectTool(tool)
+                        navController.navigate("plugin_tool_detail/${tool.key}")
+                    }
+                )
+            }
+            composable("plugin_tool_detail/{toolKey}") { backStackEntry ->
+                val toolKey = backStackEntry.arguments?.getString("toolKey").orEmpty()
+                androidx.compose.runtime.LaunchedEffect(toolKey) {
+                    projectToolsViewModel.selectToolByKey(toolKey)
+                }
+                val tool by projectToolsViewModel.selectedTool.collectAsStateWithLifecycle()
+
+                BackHandler { returnFromToolDetail() }
+                if (tool != null) {
+                    val languageTag = currentLanguageTag()
+                    val pageDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    ToolDetailScreen(
+                        tool = tool!!,
+                        languageTag = languageTag,
+                        bridgeFactory = { page, post, onClose ->
+                            pluginsViewModel.createWebBridge(
+                                page = page,
+                                pluginVersion = page.pluginVersion,
+                                languageTag = languageTag,
+                                theme = { if (pageDark) "dark" else "light" },
+                                onClosePage = onClose,
+                                post = post
+                            )
+                        },
+                        onBack = returnFromToolDetail
+                    )
+                } else {
+                    ToolUnavailableScreen(onBack = returnFromToolDetail)
+                }
+            }
         }
+        }  // SwipeBackContainer
+    }
+
+    val projectToolsListState = rememberLazyListState()
+
+    val rightDrawerSheet: @Composable () -> Unit = {
+        ModalDrawerSheet(
+            drawerShape = RectangleShape,
+            drawerContainerColor = settingsPageBackground(),
+            drawerTonalElevation = 0.dp,
+            modifier = Modifier.width(drawerWidth())
+        ) {
+            val tools by projectToolsViewModel.projectTools.collectAsStateWithLifecycle()
+            val activeTools by projectToolsViewModel.activePluginTools.collectAsStateWithLifecycle()
+            val toolsMap = remember(activeTools) { activeTools.associateBy { it.key } }
+
+            ProjectToolsDrawer(
+                workspacePath = projectToolsViewModel.currentWorkspacePath,
+                tools = tools,
+                pluginToolsMap = toolsMap,
+                listState = projectToolsListState,
+                onOpenToolDetail = { tool, item ->
+                    reopenRightDrawerOnDetailBack = true
+                    scope.launch { rightDrawerState.close() }
+                    projectToolsViewModel.selectTool(tool)
+                    navController.navigate("plugin_tool_detail/${tool.key}")
+                },
+                onOpenAllTools = {
+                    scope.launch { rightDrawerState.close() }
+                    navController.navigate("plugin_all_tools")
+                }
+            )
         }
     }
 
@@ -1342,7 +1405,7 @@ fun AppNavigation(
     // 文件树里点开的图片走这个查看器；聊天面板自带一个，两层互不影响。
     ImageViewerHost(state = drawerImageViewerState, load = drawerImageLoad)
     if (expanded) {
-        // 大屏不套 ModalNavigationDrawer：侧栏常驻在左，抽屉那套 scrim / 手势 / 锚点在这里完全用不上。
+        // 大屏左侧会话侧栏常驻，不走 ModalNavigationDrawer；右侧工具抽屉仍用 Modal 覆盖内容区。
         // 侧栏只在聊天页展开：设置页自己就是「菜单 + 详情」两栏，外面再套一层会话侧栏就成了三栏。
         // 宽度走补间而不是直接增删，否则右侧区域宽度突变，切页时会明显闪一下；
         // 时长与页面过渡取同一个值，两段动画同时收尾。
@@ -1376,17 +1439,22 @@ fun AppNavigation(
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             Box(modifier = Modifier.weight(1f)) {
-                com.bysqh.guru.core.ui.EndModalDrawer(
-                    state = rightDrawerState,
-                    gesturesEnabled = currentRoute == "chat",
-                    drawerWidth = drawerWidth(),
-                    drawerContent = { rightDrawerSheet() }
-                ) {
-                    navBody()
+                CompositionLocalProvider(LocalDensity provides LocalSystemDensity.current) {
+                    EndModalDrawer(
+                        state = rightDrawerState,
+                        gesturesEnabled = currentRoute == "chat",
+                        drawerWidth = drawerWidth(),
+                        drawerContent = { rightDrawerSheet() }
+                    ) {
+                        CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                            navBody()
+                        }
+                    }
                 }
             }
         }
     } else {
+        CompositionLocalProvider(LocalDensity provides LocalSystemDensity.current) {
         ModalNavigationDrawer(
             drawerState = drawerState,
             // [二开] 有背景时也要遮罩：右侧内容与抽屉同为浅色时，没有遮罩就分不出层次。
@@ -1401,30 +1469,26 @@ fun AppNavigation(
                     drawerTonalElevation = 0.dp,
                     modifier = Modifier.width(drawerWidth())
                 ) {
-                    drawerBody(
-                        drawerState.currentValue == DrawerValue.Open ||
-                            drawerState.targetValue == DrawerValue.Open
-                    )
+                    CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                        drawerBody(
+                            drawerState.currentValue == DrawerValue.Open ||
+                                drawerState.targetValue == DrawerValue.Open
+                        )
+                    }
                 }
             }
         ) {
-            com.bysqh.guru.core.ui.EndModalDrawer(
+            EndModalDrawer(
                 state = rightDrawerState,
                 gesturesEnabled = currentRoute == "chat",
                 drawerWidth = drawerWidth(),
                 drawerContent = { rightDrawerSheet() }
             ) {
-                navBody()
+                CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                    navBody()
+                }
             }
         }
-    }
-
-    // 插件停用 / 卸载或更新后，右栏与全屏页都不能继续抱着旧页面。
-    LaunchedEffect(pluginSlotEntries, panePluginKey) {
-        val entry = pluginSlotEntries.firstOrNull { it.key == panePluginKey }
-        if (paneKind == WorkbenchPaneKind.PLUGIN && entry?.page == null) {
-            paneKind = WorkbenchPaneKind.NONE
-            panePluginContext = PluginEntryContext()
         }
     }
 
@@ -1478,7 +1542,8 @@ fun AppNavigation(
     // 检查更新弹窗（全局宿主：自动检测与关于页手动检查共用，覆盖所有页面）
     val updateCheckState by settingsViewModel.updateCheckState.collectAsStateWithLifecycle()
     val updateCheckVisible by settingsViewModel.updateCheckVisible.collectAsStateWithLifecycle()
-    if (agreementAccepted && updateCheckVisible && updateCheckState != UpdateCheckUiState.Idle) {
+    val updateDialogShowing = agreementAccepted && updateCheckVisible && updateCheckState != UpdateCheckUiState.Idle
+    if (updateDialogShowing) {
         val version = remember {
             runCatching {
                 context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
@@ -1494,6 +1559,32 @@ fun AppNavigation(
                 settingsViewModel.dismissUpdateCheck()
             },
             onDownload = { settingsViewModel.downloadAndInstall() }
+        )
+    }
+
+    // 求 Star 弹窗（全局宿主：累计前台满 3 小时后触发，点击「下次一定」按 3/7/14 天推迟，仅在 AI 空闲且聊天主界面无抽屉/弹窗时展示）
+    val uiGate = StarPromptUiGate(
+        agreementAccepted = agreementAccepted,
+        onboardingActive = !onboardingChecked || onboardingUiState.active,
+        updateDialogVisible = updateDialogShowing,
+        pluginActionPending = pendingPluginAction != null,
+        activeSlotPageOpen = activeSlotPage != null,
+        drawerOpen = (!permanentDrawer && drawerState.isOpen) || rightDrawerState.isOpen,
+        currentRoute = currentRoute
+    )
+    LaunchedEffect(uiGate) {
+        starPromptCoordinator.updateUiGate(uiGate)
+    }
+    val starPromptVisible by starPromptCoordinator.dialogVisible.collectAsStateWithLifecycle()
+    val starPromptManual by starPromptCoordinator.isManualPrompt.collectAsStateWithLifecycle()
+    if (starPromptVisible && uiGate.allowsPrompt(manual = starPromptManual)) {
+        StarPromptDialog(
+            onGoToStar = {
+                starPromptCoordinator.onGoToStar()
+                openUrl(context, StarPromptCoordinator.GITHUB_REPO_URL)
+            },
+            onSnooze = { starPromptCoordinator.onSnooze() },
+            onDismissForever = { starPromptCoordinator.onDismissForever() }
         )
     }
 
@@ -1601,7 +1692,20 @@ fun AppNavigation(
     }
     }
     }
+
 }
+
+/**
+ * [二开] 壁纸专用 TextureView：完全不接管触摸。
+ *
+ * 只在 onTouchEvent 里返回 false 不够——TextureView 仍会被当作可命中的子 View，
+ * 部分 ROM 上整屏就此失去响应。这里在 dispatchTouchEvent 阶段直接拒绝，
+ * 保证父容器把事件继续分发给下面的 ComposeView。
+ */
+private class WallpaperTextureView(context: android.content.Context) : TextureView(context) {
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean = false
+}
+
 
 /** 侧边栏文件页写操作失败提示（新建 / 重命名 / 删除共用）。 */
 private fun toastFileOpFailed(context: android.content.Context, messageRes: Int) {
@@ -1643,6 +1747,7 @@ private val OPAQUE_URL_SCHEME = Regex(
 )
 
 private val TRAILING_LINE = Regex("^(.*):(\\d+)$")
+
 
 /** 文件树里点击即在内置查看器预览的图片格式（与 sendFile 的图片判定一致）。 */
 private val PREVIEWABLE_IMAGE_EXTS = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp")
@@ -1711,7 +1816,6 @@ private fun Modifier.backgroundWithOverlayHoles(
             drawPath(path, Color.Transparent, blendMode = BlendMode.Clear)
         }
     }
-
 
 /** 聊天区链接目标 → 归一化后的文件路径；判定为网址（非 `file` scheme）时返回 null。 */
 internal fun asChatFilePath(uri: String): String? {

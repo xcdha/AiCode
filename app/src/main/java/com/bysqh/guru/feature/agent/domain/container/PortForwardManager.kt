@@ -1,7 +1,6 @@
 package com.bysqh.guru.feature.agent.domain.container
 
 import com.bysqh.guru.core.util.FileLogger
-import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import java.net.BindException
 import java.net.InetAddress
@@ -104,7 +103,7 @@ class PortForwardManager @Inject constructor(
         val host = remoteHost.trim().ifEmpty { "127.0.0.1" }
         if (host.any { it.isWhitespace() }) throw PortForwardException("PARAM_INVALID", "host 非法: $remoteHost")
 
-        if (executionModeHolder.currentMode() != ExecutionMode.REMOTE_SSH) {
+        if (!executionModeHolder.capabilities().portForward) {
             return mutex.withLock {
                 checkLimits(owner)
                 val info = PortForwardInfo(

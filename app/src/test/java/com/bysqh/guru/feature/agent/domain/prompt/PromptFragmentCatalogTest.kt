@@ -35,7 +35,7 @@ class PromptFragmentCatalogTest {
     @Before
     fun setUp() {
         root = Files.createTempDirectory("prompt-catalog-test").toFile()
-        guruDir = File(root, "aicode").apply { mkdirs() }
+        guruDir = File(root, "guru").apply { mkdirs() }
         workspaceDir = File(root, "workspace").apply { mkdirs() }
         globalDir.mkdirs()
         localDir.mkdirs()
@@ -49,7 +49,8 @@ class PromptFragmentCatalogTest {
         val projectRoot = mockk<ProjectAicodeRoot>()
         every { projectRoot.forPath(any()) } returns File(workspaceDir, ".guru")
 
-        catalog = PromptFragmentCatalog(context, installer, projectRoot)
+        val toggleRepository = mockk<com.bysqh.guru.feature.settings.data.repository.PromptFragmentToggleRepository>(relaxed = true)
+        catalog = PromptFragmentCatalog(context, installer, projectRoot, toggleRepository)
     }
 
     @After

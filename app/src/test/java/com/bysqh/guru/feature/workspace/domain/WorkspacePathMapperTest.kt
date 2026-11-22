@@ -17,7 +17,7 @@ import java.nio.file.Files
 
 /**
  * WorkspacePathMapper：容器路径 ↔ 宿主真实路径互转。
- * 固定环境：宿主工作区=/data/ws、AI 配置目录=/data/aicode、rootfs=/data/rootfs、容器 home=/root。
+ * 固定环境：宿主工作区=/data/ws、AI 配置目录=/data/guru、rootfs=/data/rootfs、容器 home=/root。
  * activeProfileIdFlow 用 emptyFlow()，让 init 协程的 collect 永不触发，避免真实 DataStore 调用
  * 与异步 profile 切换（extraBindings 挂载分支依赖该异步更新，纯 JVM 下竞态不稳定，不在本类覆盖）。
  */
@@ -29,7 +29,7 @@ class WorkspacePathMapperTest {
     private fun filesystemMapper(): WorkspacePathMapper {
         val mapper = newMapper()
         every { workspaceRepository.currentPath() } returns tmp.newFolder("workspace").absolutePath
-        every { containerInstaller.guruDir } returns tmp.newFolder("aicode")
+        every { containerInstaller.guruDir } returns tmp.newFolder("guru")
         every { containerInstaller.rootfsDirFor(any()) } returns tmp.newFolder("rootfs")
         return mapper
     }
@@ -40,7 +40,7 @@ class WorkspacePathMapperTest {
     private val pathHomeResolver: PathHomeResolver = mockk()
 
     private val wsRoot = "/data/ws"
-    private val guruDir = "/data/aicode"
+    private val guruDir = "/data/guru"
     private val rootfsDir = "/data/rootfs"
     private val home = "/root"
 
@@ -88,7 +88,7 @@ class WorkspacePathMapperTest {
     }
 
     @Test
-    fun toHostFile_aicodeChild_mapsUnderAicodeDir() {
+    fun toHostFile_guruChild_mapsUnderAicodeDir() {
         assertEquals(File(guruDir, "skills/x/SKILL.md"), newMapper().toHostFile("/root/.guru/skills/x/SKILL.md"))
     }
 
@@ -128,7 +128,7 @@ class WorkspacePathMapperTest {
     }
 
     @Test
-    fun toContainerPath_aicode_mapsToAicodeRootForm() {
+    fun toContainerPath_guru_mapsToAicodeRootForm() {
         assertEquals("/root/.guru", newMapper().toContainerPath(guruDir))
         assertEquals("/root/.guru/skills/x/SKILL.md", newMapper().toContainerPath("$guruDir/skills/x/SKILL.md"))
     }

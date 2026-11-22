@@ -47,9 +47,9 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.AppSwitch
 import com.bysqh.guru.core.ui.BatchDeleteConfirmDialog
+import com.bysqh.guru.core.ui.FloatingSelectionBar
 import com.bysqh.guru.core.ui.ListSelectionState
-import com.bysqh.guru.core.ui.SelectionActionBar
-import com.bysqh.guru.core.ui.SelectionActionIconButton
+import com.bysqh.guru.core.ui.SelectionActionDangerButton
 import com.bysqh.guru.core.ui.SwipeToDeleteRow
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragment
 import com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentSource
@@ -57,7 +57,6 @@ import com.bysqh.guru.feature.settings.presentation.PromptsUiState
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.FileText
-import compose.icons.feathericons.Trash2
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -87,9 +86,9 @@ internal fun PromptsSection(
     onReorder: (List<PromptFragment>) -> Unit,
     onToggleBuiltinDisabled: (Boolean) -> Unit,
     onBatchDeleteFragments: (List<Int>) -> Unit,
-    // [二开] 片段开关
+    // [二开] 片段开关：关闭的编号不参与提示词拼装
     disabledNumbers: Set<Int> = emptySet(),
-    onToggleEnabled: (Int, Boolean) -> Unit = { _, _ -> }
+    onToggleFragmentEnabled: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
     // 内置来源的片段删不了，也就不参与多选：勾选框置灰、全选也不会选中它们。
@@ -105,59 +104,58 @@ internal fun PromptsSection(
 
     val allSelected = selection.selectedCount > 0 && selection.selectedCount == selectableKeys.size
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        SettingsGroup(
-            modifier = Modifier
-                .padding(horizontal = Spacing.lg)
-                .padding(top = Spacing.sm)
-        ) {
-            SettingsRow(
-                icon = null,
-                title = stringResource(R.string.prompts_disable_builtin),
-                subtitle = stringResource(R.string.prompts_disable_builtin_hint),
-                trailing = {
-                    AppSwitch(checked = state.builtinDisabled, onCheckedChange = onToggleBuiltinDisabled)
-                }
-            )
-        }
-
-        if (selection.isActive) {
-            SelectionActionBar(
-                selectedCount = selection.selectedCount,
-                allSelected = allSelected,
-                onToggleSelectAll = {
-                    if (allSelected) selection.clear() else selection.replaceAll(selectableKeys)
-                },
-                onExit = { selection.exit() }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SettingsGroup(
+                modifier = Modifier
+                    .padding(horizontal = Spacing.lg)
+                    .padding(top = Spacing.sm)
             ) {
-                val enabled = selection.selectedCount > 0
-                SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
-                    contentDescription = stringResource(R.string.common_batch_delete),
-                    enabled = enabled,
-                    onClick = { showBatchDeleteConfirm = true },
-                    tint = MaterialTheme.colorScheme.error
+                SettingsRow(
+                    icon = null,
+                    title = stringResource(R.string.prompts_disable_builtin),
+                    subtitle = stringResource(R.string.prompts_disable_builtin_hint),
+                    trailing = {
+                        AppSwitch(checked = state.builtinDisabled, onCheckedChange = onToggleBuiltinDisabled)
+                    }
+                )
+            }
+
+            if (state.fragments.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.prompts_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 12.dp)
+                )
+            } else {
+                PromptList(
+                    fragments = state.fragments,
+                    selection = selection,
+                    onOpenFragment = onOpenFragment,
+                    disabledNumbers = disabledNumbers,
+                    onToggleFragmentEnabled = onToggleFragmentEnabled,
+                    onDeleteFragment = onDeleteFragment,
+                    onReorder = onReorder,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        if (state.fragments.isEmpty()) {
-            Text(
-                text = stringResource(R.string.prompts_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = Spacing.lg, vertical = 12.dp)
-            )
-        } else {
-            PromptList(
-                fragments = state.fragments,
-                selection = selection,
-                onOpenFragment = onOpenFragment,
-                onDeleteFragment = onDeleteFragment,
-                onReorder = onReorder,
-                disabledNumbers = disabledNumbers,
-                onToggleEnabled = onToggleEnabled,
-                modifier = Modifier.weight(1f)
+        FloatingSelectionBar(
+            visible = selection.isActive,
+            selectedCount = selection.selectedCount,
+            allSelected = allSelected,
+            onToggleSelectAll = {
+                if (allSelected) selection.clear() else selection.replaceAll(selectableKeys)
+            },
+            onExit = { selection.exit() },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            SelectionActionDangerButton(
+                text = stringResource(R.string.common_batch_delete),
+                enabled = selection.selectedCount > 0,
+                onClick = { showBatchDeleteConfirm = true }
             )
         }
     }
@@ -188,10 +186,10 @@ private fun PromptList(
     onOpenFragment: (PromptFragment) -> Unit,
     onDeleteFragment: (Int) -> Unit,
     onReorder: (List<PromptFragment>) -> Unit,
+    modifier: Modifier = Modifier,
     // [二开] 片段开关
     disabledNumbers: Set<Int> = emptySet(),
-    onToggleEnabled: (Int, Boolean) -> Unit = { _, _ -> },
-    modifier: Modifier = Modifier
+    onToggleFragmentEnabled: (Int, Boolean) -> Unit = { _, _ -> }
 ) {
     var localFragments by remember { mutableStateOf(fragments) }
     LaunchedEffect(fragments) { localFragments = fragments }
@@ -206,9 +204,11 @@ private fun PromptList(
         state = listState,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = Spacing.lg)
-            .padding(bottom = Spacing.xl),
-        contentPadding = PaddingValues(top = Spacing.xs),
+            .padding(horizontal = Spacing.lg),
+        contentPadding = PaddingValues(
+            top = Spacing.xs,
+            bottom = if (selection.isActive) 88.dp else Spacing.xl
+        ),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         itemsIndexed(
@@ -250,7 +250,7 @@ private fun PromptList(
                         selected = selection.isSelected(fragment.number.toString()),
                         onToggleSelect = { selection.toggle(fragment.number.toString()) },
                         enabled = fragment.number !in disabledNumbers,
-                        onToggleEnabled = { checked -> onToggleEnabled(fragment.number, checked) },
+                        onToggleEnabled = { onToggleFragmentEnabled(fragment.number, it) },
                         dragModifier = if (selection.isActive) {
                             Modifier
                         } else {
@@ -285,12 +285,11 @@ private fun PromptRow(
     onDelete: () -> Unit,
     deleteEnabled: Boolean,
     dragModifier: Modifier,
+    enabled: Boolean = true,
+    onToggleEnabled: (Boolean) -> Unit = {},
     selectionMode: Boolean = false,
     selected: Boolean = false,
-    onToggleSelect: () -> Unit = {},
-    // [二开] 片段开关：关闭后不参与系统提示词渲染
-    enabled: Boolean = true,
-    onToggleEnabled: (Boolean) -> Unit = {}
+    onToggleSelect: () -> Unit = {}
 ) {
     val sortDescription = stringResource(R.string.prompts_sort_long_press)
     val row: @Composable () -> Unit = {
@@ -342,12 +341,11 @@ private fun PromptRow(
             }
 
             Spacer(modifier = Modifier.width(Spacing.sm))
+            // [二开] 片段启用开关：关闭后该编号不进入系统提示词
+            AppSwitch(checked = enabled, onCheckedChange = onToggleEnabled)
+            Spacer(modifier = Modifier.width(Spacing.sm))
             SourceBadge(fragment.source)
             Spacer(modifier = Modifier.width(Spacing.xs))
-            if (!selectionMode) {
-                AppSwitch(checked = enabled, onCheckedChange = onToggleEnabled)
-                Spacer(modifier = Modifier.width(Spacing.xs))
-            }
             Icon(
                 imageVector = FeatherIcons.ChevronRight,
                 contentDescription = null,

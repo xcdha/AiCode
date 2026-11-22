@@ -57,7 +57,7 @@ class PermissionRulesRepositoryTest {
         every { context.filesDir } returns filesDir
         every { workspace.currentPath() } returns workspaceDir.absolutePath
         every { workspace.current } returns MutableStateFlow(null)
-        every { installer.guruDir } returns File(filesDir, "aicode")
+        every { installer.guruDir } returns File(filesDir, "guru")
         every { installer.rootfsDirFor(any()) } returns File(filesDir, "rootfs")
         every { settings.activeProfileIdFlow } returns emptyFlow()
         every { home.home() } returns "/root"

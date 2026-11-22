@@ -15,8 +15,16 @@ import com.bysqh.guru.core.util.AILogger
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.core.util.TombstoneParser
 import net.schmizz.sshj.common.SecurityUtils
+import com.bysqh.guru.feature.agent.domain.container.BuiltinDocsSync
 import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
+import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
 import com.bysqh.guru.feature.agent.domain.mcp.McpManager
+import com.bysqh.guru.feature.plugin.domain.PluginManager
+import com.bysqh.guru.feature.plugin.runtime.PluginExecutionBackendRegistrar
+import com.bysqh.guru.feature.plugin.runtime.PluginHookDispatcher
+import com.bysqh.guru.feature.plugin.runtime.PluginToolManager
+import com.bysqh.guru.feature.plugin.runtime.PluginWorkflowRegistrar
 import com.bysqh.guru.feature.settings.data.repository.KeepaliveSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.LanguageSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.LogSettingsRepository
@@ -24,21 +32,23 @@ import com.bysqh.guru.feature.settings.data.remote.ModelMetadataService
 import com.bysqh.guru.feature.terminal.domain.KeepaliveWorker
 import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import javax.inject.Inject
-import kotlinx.coroutines.Job
-import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
-import com.bysqh.guru.feature.agent.domain.container.BuiltinDocsSync
-import kotlinx.coroutines.sync.withLock
 
 @HiltAndroidApp
 class AIEditorApp : Application(), Configuration.Provider {
@@ -152,10 +162,6 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var logSettings: LogSettingsRepository
 
-    /** [二开] 提示词片段开关：启动时把「被关闭的编号」刷进缓存，保证首轮对话就生效。 */
-    @Inject
-    lateinit var promptFragmentCatalog: com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentCatalog
-
     /** [二开] 导航手势偏好：用于开启/关闭系统级预测性返回。 */
     @Inject
     lateinit var gestureSettings: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository
@@ -172,6 +178,14 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var mcpManager: McpManager
 
+    /** 插件 AI 工具注册器：启动即把生效插件声明的工具同步进 ToolRegistry。 */
+    @Inject
+    lateinit var pluginToolManager: PluginToolManager
+
+    /** 插件启动 hook：派发 app.started，拉起声明该事件的插件进程。 */
+    @Inject
+    lateinit var pluginHookDispatcher: PluginHookDispatcher
+
     /** MCP 配置仓库：启动即监听 mcp.json 外部直接编辑，改动数秒内刷新列表并触发重连。 */
     @Inject
     lateinit var mcpConfigRepository: com.bysqh.guru.feature.agent.domain.mcp.McpConfigRepository
@@ -179,18 +193,6 @@ class AIEditorApp : Application(), Configuration.Provider {
     /** 工具授权规则仓库：启动即监听 permissions.json 外部直接编辑，改动数秒内刷新规则。 */
     @Inject
     lateinit var permissionRulesRepository: com.bysqh.guru.feature.agent.domain.permission.PermissionRulesRepository
-
-    /** 进程级 AI 执行器：启动即接管运行态与订阅，Activity 被回收后任务继续。 */
-    @Inject
-    lateinit var agentRunManager: com.bysqh.guru.feature.agent.presentation.run.AgentRunManager
-
-    /** 插件 AI 工具注册：启动即把插件声明的工具挂进 ToolRegistry。 */
-    @Inject
-    lateinit var pluginToolManager: com.bysqh.guru.feature.plugin.runtime.PluginToolManager
-
-    /** 插件生命周期 hook 分发：负责 app.started，声明该事件的插件在此拉起进程。 */
-    @Inject
-    lateinit var pluginHookDispatcher: com.bysqh.guru.feature.plugin.runtime.PluginHookDispatcher
 
     /** 技能配置仓库：启动即监听技能目录与 skills.json 外部变更，改动数秒内刷新技能列表。 */
     @Inject
@@ -217,6 +219,9 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var executionModeRepository: com.bysqh.guru.feature.settings.data.repository.ExecutionModeRepository
 
+    @Inject
+    lateinit var containerSettingsRepository: com.bysqh.guru.feature.settings.data.repository.ContainerSettingsRepository
+
     /** 应用语言偏好仓库：持久化用户选择的语言，供 attachBaseContext 同步读取。 */
     @Inject
     lateinit var languageSettings: LanguageSettingsRepository
@@ -224,6 +229,26 @@ class AIEditorApp : Application(), Configuration.Provider {
     /** 执行模式同步缓存：启动时从 DataStore 读首帧注入 DI。 */
     @Inject
     lateinit var executionModeHolder: com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
+
+    /** 全局执行后端注册表：维护内置与插件动态注册的执行后端及当前激活项。 */
+    @Inject
+    lateinit var executionBackendRegistry: ExecutionBackendRegistry
+
+    /** 插件执行后端注册器：负责将已激活插件声明的执行后端同步到注册表。 */
+    @Inject
+    lateinit var pluginExecutionBackendRegistrar: PluginExecutionBackendRegistrar
+
+    /** 插件工作流注册器：负责将已激活插件声明的工作流同步到注册表。 */
+    @Inject
+    lateinit var pluginWorkflowRegistrar: PluginWorkflowRegistrar
+
+    /** 插件外部会话服务：负责同步已激活插件声明的外部会话源到内存存储。 */
+    @Inject
+    lateinit var externalSessionService: com.bysqh.guru.feature.plugin.runtime.ExternalSessionService
+
+    /** 插件管理器：用于监听插件启停、安装与卸载变化并同步执行后端。 */
+    @Inject
+    lateinit var pluginManager: PluginManager
 
     /** 远程 SSH 连接管理器：远程模式下启动即用配置建立连接。 */
     @Inject
@@ -260,14 +285,17 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var providerProxyRegistry: com.bysqh.guru.feature.settings.data.repository.ProviderProxyRegistry
 
+    /** 进程级 AI 执行器：启动即接管运行态与订阅，Activity 被回收后任务继续。 */
+    @Inject
+    lateinit var agentRunManager: com.bysqh.guru.feature.agent.presentation.run.AgentRunManager
+
     /** 长驻作用域：持续把持久化的日志等级同步到 FileLogger。 */
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val docsSnapshotMutex = Mutex()
+    private var docsSnapshot: BuiltinDocsSync.Snapshot? = null
     private val docsSyncLock = Any()
     private var docsSyncJob: Job? = null
     private var docsSyncTarget: RemoteSshConnection.DocsSyncTarget? = null
-    private val docsSnapshotMutex = kotlinx.coroutines.sync.Mutex()
-    private var docsSnapshot: BuiltinDocsSync.Snapshot? = null
-
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
         if (isCrashProcess(this)) {
@@ -278,15 +306,10 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
         super.onCreate()
         agentRunManager.start()
-        migrateLegacyAicodeData()
         logDeviceInfo()
         // 补记 Java 未捕获异常处理器覆盖不到的异常退出（native 崩溃 / ANR / 低内存被杀 / 被信号杀死）。
         appScope.launch { reportAbnormalExits() }
-        // [二开] 预载片段开关缓存（DataStore 读取是挂起的，不能等到渲染提示词时再读）。
-        appScope.launch { promptFragmentCatalog.refreshDisabledCache() }
-        // [二开] 同步系统级预测性返回开关（Android 14+）。App 锁 targetSdk 28，
-        // 默认拿不到系统手势预测动画，这里用反射打开；失败静默降级。
-        // 持续跟随设置，用户切换后立即生效。
+        // [二开] 跟随设置同步系统级预测性返回开关（App 锁 targetSdk 28，需反射打开）；失败静默降级。
         appScope.launch {
             gestureSettings.predictiveBackFlow.collectLatest { enabled ->
                 com.bysqh.guru.core.ui.PredictiveBackController.apply(applicationInfo, enabled)
@@ -347,47 +370,100 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
         // 启动即加载持久化等级，并随设置页改动实时生效（唯一同步点）。
         appScope.launch {
-            logSettings.levelFlow.collectLatest { FileLogger.setMinLevel(it) }
+            logSettings.levelFlow.collectLatest {
+                FileLogger.setMinLevel(it)
+                AILogger.setMinLevel(it)
+            }
         }
-        // 启动即同步从 DataStore 读首帧执行模式缓存到 ExecutionModeHolder，供 DI @Provides 同步读取。
-        // 异步读首帧模式写入 ExecutionModeHolder。委托层（DelegatingCommandEngine/DelegatingFileAccess）
-        // 每次方法调用时才按 holder.currentMode() 转发，不依赖注入时机，故 holder 晚几毫秒写入无妨——
-        // 首次命令/文件操作一定在 UI 启动之后，那时 holder 早已就绪。
-        // SSH 连接放后台，失败不阻塞 UI（连接失败时首次命令会触发 ensureInstalled 重试）。
+        // 启动时先同步已安装插件声明的执行后端，再从 DataStore 恢复上次激活的后端 ID
+        //（ExecutionModeHolder 会跟随 ExecutionBackendRegistry.activeBackendId 自动同步）。
+        // 之后持续监听插件启停/安装/卸载变化，刷新后端列表并在当前后端失效回退时回写持久化。
         appScope.launch {
-            val mode = executionModeRepository.executionModeFlow.first()
-            executionModeHolder.setMode(mode)
+            pluginExecutionBackendRegistrar.syncAll()
+            val savedBackendId = executionModeRepository.activeBackendIdFlow.first()
+            val applied = executionBackendRegistry.setActiveBackend(savedBackendId)
+            if (!applied) {
+                executionModeRepository.setActiveBackendId(executionBackendRegistry.currentBackend().id)
+            }
+            pluginManager.plugins.drop(1).collect {
+                val activeBefore = executionBackendRegistry.currentBackend().id
+                pluginExecutionBackendRegistrar.syncAll()
+                val activeAfter = executionBackendRegistry.currentBackend().id
+                if (activeBefore != activeAfter) {
+                    executionModeRepository.setActiveBackendId(activeAfter)
+                }
+            }
         }
-        // 当前激活 profile 的连接配置变化（编辑连接/编辑 profile/切 profile/切模式）即重连，改连接即时生效。
+        // 启动时同步已安装插件声明的工作流与外部会话源，并持续监听插件启停/安装/卸载变化。
+        appScope.launch {
+            pluginWorkflowRegistrar.syncAll()
+            externalSessionService.syncDeclaredSources()
+            pluginManager.plugins.drop(1).collect {
+                pluginWorkflowRegistrar.syncAll()
+                externalSessionService.syncDeclaredSources()
+            }
+        }
+        appScope.launch {
+            containerSettingsRepository.activeProfileIdFlow.collect { profileId ->
+                executionBackendRegistry.updateBuiltinInstance(
+                    ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID,
+                    profileId
+                )
+            }
+        }
+        // 仅内置远程 SSH 后端需要监督 SSH 连接并在连接后同步内置文档与 assets；
+        // 其余后端（本地 PRoot 或插件执行后端）停掉 SSH 监督并断开残留连接。
         appScope.launch {
             combine(
                 activeRemoteConnectionResolver.activeConfigFlow,
-                executionModeHolder.mode
-            ) { config, mode -> config to mode }.collect { (config, mode) ->
-                if (mode != com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
+                executionBackendRegistry.activeBackend.map {
+                    it.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID
+                }.distinctUntilChanged(),
+                containerSettingsRepository.activeProfileIdFlow
+            ) { config, isRemoteSsh, profileId -> Triple(config, isRemoteSsh, profileId) }
+                .collectLatest { (config, isRemoteSsh, profileId) ->
+                if (!isRemoteSsh) {
                     cancelDocsSync()
                     remoteSshConnection.stopSupervisor()
                     remoteTerminalSessionManager.tabs.value.map { it.id }.forEach {
                         remoteTerminalSessionManager.closeTab(it)
                     }
                     withContext(Dispatchers.IO) { remoteSshConnection.disconnect() }
-                    return@collect
+                    return@collectLatest
                 }
+                val remoteIdentity = config?.let {
+                    listOf(profileId, it.host, it.port.toString(), it.username).joinToString("\u0000")
+                } ?: "unconfigured:$profileId"
+                val targetInstanceId = "${ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID}:$remoteIdentity"
+                if (config != remoteSshConnection.config ||
+                    executionBackendRegistry.currentBackend().instanceId != targetInstanceId
+                ) {
+                    cancelDocsSync()
+                    remoteSshConnection.stopSupervisor()
+                    withContext(Dispatchers.IO) { remoteSshConnection.disconnect() }
+                }
+                executionBackendRegistry.updateBuiltinInstance(
+                    ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID,
+                    remoteIdentity
+                )
                 if (config == null) {
                     cancelDocsSync()
-                    return@collect
+                    return@collectLatest
                 }
-                if (config != remoteSshConnection.config || !remoteSshConnection.isConnected()) cancelDocsSync()
+                if (!remoteSshConnection.isConnected()) cancelDocsSync()
                 remoteSshConnection.startSupervisor(appScope) {
-                    if (executionModeHolder.currentMode() != com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
+                    if (executionBackendRegistry.currentBackend().id != ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID) {
                         return@startSupervisor
                     }
-                    runCatching { workspaceRepository.initialize() }
-                        .onFailure { FileLogger.w(TAG, "SSH 重连后重新加载工作区失败", it) }
+                    runCatching { workspaceRepository.refreshAvailability() }
+                        .onFailure { FileLogger.w(TAG, "SSH 重连后刷新工作区失败", it) }
                     syncDocsToRemote()
                     releaseBuiltinAssetsToRemote()
                 }
-                if (config == remoteSshConnection.config && remoteSshConnection.isConnected()) return@collect
+                if (config == remoteSshConnection.config && remoteSshConnection.isConnected()) {
+                    syncDocsToRemote()
+                    return@collectLatest
+                }
                 runCatching {
                     remoteSshConnection.connect(config)
                     // 连接成功后同步内置文档到远程 ~/.guru/docs/，供 AI 查阅。
@@ -439,6 +515,7 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
         // 连接已配置的 MCP server，把其工具注册进 ToolRegistry（内部自有 scope，失败不影响启动）。
         mcpManager.start()
+        // 插件 AI 工具：设备支持 JS 运行时后，把生效插件声明的工具注册进同一个 ToolRegistry。
         pluginToolManager.start(appScope)
         // 插件启动事件：声明 app.started 的插件在此拉起进程；runtime.resident 的进程不参与空闲回收。
         appScope.launch {
@@ -450,10 +527,10 @@ class AIEditorApp : Application(), Configuration.Provider {
         // 权限规则由 App 启动即常驻订阅（AI 评估随时要读到最新规则）；MCP 配置与技能列表
         // 改由各自消费方（McpManager / 设置页）按需订阅，无需在这里拉起。
         appScope.launch { permissionRulesRepository.startWatching() }
-        // 持续同步工作区模式缓存，崩溃时随报告带出
+        // 持续同步工作区后端缓存，崩溃时随报告带出
         appScope.launch {
-            executionModeRepository.executionModeFlow.collect { mode ->
-                currentWorkspaceMode = mode.name
+            executionBackendRegistry.activeBackend.collect { backend ->
+                currentWorkspaceMode = backend.id
             }
         }
         // 主进程健康启动 10 秒后，自动清零连续崩溃计数与错误页显示标志，恢复健康状态
@@ -465,38 +542,6 @@ class AIEditorApp : Application(), Configuration.Provider {
         // MainActivity 继承 ComponentActivity（非 AppCompatActivity），
         // AppCompatDelegate.setApplicationLocales 的自动 recreate 不生效，
         // 且两者同时设置 locale 会竞争导致偶发语言错乱。
-    }
-
-    /**
-     * 把误写到 files/aicode 的用户数据并回 files/guru。
-     *
-     * 中途版本把容器数据目录硬编码成了 "aicode"，那段时间安装的插件落在 files/aicode；
-     * 现已改回 files/guru，旧数据不迁移的话插件会被当成未安装（图标、开关全部消失）。
-     * 只迁移用户数据，不碰 docs/scripts 等随版本更新的资源；同名条目保留新目录的版本。
-     */
-    private fun migrateLegacyAicodeData() {
-        val legacy = File(filesDir, "aicode")
-        if (!legacy.isDirectory) return
-        val current = File(filesDir, "guru")
-        listOf("plugins", "plugin-dev").forEach { name ->
-            val src = File(legacy, name)
-            if (src.isDirectory) mergeDirectory(src, File(current, name))
-        }
-    }
-
-    private fun mergeDirectory(src: File, dst: File) {
-        if (!dst.exists()) {
-            src.renameTo(dst)
-            return
-        }
-        src.listFiles()?.forEach { child ->
-            val target = File(dst, child.name)
-            when {
-                !target.exists() -> child.renameTo(target)
-                child.isDirectory && target.isDirectory -> mergeDirectory(child, target)
-                else -> Unit // 目标已存在：保留新目录的版本
-            }
-        }
     }
 
     /** 记录设备/版本信息：用户报「某系统版本上容器起不来」时，日志里得先有系统与 ABI 上下文。 */
@@ -519,11 +564,6 @@ class AIEditorApp : Application(), Configuration.Provider {
             .setWorkerFactory(workerFactory)
             .build()
 
-    /**
-     * 读取 assets/docs 下所有内置文档（含 guide/ advanced/ 等分类子目录），通过 SSH exec 同步到远程 ~/.guru/docs/。
-     * 远程模式下 AI 查阅 ~/.guru/docs/ 的设置说明文档时，需要这些文件存在于远程服务器。
-     * 连接成功与重连成功后调用，保证远程文档随 App 升级更新。失败仅记日志，不阻断流程。
-     */
     private fun syncDocsToRemote() {
         val target = remoteSshConnection.captureDocsSyncTarget() ?: return
         synchronized(docsSyncLock) {
@@ -533,10 +573,10 @@ class AIEditorApp : Application(), Configuration.Provider {
             docsSyncJob = appScope.launch {
                 try {
                     val snapshot = cachedDocsSnapshot()
-                    if (executionModeHolder.currentMode() == com.bysqh.guru.feature.settings.data.repository.ExecutionMode.REMOTE_SSH) {
+                    if (executionBackendRegistry.currentBackend().id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID) {
                         remoteSshConnection.uploadDocs(snapshot, target)
                     }
-                } catch (error: kotlinx.coroutines.CancellationException) {
+                } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {
                     FileLogger.w(TAG, "同步内置文档到远程失败", error)
@@ -545,7 +585,6 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
     }
 
-    /** 连接身份变化或退出远程模式时中止在途的文档同步，避免写到旧连接。 */
     private fun cancelDocsSync() {
         synchronized(docsSyncLock) {
             docsSyncJob?.cancel()
@@ -553,7 +592,7 @@ class AIEditorApp : Application(), Configuration.Provider {
         }
     }
 
-    private suspend fun cachedDocsSnapshot(): BuiltinDocsSync.Snapshot = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    private suspend fun cachedDocsSnapshot(): BuiltinDocsSync.Snapshot = withContext(Dispatchers.IO) {
         docsSnapshotMutex.withLock {
             docsSnapshot ?: run {
                 val docs = linkedMapOf<String, String>()
@@ -588,10 +627,9 @@ class AIEditorApp : Application(), Configuration.Provider {
         for (entry in entries) {
             val assetPath = "$assetDir/$entry"
             val relativePath = if (relativePrefix.isEmpty()) entry else "$relativePrefix/$entry"
-            try {
-                out[relativePath] = assets.open(assetPath).bufferedReader().use { it.readText() }
-            } catch (e: java.io.IOException) {
-                // 目录项：assets.open 对目录抛 IOException，递归处理
+            if (entry.endsWith(".md")) {
+                out[relativePath] = assets.open(assetPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            } else {
                 collectAssetDocs(assetPath, relativePath, out)
             }
         }
@@ -915,6 +953,17 @@ class AIEditorApp : Application(), Configuration.Provider {
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(approvalChannel)
+
+            // 插件通知：由插件进程通过 host.notify 发起，默认优先级，可单独关闭。
+            val pluginChannel = NotificationChannel(
+                "plugin_events",
+                getString(R.string.notification_channel_plugin_events),
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = getString(R.string.notification_channel_plugin_events_desc)
+                setShowBadge(true)
+            }
+            notificationManager.createNotificationChannel(pluginChannel)
         }
     }
 }

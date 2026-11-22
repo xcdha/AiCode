@@ -185,7 +185,7 @@ class RepoDataFetcher(
         private const val CACHE_DIR_NAME = "repo_data_cache"
 
         const val DEFAULT_OWNER = "jieapi"
-        const val DEFAULT_REPO = "guru"
+        const val DEFAULT_REPO = "aicode"
         const val DEFAULT_BRANCH = "main"
 
         /** 默认缓存 12 小时 */

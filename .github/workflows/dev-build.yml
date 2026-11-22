@@ -5,7 +5,7 @@ name: Dev Build
 # 正式发版走 android-release.yml（打 v* tag），这里只出可安装的验证包，不创建 Release。
 on:
   push:
-    branches: [ dev ]
+    branches: [ dev, feat/rebase-clean ]
     paths-ignore:
       - '**.md'
       - 'docs/**'

@@ -52,6 +52,8 @@ The management page has three sections:
 
 **Key list**: each key is a collapsible card — collapsed it shows the index and a masked preview, tap to expand. Expanded you can edit that key and set its **weight**. Swipe a card left to delete it; long-press the card header and drag to reorder (the order survives restart). The eye icon toggles plaintext/masked display per key.
 
+Each key can also carry a **custom Base URL**. When set, requests made with that key go to that address only; leave it blank to use the provider's Base URL. This is useful when different keys live behind different relays or self-hosted proxies. Switching keys switches the address along with it, and image generation, model discovery, connectivity tests and the dashboard follow the current key's address.
+
 **Scheduling weight**: each key carries its own weight, default `1`, max `1,000,000`; `≤ 0` keeps the key but excludes it from scheduling. Weight only affects the **round robin** strategy — a higher value means new sessions land on that key more often (smooth proportional distribution, e.g. `1:3` is roughly a one-to-three split).
 
 **Pickup strategy**:
@@ -83,7 +85,7 @@ Keep them off by default. Enable only when you've confirmed the official direct 
 
 ::: v-pre
 - **Custom request headers**: append custom headers to all requests of this vendor, fully overriding same-named defaults (e.g. setting `User-Agent` replaces the default UA). Values support `{{SESSION_ID}}` (current session id) and `{{API_KEY}}` (the key actually used this time) placeholders, substituted before sending. Only needed when a relay gateway validates specific headers.
-- **Custom dashboard script**: show a balance or usage card above the input box for this vendor. Scripts live in `~/.aicode/scripts/`, support Python, Bash and Node, and can be tested with "Run Test" in the edit page.
+- **Custom dashboard script**: show a balance or usage card above the input box for this vendor. Scripts live in `~/.guru/scripts/`, support Python, Bash and Node, and can be tested with "Run Test" in the edit page.
 - **Script arguments**: inject extra environment variable `AICODE_KEY_<KEY>` into the dashboard script. Values support placeholders like `{{PROVIDER_API_KEY}}` (current key), `{{BASE_URL}}`, `{{MODEL}}`, substituted before the script runs.
 :::
 

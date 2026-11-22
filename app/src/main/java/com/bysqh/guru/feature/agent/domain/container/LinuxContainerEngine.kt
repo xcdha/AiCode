@@ -157,7 +157,7 @@ class LinuxContainerEngine @Inject constructor(
         private const val TIMEOUT_KILL_GRACE_MS = 200L
 
         /**
-         * 基础包配置版本。对应 assets/aicode/provision.sh 的版本：改脚本（包清单/安装逻辑/镜像源）时同步 +1，
+         * 基础包配置版本。对应 assets/guru/provision.sh 的版本：改脚本（包清单/安装逻辑/镜像源）时同步 +1，
          * 触发在设备上重新执行该脚本（apk add 幂等，已装包跳过）。
          * 独立于 [ContainerInstaller] 的 rootfs INSTALL_VERSION：rootfs 版本升级会删 rootfs
          * （连带清掉本标记），故新 rootfs 必然重跑配置；同 rootfs 下改脚本则靠本版本号触发。
@@ -473,7 +473,7 @@ class LinuxContainerEngine @Inject constructor(
 
     /**
      * 基础包是否已配置完成（按当前 profile 的标记）。首次进入终端时由初始化菜单
-     * （assets/aicode/provision.sh）引导安装，完成后脚本写标记；未完成时不影响进入 shell。
+     * （assets/guru/provision.sh）引导安装，完成后脚本写标记；未完成时不影响进入 shell。
      */
     override fun isProvisioned(): Boolean = isProvisionedFor(currentProfile)
 
@@ -507,7 +507,7 @@ class LinuxContainerEngine @Inject constructor(
 
     /**
      * 幂等地确保容器可用：解压 rootfs/proot（首次耗时）。所有容器（内置/自定义）一致——
-     * 基础工具安装不在此阶段自动执行，由进入终端时的初始化菜单（assets/aicode/provision.sh）
+     * 基础工具安装不在此阶段自动执行，由进入终端时的初始化菜单（assets/guru/provision.sh）
      * 引导用户选择，装包失败也不阻塞进入 shell。
      * 仅由终端页（[TerminalSessionManager]）作为唯一初始化入口调用；命令执行入口不再自动触发。
      *
@@ -565,7 +565,7 @@ class LinuxContainerEngine @Inject constructor(
             FileLogger.e(TAG, "ensureInstalled 失败：$reason（profile=${profile.id}）")
             logContainerDiagnostics("ensureInstalled 失败")
             _initProgress.value = ContainerInitState.Failed(reason)
-            throw IllegalStateException(reason)
+            throw ContainerNotInitializedException(reason)
         }
     }
 
@@ -793,7 +793,7 @@ class LinuxContainerEngine @Inject constructor(
             // (5.1.107.x) 的 seccomp 过滤表已包含 statx，默认 seccomp 模式即可正确翻译，故此处
             // **刻意不设 PROOT_NO_SECCOMP**——这正是 Termux 自己用 proot 的方式；强制全量 ptrace
             // (PROOT_NO_SECCOMP=1) 反而在本设备触发过 ptrace(PEEKDATA) I/O error。
-            // 前缀 /root/.guru/bin：容器内 aicode 环境工具（见 ContainerInstaller.extractEnvTool）。
+            // 前缀 /root/.guru/bin：容器内 guru 环境工具（见 ContainerInstaller.extractEnvTool）。
             // /usr/local/bin 供 skills.sh CLI 等自装工具使用：容器内 shell 以非登录方式启动（bash -c），
             // 不加载 /etc/profile，不在此处列出则这些命令名不可达。
             "PATH" to "/root/.guru/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
@@ -801,7 +801,7 @@ class LinuxContainerEngine @Inject constructor(
             // 宿主进程环境的 TMPDIR 指向 App 缓存目录（/data/user/0/<pkg>/cache），容器内 /data 未挂载、
             // 该路径不存在——mktemp/dpkg 等会因找不到临时目录失败，故显式覆盖为容器内 /tmp。
             "TMPDIR" to "/tmp",
-            // git 全局配置指向持久挂载里的 .gitconfig（/root/.guru 绑定到宿主 filesDir/aicode，
+            // git 全局配置指向持久挂载里的 .gitconfig（/root/.guru 绑定到宿主 filesDir/guru，
             // 跨 rootfs 升级不丢）。git-credentials 同放该目录，credential.helper=store 经此读；
             // credential.helper 由 provision.sh 经 includeIf 限定 /root/workspace/ 加载（最小化注入）。
             "GIT_CONFIG_GLOBAL" to "/root/.guru/.gitconfig",

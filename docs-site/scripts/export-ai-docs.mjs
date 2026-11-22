@@ -124,9 +124,9 @@ for (const section of sections) {
 }
 
 const lines = [
-  '# Guru 文档',
+  '# AiCode 文档',
   '',
-  `> Guru 用户文档的纯 Markdown 镜像，正文即 .md 原文，可直接整页抓取。HTML 版见 ${SITE_URL}。`,
+  `> AiCode 用户文档的纯 Markdown 镜像，正文即 .md 原文，可直接整页抓取。HTML 版见 ${SITE_URL}。`,
   ''
 ]
 for (const section of sections) {

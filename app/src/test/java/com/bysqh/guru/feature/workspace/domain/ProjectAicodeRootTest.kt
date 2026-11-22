@@ -1,0 +1,100 @@
+package com.bysqh.guru.feature.workspace.domain
+
+import com.bysqh.guru.feature.agent.domain.container.BackendCapabilities
+import com.bysqh.guru.feature.agent.domain.container.BuiltinLocalProotBackend
+import com.bysqh.guru.feature.agent.domain.container.BuiltinRemoteSshBackend
+import com.bysqh.guru.feature.agent.domain.container.CommandEngine
+import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackend
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
+import com.bysqh.guru.feature.agent.domain.container.LinuxContainerEngine
+import com.bysqh.guru.feature.agent.domain.container.ProjectConfigLocation
+import com.bysqh.guru.feature.agent.domain.container.RemoteConnectionConfig
+import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
+import com.bysqh.guru.feature.agent.domain.container.RemoteSshEngine
+import com.bysqh.guru.feature.terminal.domain.RemoteTerminalSessionManager
+import com.bysqh.guru.feature.terminal.domain.TerminalSessionManager
+import com.bysqh.guru.feature.workspace.domain.LocalFileAccess
+import com.bysqh.guru.feature.workspace.domain.RemoteSftpFileAccess
+import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
+import com.bysqh.guru.feature.terminal.domain.TerminalSessionProvider
+import com.bysqh.guru.feature.workspace.data.repository.WorkspaceRepository
+import com.bysqh.guru.feature.workspace.domain.remote.RemoteAuth
+import io.mockk.every
+import io.mockk.mockk
+import java.io.File
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+
+class ProjectAicodeRootTest {
+
+    @get:Rule
+    val tmp = TemporaryFolder()
+
+    private fun setup(
+        remoteConfig: RemoteConnectionConfig? = null
+    ): Triple<ExecutionBackendRegistry, ProjectAicodeRoot, File> {
+        val guruDir = tmp.newFolder("guru")
+        val sshConnection = mockk<RemoteSshConnection> {
+            every { config } returns remoteConfig
+        }
+        val localBackend = BuiltinLocalProotBackend(mockk<LinuxContainerEngine>(relaxed = true), mockk<LocalFileAccess>(relaxed = true), mockk<TerminalSessionManager>(relaxed = true))
+        val remoteBackend = BuiltinRemoteSshBackend(mockk<RemoteSshEngine>(relaxed = true), mockk<RemoteSftpFileAccess>(relaxed = true), mockk<RemoteTerminalSessionManager>(relaxed = true), sshConnection)
+        val registry = ExecutionBackendRegistry(localBackend, remoteBackend)
+        val workspaceRepo = mockk<WorkspaceRepository> {
+            every { currentPath() } returns "/ws/my-app"
+        }
+        val installer = mockk<ContainerInstaller> {
+            every { this@mockk.guruDir } returns guruDir
+        }
+        val root = ProjectAicodeRoot(workspaceRepo, ExecutionModeHolder(registry), installer)
+        return Triple(registry, root, guruDir)
+    }
+
+    @Test
+    fun localBackend_resolvesInsideWorkspaceDir() {
+        val (_, root, _) = setup()
+        assertEquals(File("/ws/my-app", ".guru"), root.current())
+    }
+
+    @Test
+    fun remoteSshBackend_resolvesInAppPrivateDirWithHostPortKey() {
+        val (registry, root, guruDir) = setup(
+            RemoteConnectionConfig("10.0.0.1", 22, "dev", RemoteAuth.Password(""), "/srv")
+        )
+        registry.setActiveBackend(ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID)
+
+        val resolved = root.current()
+        assertEquals(File(guruDir, "projects"), resolved.parentFile)
+        assertTrue(resolved.name.startsWith("my-app-"))
+        assertEquals(resolved.name, root.projectKey("/ws/my-app"))
+    }
+
+    @Test
+    fun pluginBackend_respectsProjectConfigLocationAndProjectConfigKey() {
+        val (registry, root, guruDir) = setup()
+        val pluginBackend = object : ExecutionBackend {
+            override val id: String = "demo.cloud:sandbox"
+            override val displayName: String = "Cloud Sandbox"
+            override val capabilities: BackendCapabilities = BackendCapabilities(
+                isRemoteEnvironment = true,
+                projectConfigLocation = ProjectConfigLocation.APP_PRIVATE_DIR
+            )
+            override fun environmentDescription(): String = displayName
+            override fun environmentCacheKey(): String = id
+            override fun workspaceRootDisplay(workspacePath: String): String = workspacePath
+            override fun projectConfigKey(workspacePath: String): String = "custom-plugin-key"
+            override val commandEngine: CommandEngine = mockk(relaxed = true)
+            override val fileAccess: FileAccessProvider = mockk(relaxed = true)
+            override val terminalSessionProvider: TerminalSessionProvider? = null
+        }
+        registry.register(pluginBackend)
+        registry.setActiveBackend(pluginBackend.id)
+
+        assertEquals(File(File(guruDir, "projects"), "custom-plugin-key"), root.current())
+        assertEquals("custom-plugin-key", root.projectKey("/ws/my-app"))
+    }
+}

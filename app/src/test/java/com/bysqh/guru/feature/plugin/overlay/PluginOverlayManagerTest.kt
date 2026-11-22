@@ -17,10 +17,12 @@ import com.bysqh.guru.feature.plugin.domain.PluginManager
 import com.bysqh.guru.feature.plugin.domain.PluginOverlayDefinition
 import com.bysqh.guru.feature.plugin.domain.PluginOverlaySurface
 import com.bysqh.guru.feature.plugin.domain.PluginStatus
+import com.bysqh.guru.feature.plugin.runtime.PluginHostApiDispatcher
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.justRun
+import dagger.Lazy
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -181,11 +183,15 @@ class PluginOverlayManagerTest {
         val foreground = mockk<AppForegroundMonitor>()
         every { foreground.isForeground } returns MutableStateFlow(false)
         every { foreground.current() } returns false
+        val hostApiDispatcher = mockk<PluginHostApiDispatcher>(relaxed = true)
+        val dispatcherLazy = object : Lazy<PluginHostApiDispatcher> {
+            override fun get(): PluginHostApiDispatcher = hostApiDispatcher
+        }
         return PluginOverlayManager(
             context = context,
             pluginManager = pluginManager,
             permissionService = mockk(relaxed = true),
-            sessionSourceService = mockk(relaxed = true),
+            hostApiDispatcher = dispatcherLazy,
             permissionRepository = permissions,
             positionRepository = positions,
             appForegroundMonitor = foreground

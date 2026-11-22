@@ -184,7 +184,7 @@ internal class BuiltinDocsSync(
         internal const val MAX_STATE_BYTES = 1024 * 1024
         internal const val STAGING_DIR = ".builtin-docs-staging-v1"
         internal const val BACKUP_DIR = ".builtin-docs-backups"
-        private const val FORMAT = "aicode-docs-v1"
+        private const val FORMAT = "guru-docs-v1"
         private val HASH = Regex("[0-9a-f]{64}")
 
         fun snapshot(docs: Map<String, String>): Snapshot {

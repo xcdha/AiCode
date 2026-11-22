@@ -62,6 +62,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -98,7 +99,7 @@ sealed interface PluginImportState {
         val origin: PluginInstallOrigin = PluginInstallOrigin(),
         /** 非官方在线安装需要使用者手动输入该插件的源码仓库地址。 */
         val expectedRepository: String? = null,
-        /** 展示用来源名称，例如「AiCode Plugins」。 */
+        /** 展示用来源名称，例如「Guru Plugins」。 */
         val sourceLabel: String? = null,
         /** 来源是否在宿主官方白名单内；只有它为 true 时跳过手输仓库。 */
         val officialSource: Boolean = false
@@ -120,6 +121,7 @@ data class PluginDevProject(
     val pluginId: String,
     val version: String,
     val installedVersion: String?,
+    val installedDevelopment: Boolean = false,
     val lastModified: Long,
     val error: String? = null,
     val name: LocalizedText? = null,
@@ -175,8 +177,8 @@ class PluginsViewModel @Inject constructor(
     private val introspectionService: PluginIntrospectionService,
     private val toolService: PluginToolService,
     private val permissionService: com.bysqh.guru.feature.plugin.runtime.PluginPermissionService,
-    private val sessionSourceService: com.bysqh.guru.feature.plugin.runtime.PluginSessionHostService,
-    private val httpService: PluginHttpService
+    private val httpService: PluginHttpService,
+    private val hostApiDispatcher: com.bysqh.guru.feature.plugin.runtime.PluginHostApiDispatcher
 ) : ViewModel() {
 
     val plugins: StateFlow<List<InstalledPlugin>> = manager.plugins
@@ -300,6 +302,7 @@ class PluginsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             when (val result = manager.install(state.preview.token, state.origin)) {
                 is PluginInstallResult.Installed -> {
+                    pluginRuntimeManager.closePlugin(result.pluginId)
                     if (installSourceChanged(state.preview, state.origin)) {
                         // 来源变了就不沿用旧包拿到的高危授权，启用状态保持原样
                         shizukuPermissionRepository.revoke(result.pluginId)
@@ -312,6 +315,9 @@ class PluginsViewModel @Inject constructor(
                         state.preview.installedVersion
                     )
                     state.sourceDirName?.let { dirName ->
+                        if (!manager.bindDevelopment(result.pluginId, dirName)) {
+                            FileLogger.w(TAG, "绑定开发插件失败: $dirName")
+                        }
                         devLastLoaded[dirName] = devDirModified(dirName)
                         refreshDevProjects()
                     }
@@ -550,6 +556,10 @@ class PluginsViewModel @Inject constructor(
                         pluginId = parsed.manifest.id,
                         version = parsed.manifest.version.toString(),
                         installedVersion = installed[parsed.manifest.id],
+                        installedDevelopment = manager.plugins.value.any { plugin ->
+                            plugin.id == parsed.manifest.id && plugin.record.sourceKind == "development" &&
+                                plugin.record.devDirName == dir.name
+                        },
                         lastModified = lastModified,
                         name = parsed.manifest.name,
                         description = parsed.manifest.description,
@@ -560,6 +570,7 @@ class PluginsViewModel @Inject constructor(
                         pluginId = "",
                         version = "",
                         installedVersion = null,
+                        installedDevelopment = false,
                         lastModified = lastModified,
                         error = "manifest"
                     )
@@ -573,15 +584,24 @@ class PluginsViewModel @Inject constructor(
     private fun startDevWatcher() {
         if (devWatcherJob?.isActive == true) return
         devWatcherJob = viewModelScope.launch(Dispatchers.IO) {
-            scanDevChanges()
-            fileChangeHub.watchHostDir(
-                hostDir = manager.devDir,
-                recursive = true,
-                filter = WatchFilter(ignoredNames = DEV_IGNORED_NAMES, followGitignore = false),
-                fallbackPoll = false
-            )
-                .debounce(DEV_RELOAD_DEBOUNCE_MS)
-                .collect { scanDevChanges() }
+            while (isActive) {
+                try {
+                    scanDevChanges()
+                    fileChangeHub.watchHostDir(
+                        hostDir = manager.devDir,
+                        recursive = true,
+                        filter = WatchFilter(ignoredNames = DEV_IGNORED_NAMES, followGitignore = false),
+                        fallbackPoll = true
+                    )
+                        .debounce(DEV_RELOAD_DEBOUNCE_MS)
+                        .collect { scanDevChanges() }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    FileLogger.w(TAG, "开发插件监听失败，稍后重试", e)
+                    delay(DEV_WATCH_RETRY_MS)
+                }
+            }
         }
     }
 
@@ -598,7 +618,7 @@ class PluginsViewModel @Inject constructor(
                 if (project.installedVersion != null) devLastLoaded[project.dirName] = project.lastModified
                 return@forEach
             }
-            if (project.installedVersion != null &&
+            if (project.installedVersion != null && project.installedDevelopment &&
                 (versionChanged || project.lastModified > (baseline ?: 0L))
             ) {
                 if (reloadDevProject(project)) {
@@ -610,29 +630,15 @@ class PluginsViewModel @Inject constructor(
     }
 
     private suspend fun reloadDevProject(project: PluginDevProject): Boolean {
-        val zip = File(context.cacheDir, "plugin-dev-${project.dirName}.zip")
         return try {
-            PluginDevPackageBuilder.zip(File(manager.devDir, project.dirName), zip)
-            val preview = zip.inputStream().use { manager.preview(it) }
-            if (preview !is PluginPreviewResult.Ready) return false
-            if (preview.preview.manifest.id != project.pluginId) return false
-            if (preview.preview.installedVersion == null) return false
-            when (val result = manager.install(preview.preview.token)) {
-                is PluginInstallResult.Installed -> {
-                    syncProviders(result.pluginId)
-                    pluginHookDispatcher.dispatchPluginInstalled(
-                        result.pluginId,
-                        preview.preview.installedVersion
-                    )
-                    true
-                }
-                is PluginInstallResult.Failed -> false
-            }
+            if (!manager.reloadDevelopment(project.dirName)) return false
+            pluginRuntimeManager.closePlugin(project.pluginId)
+            syncProviders(project.pluginId)
+            pluginHookDispatcher.dispatchPluginInstalled(project.pluginId, project.installedVersion)
+            true
         } catch (e: Exception) {
             FileLogger.w(TAG, "自动重载开发插件失败: ${project.dirName}", e)
             false
-        } finally {
-            zip.delete()
         }
     }
 
@@ -728,26 +734,13 @@ class PluginsViewModel @Inject constructor(
             languageTag = languageTag,
             fileAccess = fileAccess,
             homeResolver = pathHomeResolver,
-            commandEngine = commandEngine,
             workspacePath = { workspaceRepository.currentPath() },
             eventBus = eventBus,
             pluginManager = manager,
             pluginRuntimeManager = pluginRuntimeManager,
-            terminalRunner = pluginTerminalRunner,
-            shizukuRunner = shizukuRunner,
-            tipManager = tipManager,
-            overlayManager = overlayManager,
-            chatService = chatService,
             modelService = modelService,
-            providerService = providerService,
             agentRunStateStore = agentRunStateStore,
-            secretStore = secretStore,
-            systemService = systemService,
-            introspectionService = introspectionService,
-            toolService = toolService,
-            permissionService = permissionService,
-            sessionSourceService = sessionSourceService,
-            httpService = httpService,
+            hostApiDispatcher = hostApiDispatcher,
             environment = pageEnvironment,
             theme = theme,
             onClosePage = onClosePage,
@@ -759,6 +752,7 @@ class PluginsViewModel @Inject constructor(
     private companion object {
         const val TAG = "PluginsViewModel"
         const val DEV_RELOAD_DEBOUNCE_MS = 500L
+        const val DEV_WATCH_RETRY_MS = 1_000L
         const val SETTINGS_SAVE_DEBOUNCE_MS = 500L
         const val ACTION_TIMEOUT_MS = 10_000L
 

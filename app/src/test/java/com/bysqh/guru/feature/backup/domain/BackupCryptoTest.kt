@@ -28,7 +28,7 @@ class BackupCryptoTest {
 
     @Test
     fun encryptStream_and_decryptStream_roundTrip() {
-        val plain = "AiCode encrypted backup payload".toByteArray(Charsets.UTF_8)
+        val plain = "Guru encrypted backup payload".toByteArray(Charsets.UTF_8)
         val encryptedBytes = encrypt(plain)
 
         assertTrue(encryptedBytes.size > BackupCrypto.SALT_LEN + BackupCrypto.IV_LEN)
@@ -39,7 +39,7 @@ class BackupCryptoTest {
     fun encryptStream_writesVersionedHeader() {
         val encryptedBytes = encrypt("payload".toByteArray(Charsets.UTF_8))
 
-        assertArrayEquals("AICODEBK".toByteArray(Charsets.US_ASCII), encryptedBytes.copyOfRange(0, 8))
+        assertArrayEquals("GURUBK".toByteArray(Charsets.US_ASCII), encryptedBytes.copyOfRange(0, 8))
         assertEquals(2, encryptedBytes[8].toInt())
     }
 

@@ -95,7 +95,9 @@ import compose.icons.feathericons.BookOpen
 import compose.icons.feathericons.ChevronRight
 import compose.icons.feathericons.Cloud
 import compose.icons.feathericons.Code
+import compose.icons.feathericons.Cpu
 import compose.icons.feathericons.Github
+import compose.icons.feathericons.MessageSquare
 import compose.icons.feathericons.Monitor
 import compose.icons.feathericons.Package
 import compose.icons.feathericons.Search
@@ -478,7 +480,7 @@ private fun PluginRow(
 
 /**
  * 插件详情与配置页面：
- * 采用 SegmentedTabs 分段控件，将【插件管理（AiCode 固定配置）】与【插件配置（WebView 专属配置页面）】清晰分离，
+ * 采用 SegmentedTabs 分段控件，将【插件管理（Guru 固定配置）】与【插件配置（WebView 专属配置页面）】清晰分离，
  * 若插件未声明专属配置页面（configPage）则直接全屏展示原生管理页面，无缝融入 App 主题。
  */
 @Composable
@@ -518,7 +520,7 @@ internal fun PluginDetailSection(
         }
 
         if (!hasConfigPage || selectedTab == 0) {
-            // Tab 0: AiCode 固定配置与管理页面
+            // Tab 0: Guru 固定配置与管理页面
             PluginNativeConfigContent(
                 plugin = plugin,
                 languageTag = languageTag,
@@ -934,11 +936,49 @@ internal fun pluginContentItems(content: PluginContent, languageTag: String): Li
     content.providers.forEach { entry ->
         items += PluginContentItem(FeatherIcons.Cloud, entry.name.resolve(languageTag), entry.baseUrl)
     }
-    content.sessionSources.forEach { entry ->
+    content.executionBackends.forEach { entry ->
+        val desc = entry.description.resolve(languageTag).ifBlank {
+            listOfNotNull(
+                if (entry.capabilities.filesystem) stringResource(R.string.plugins_backend_cap_fs) else null,
+                if (entry.capabilities.command) stringResource(R.string.plugins_backend_cap_command) else null,
+                if (entry.capabilities.terminal) stringResource(R.string.plugins_backend_cap_terminal) else null
+            ).joinToString(" · ")
+        }
         items += PluginContentItem(
             FeatherIcons.Server,
+            entry.name.resolve(languageTag),
+            desc
+        )
+    }
+    content.workflows.forEach { entry ->
+        val desc = entry.description.resolve(languageTag).ifBlank {
+            listOfNotNull(
+                if (entry.capabilities.streaming) stringResource(R.string.plugins_workflow_cap_streaming) else null,
+                if (entry.capabilities.tools) stringResource(R.string.plugins_workflow_cap_tools) else null,
+                if (entry.capabilities.compaction) stringResource(R.string.plugins_workflow_cap_compaction) else null,
+                if (entry.capabilities.titleGeneration) stringResource(R.string.plugins_workflow_cap_title_gen) else null
+            ).joinToString(" · ")
+        }
+        items += PluginContentItem(
+            FeatherIcons.Cpu,
             entry.title.resolve(languageTag),
-            entry.handlers.listSessions
+            desc
+        )
+    }
+    content.sessions.forEach { entry ->
+        val desc = entry.description.resolve(languageTag).ifBlank {
+            listOfNotNull(
+                stringResource(R.string.plugins_session_cap_read),
+                if (entry.handlers.createSession != null) stringResource(R.string.plugins_session_cap_create) else null,
+                if (entry.handlers.renameSession != null) stringResource(R.string.plugins_session_cap_rename) else null,
+                if (entry.handlers.pinSession != null) stringResource(R.string.plugins_session_cap_pin) else null,
+                if (entry.handlers.deleteSession != null) stringResource(R.string.plugins_session_cap_delete) else null
+            ).joinToString(" · ")
+        }
+        items += PluginContentItem(
+            FeatherIcons.MessageSquare,
+            entry.title.resolve(languageTag),
+            desc
         )
     }
     content.modelAccess?.let { declaration ->

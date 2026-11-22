@@ -175,7 +175,7 @@ internal fun MarkdownContent(
     val textSizePx = with(density) { body.fontSize.toPx() }
     val colorArgb = color.toArgb()
     LaunchedEffect(processed, textSizePx, colorArgb) {
-        if (!processed.contains("aicode-math-")) return@LaunchedEffect
+        if (!processed.contains("guru-math-")) return@LaunchedEffect
         withContext(Dispatchers.Default) {
             MathImageTransformer.prewarm(processed, textSizePx, colorArgb)
         }

@@ -234,18 +234,18 @@ class PluginHostPaths(
      */
     private fun isProtectedRoot(path: String, followFinalLink: Boolean): Boolean {
         val target = identity(path, followFinalLink)
-        val aicode = homeResolver.guruRoot().trimEnd('/')
+        val guru = homeResolver.guruRoot().trimEnd('/')
         val protected = listOf(
             "/",
             homeResolver.home(),
-            aicode,
+            guru,
             workspaceRoot(),
             dataRoot(),
-            "$aicode/plugins",
-            "$aicode/plugins/installed",
-            "$aicode/plugins/staging",
-            "$aicode/plugins/data",
-            "$aicode/plugin-dev"
+            "$guru/plugins",
+            "$guru/plugins/installed",
+            "$guru/plugins/staging",
+            "$guru/plugins/data",
+            "$guru/plugin-dev"
         )
         return protected.any { identity(it) == target }
     }
@@ -274,12 +274,12 @@ class PluginHostPaths(
     private fun assertWatchScope(path: String, recursive: Boolean) {
         val trimmed = identity(path)
         val home = identity(homeResolver.home())
-        val aicode = identity(homeResolver.guruRoot())
-        if (trimmed == identity("/") || trimmed == home || trimmed == aicode) {
+        val guru = identity(homeResolver.guruRoot())
+        if (trimmed == identity("/") || trimmed == home || trimmed == guru) {
             throw PluginHostException("PATH_DENIED", "watch range is too broad: $path")
         }
         if (!recursive) return
-        if (home.startsWith("$trimmed/") || aicode.startsWith("$trimmed/")) {
+        if (home.startsWith("$trimmed/") || guru.startsWith("$trimmed/")) {
             throw PluginHostException("PATH_DENIED", "watch range includes $home: $path")
         }
     }

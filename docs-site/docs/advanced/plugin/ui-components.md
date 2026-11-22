@@ -15,18 +15,18 @@
 
 | 变量 | 用途 |
 | --- | --- |
-| `--aicode-bg` | 页面背景 |
-| `--aicode-surface` | 卡片、输入框表面 |
-| `--aicode-on-surface` | 正文文字 |
-| `--aicode-primary` | 主色 |
-| `--aicode-error` | 错误色 |
-| `--aicode-success` | 成功色 |
-| `--aicode-warning` | 警告色 |
-| `--aicode-radius-*` | 圆角 |
-| `--aicode-space-*` | 间距 |
-| `--aicode-font-scale` | 字号缩放 |
+| `--guru-bg` | 页面背景 |
+| `--guru-surface` | 卡片、输入框表面 |
+| `--guru-on-surface` | 正文文字 |
+| `--guru-primary` | 主色 |
+| `--guru-error` | 错误色 |
+| `--guru-success` | 成功色 |
+| `--guru-warning` | 警告色 |
+| `--guru-radius-*` | 圆角 |
+| `--guru-space-*` | 间距 |
+| `--guru-font-scale` | 字号缩放 |
 
-深浅色切换时，宿主直接更新变量，页面不会重新加载；请依赖 CSS 变量，不要在脚本中缓存具体颜色值。`aicode.applyTheme(variables)` 可临时覆盖变量，并派发 `aicode:theme` 事件。
+深浅色切换时，宿主直接更新变量，页面不会重新加载；请依赖 CSS 变量，不要在脚本中缓存具体颜色值。`guru.applyTheme(variables)` 可临时覆盖变量，并派发 `guru:theme` 事件。
 
 ### 布局
 
@@ -44,13 +44,13 @@
 
 ## Vue 组件库
 
-按 [Vue 入口](/advanced/plugin/source-build#vue-入口)注册 `AicodeUI` 后，在单文件组件中使用 `aicode-*`：
+按 [Vue 入口](/advanced/plugin/source-build#vue-入口)注册 `AicodeUI` 后，在单文件组件中使用 `guru-*`：
 
 ```vue
 <template>
-  <aicode-field label="描述">
-    <aicode-textarea v-model="description" placeholder="输入描述" />
-  </aicode-field>
+  <guru-field label="描述">
+    <guru-textarea v-model="description" placeholder="输入描述" />
+  </guru-field>
 </template>
 
 <script setup lang="ts">
@@ -64,9 +64,9 @@ const description = ref('');
 
 ### 输入框
 
-`aicode-input`、`aicode-textarea` 的外观与 App 输入框一致，包括圆角、描边、文字间距、深浅色、聚焦和禁用状态。
+`guru-input`、`guru-textarea` 的外观与 App 输入框一致，包括圆角、描边、文字间距、深浅色、聚焦和禁用状态。
 
-- 每个 `aicode-field` 放置一个输入组件；
+- 每个 `guru-field` 放置一个输入组件；
 - 空值且未聚焦时，标签显示在框内；聚焦或有内容时标签浮到边框处，提示文字在标签浮起后显示；
 - 点击标签也可聚焦输入框；
 - `disabled` 时底色保持不变，文字与边框变淡；
@@ -74,24 +74,24 @@ const description = ref('');
 
 ### 对话框
 
-`aicode-dialog` 对齐 App 的居中对话框：标题、内容和底部文字按钮分区排列，取消在左、确认在右。
+`guru-dialog` 对齐 App 的居中对话框：标题、内容和底部文字按钮分区排列，取消在左、确认在右。
 
 文字确认：
 
 ```html
-<aicode-dialog v-model="confirmOpen" title="确认操作"
-  message="确定继续执行吗？" @confirm="runAction"></aicode-dialog>
+<guru-dialog v-model="confirmOpen" title="确认操作"
+  message="确定继续执行吗？" @confirm="runAction"></guru-dialog>
 ```
 
 输入表单：
 
 ```html
-<aicode-dialog v-model="editOpen" title="修改名称" confirm-text="保存"
+<guru-dialog v-model="editOpen" title="修改名称" confirm-text="保存"
   :confirm-disabled="!name.trim()" @confirm="saveName">
-  <aicode-field label="名称">
-    <aicode-input v-model="name" placeholder="输入名称"></aicode-input>
-  </aicode-field>
-</aicode-dialog>
+  <guru-field label="名称">
+    <guru-input v-model="name" placeholder="输入名称"></guru-input>
+  </guru-field>
+</guru-dialog>
 ```
 
 - 文字确认通过 `message` 显示说明；
@@ -101,15 +101,15 @@ const description = ref('');
 - 确认将触发 `confirm` 并关闭；取消按钮、遮罩、返回键或 Escape 将触发 `cancel` 并关闭；
 - 输入值由页面的 `v-model` 管理，取消时是否恢复原值由页面决定。
 
-`aicode-bottom-sheet` 用于底部弹窗内容，窄屏从底部展开，宽屏居中。简单输入和文字确认应直接使用 `aicode-dialog`。
+`guru-bottom-sheet` 用于底部弹窗内容，窄屏从底部展开，宽屏居中。简单输入和文字确认应直接使用 `guru-dialog`。
 
 ### 自定义全屏弹层
 
-页面自行绘制的全屏弹层，应在打开和关闭时成对调用 `aicode.ui.setOverlay`，由宿主在全局背景图上按矩形挖孔：
+页面自行绘制的全屏弹层，应在打开和关闭时成对调用 `guru.ui.setOverlay`，由宿主在全局背景图上按矩形挖孔：
 
 ```js
 const rect = element.getBoundingClientRect();
-await aicode.ui.setOverlay(true, {
+await guru.ui.setOverlay(true, {
   left: rect.left,
   top: rect.top,
   width: rect.width,
@@ -120,7 +120,7 @@ await aicode.ui.setOverlay(true, {
 });
 
 // 关闭时
-await aicode.ui.setOverlay(false);
+await guru.ui.setOverlay(false);
 ```
 
 `AicodeBottomSheet`、`AicodeDialog` 打开时会自动上报弹层矩形并调用 `setOverlay(true, rect)`，关闭后恢复。页面自行绘制的弹层不应依赖这两个组件的行为。
@@ -138,7 +138,7 @@ emit('records.changed', {count: 4});
 页面侧：
 
 ```js
-const off = aicode.events.on((event) => {
+const off = guru.events.on((event) => {
   if (event.name === 'records.changed') {
     console.log(event.payload);
     refreshRecords();
@@ -158,7 +158,7 @@ const off = aicode.events.on((event) => {
 所有插件 HTML 页面均可订阅其读取的文件来源，无需增加运行时或声明 hook。订阅仅通知「数据可能发生变化」，由页面决定重读哪些内容；宿主不会重载 WebView。
 
 ```js
-const stopWatching = await aicode.fs.watch('data://records', {recursive: false}, (change) => {
+const stopWatching = await guru.fs.watch('data://records', {recursive: false}, (change) => {
   if (change.error) {
     console.error(change.error.code, change.error.message);
     return;
@@ -166,7 +166,7 @@ const stopWatching = await aicode.fs.watch('data://records', {recursive: false},
   refreshRecords();
 });
 
-const stopLifecycle = aicode.events.on((event) => {
+const stopLifecycle = guru.events.on((event) => {
   if (event.name === 'ui.lifecycle' && event.payload.visible) {
     refreshRecords();
   }
@@ -193,7 +193,7 @@ stopLifecycle();
 - SSH 的工作区和配置目录使用约 2 秒的按需远端快照检查；同一远端工作区内的多个订阅共享工作区根的一次轮询，再按各自子路径过滤事件，以修改时间和大小判断变化；同一时间精度内、大小也相同的连续改写可能无法区分，重新显示页面时应再次校准；
 - 页面可见时监听，离开页面或 App 退到后台时暂停，回到页面时恢复；工作区、执行模式或 SSH 服务器变化时重建；
 - 每个页面最多 16 个订阅，应选择必要的小范围，避免递归监听整个工作区；
-- 文件订阅同样受范围限制：不能递归订阅整个文件系统、home 或 `~/.aicode` 根，避免一次扫描整棵树。
+- 文件订阅同样受范围限制：不能递归订阅整个文件系统、home 或 `~/.guru` 根，避免一次扫描整棵树。
 
 文件订阅仅覆盖指定文件来源，不会自动推断数据库、HTTP API 或其他插件数据的变化。这类数据仍由插件进程通过 `plugin.event` 主动推送，或在页面显示时自行校准。
 
@@ -215,16 +215,16 @@ stopLifecycle();
 页面启动 AI 轮次后，会额外收到宿主的 `chat.run.started` 与 `chat.run.finished` 事件：
 
 ```js
-aicode.events.on((event) => {
+guru.events.on((event) => {
   if (event.name === 'chat.run.finished') {
     console.log(event.payload.sessionId, event.payload.status, event.payload.error);
   }
 });
 ```
 
-`status` 为 `running` / `success` / `error` / `cancelled`；这些事件只说明轮次状态，正文仍通过 `aicode.chat.listMessages` 读取。
+`status` 为 `running` / `success` / `error` / `cancelled`；这些事件只说明轮次状态，正文仍通过 `guru.chat.listMessages` 读取。
 
-`aicode.context()` 返回当前 `contextKey` 和 `visible`。文件方法可在最后一个 `options` 参数中传入 `{contextKey}`；上下文已经变化时请求返回 `STALE_CONTEXT`，用于拦截仍在排队的旧项目操作。异步刷新结果仍应在页面侧核对上下文，正在编辑的输入不得被刷新直接覆盖。
+`guru.context()` 返回当前 `contextKey` 和 `visible`。文件方法可在最后一个 `options` 参数中传入 `{contextKey}`；上下文已经变化时请求返回 `STALE_CONTEXT`，用于拦截仍在排队的旧项目操作。异步刷新结果仍应在页面侧核对上下文，正在编辑的输入不得被刷新直接覆盖。
 
 ```js
 let loading = false;
@@ -233,9 +233,9 @@ async function refreshRecords() {
   if (loading) return;
   loading = true;
   try {
-    const ctx = await aicode.context();
-    const result = await aicode.fs.read('data://records.json', {contextKey: ctx.contextKey});
-    const current = await aicode.context();
+    const ctx = await guru.context();
+    const result = await guru.fs.read('data://records.json', {contextKey: ctx.contextKey});
+    const current = await guru.context();
     if (!current.visible || current.contextKey !== ctx.contextKey) return;
     render(JSON.parse(result.content));
   } catch (error) {

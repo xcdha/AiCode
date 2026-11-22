@@ -3,6 +3,7 @@ package com.bysqh.guru.feature.agent.domain.model
 import kotlinx.serialization.Serializable
 import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinition
 import com.bysqh.guru.feature.agent.domain.tool.ToolCall
+import com.bysqh.guru.feature.agent.domain.workflow.WorkflowTurnContext
 
 @Serializable
 sealed class AgentMessage {
@@ -85,12 +86,13 @@ data class AgentContext(
      * 本会话绑定的自定义子代理定义；非空表示这是一个按定义运行的子代理会话，
      * 系统提示词与工具集都按其配置组装（见 [com.bysqh.guru.feature.agent.domain.prompt.SystemPromptProvider]）。
      */
-    val agentDefinition: AgentDefinition? = null
+    val agentDefinition: AgentDefinition? = null,
+    val turn: WorkflowTurnContext? = null
 ) {
     /**
      * 工具授权判定用的有效模式：goal 自主循环激活期间按 AUTO 放行（保留灾难性安全防护），
      * 与用户可见的 [mode] 解耦——goal 不改变会话显示的模式，只改变授权强度。
      */
     val permissionMode: AgentMode
-        get() = if (goalStatus == GoalStatus.ACTIVE) AgentMode.AUTO else mode
+        get() = turn?.permissionMode ?: if (goalStatus == GoalStatus.ACTIVE) AgentMode.AUTO else mode
 }

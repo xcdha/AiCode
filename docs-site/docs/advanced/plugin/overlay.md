@@ -17,10 +17,10 @@
 
 ## 创建与更新
 
-普通页面通过 `aicode.overlay.create({surface?, width?, height?, visibilityPolicy?})` 创建清单中的 surface：
+普通页面通过 `guru.overlay.create({surface?, width?, height?, visibilityPolicy?})` 创建清单中的 surface：
 
 ```js
-const overlay = await aicode.overlay.create({
+const overlay = await guru.overlay.create({
   surface: 'pet',
   width: 120,
   height: 120,
@@ -33,7 +33,7 @@ const overlay = await aicode.overlay.create({
 更新：
 
 ```js
-await aicode.overlay.update(overlay.overlayId, {
+await guru.overlay.update(overlay.overlayId, {
   width: 160,
   height: 160,
   visible: true,
@@ -46,15 +46,15 @@ await aicode.overlay.update(overlay.overlayId, {
 关闭：
 
 ```js
-await aicode.overlay.close(overlay.overlayId);
+await guru.overlay.close(overlay.overlayId);
 // 浮层页面内可省略 id，关闭自身
-await aicode.overlay.close();
+await guru.overlay.close();
 ```
 
 浮层页面通过 `self()` 读取 `OverlaySelfInfo`，额外包含 `density`、`foreground`，其中 `x` / `y` 为当前显示位置，单位为 dp：
 
 ```js
-const self = await aicode.overlay.self();
+const self = await guru.overlay.self();
 // { overlayId, pluginId, width, height, x, y, density, draggable, snap, visibilityPolicy, foreground }
 ```
 
@@ -86,18 +86,18 @@ const self = await aicode.overlay.self();
 import { onMounted, onUnmounted, ref } from 'vue';
 
 const label = ref('AI');
-const off = aicode.overlay.onMessage((message) => {
+const off = guru.overlay.onMessage((message) => {
   if (message.type === 'state') label.value = message.busy ? '忙' : 'AI';
 });
 
 onMounted(async () => {
   const rect = document.body.getBoundingClientRect();
-  await aicode.overlay.setDragRegion({left: 0, top: 0, width: rect.width, height: rect.height});
+  await guru.overlay.setDragRegion({left: 0, top: 0, width: rect.width, height: rect.height});
 });
 onUnmounted(off);
 
 async function sendClick(): Promise<void> {
-  await aicode.overlay.postMessage({type: 'click'});
+  await guru.overlay.postMessage({type: 'click'});
 }
 </script>
 
@@ -114,8 +114,8 @@ html, body, #app {
   height: 100%;
   border: 0;
   border-radius: 50%;
-  background: var(--aicode-primary);
-  color: var(--aicode-on-surface);
+  background: var(--guru-primary);
+  color: var(--guru-on-surface);
 }
 </style>
 ```
@@ -158,7 +158,7 @@ html, body, #app {
 ```js
 let edge = null;
 
-aicode.overlay.onMessage((message) => {
+guru.overlay.onMessage((message) => {
   if (message.type === 'snap') {
     edge = message.edge;
     document.body.dataset.edge = edge;
@@ -176,7 +176,7 @@ aicode.overlay.onMessage((message) => {
 `overlay.resize` 未指定 `options` 时立即调整；指定 `{animate: true}` 时，宿主在原窗口内以 280ms 同步过渡尺寸与位置，页面不会重新加载。
 
 ```js
-await aicode.overlay.resize(320, 480, {animate: true, x: 40, y: 120});
+await guru.overlay.resize(320, 480, {animate: true, x: 40, y: 120});
 ```
 
 - `options.x/y` 为目标位置，单位与 `self()` 中的位置相同，均为 dp；
@@ -197,7 +197,7 @@ await aicode.overlay.resize(320, 480, {animate: true, x: 40, y: 120});
 | `foreground` | 仅在 App 前台显示 |
 | `background` | 仅在 App 后台显示 |
 
-App 前后台状态以 `ProcessLifecycleOwner` 为准。插件也可轮询 `aicode.app.isForeground()` 或进程的 `host.app.isForeground` 自行判断。
+App 前后台状态以 `ProcessLifecycleOwner` 为准。插件也可轮询 `guru.app.isForeground()` 或进程的 `host.app.isForeground` 自行判断。
 
 ## 自动启动
 
@@ -227,4 +227,4 @@ definePlugin({
 
 ## 参考源码
 
-浮层插件可参考 [`jieapi/aicode-plugin-desktop-pet`](https://github.com/jieapi/aicode-plugin-desktop-pet)。
+浮层插件可参考 [`jieapi/guru-plugin-desktop-pet`](https://github.com/jieapi/guru-plugin-desktop-pet)。

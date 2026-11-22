@@ -77,10 +77,8 @@ internal fun ChatHeader(
     onToggleMode: (AgentMode) -> Unit,
     connectionState: com.bysqh.guru.feature.agent.domain.container.ConnectionState? = null,
     showMenuButton: Boolean = true,
-    onNavigateToBrowser: (() -> Unit)? = null,
     terminalActive: Boolean = false,
     gitActive: Boolean = false,
-    browserActive: Boolean = false,
     pluginEntries: List<PluginUiEntry> = emptyList(),
     pluginLanguageTag: String = "zh-CN",
     onPluginEntry: (PluginUiEntry) -> Unit = {}

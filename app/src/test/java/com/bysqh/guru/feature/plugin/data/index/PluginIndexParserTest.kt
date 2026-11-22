@@ -134,6 +134,6 @@ class PluginIndexParserTest {
     fun officialPluginIsDeterminedByRepositoryOwner() {
         assertTrue(PluginOfficialRepositories.isOfficial("https://github.com/jieapi/aicode"))
         assertTrue(PluginOfficialRepositories.isOfficial("https://github.com/jieapi/aicode-plugin"))
-        assertFalse(PluginOfficialRepositories.isOfficial("https://github.com/other/aicode-plugin"))
+        assertFalse(PluginOfficialRepositories.isOfficial("https://github.com/other/guru-plugin"))
     }
 }

@@ -1,8 +1,9 @@
 package com.bysqh.guru.feature.agent.presentation.component
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
 import android.net.Uri
-
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -17,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -52,7 +52,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import com.bysqh.guru.core.ui.AdaptiveModalBottomSheet
@@ -61,16 +60,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.bysqh.guru.core.ui.AppTextField
-import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.core.ui.dialogTextFieldColors
 import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
 import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -79,15 +81,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -101,8 +98,11 @@ import androidx.compose.ui.unit.sp
 import com.bysqh.guru.core.theme.Radius
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
+import com.bysqh.guru.core.ui.FloatingSelectionBar
 import com.bysqh.guru.core.ui.SegmentedTabs
+import com.bysqh.guru.core.ui.SelectionActionDangerButton
 import com.bysqh.guru.core.ui.rememberImeBottomInset
+import com.bysqh.guru.core.ui.rememberSaveableListSelectionState
 import com.bysqh.guru.feature.settings.presentation.component.ModelSearchField
 import com.bysqh.guru.feature.settings.presentation.component.SettingsDivider
 import com.bysqh.guru.feature.settings.presentation.component.SettingsGroup
@@ -110,13 +110,19 @@ import com.bysqh.guru.feature.settings.presentation.component.SettingsGroupHeade
 import com.bysqh.guru.feature.settings.presentation.component.SettingsRow
 import com.bysqh.guru.feature.settings.presentation.component.settingsPageBackground
 import com.bysqh.guru.feature.agent.domain.model.ChatSession
+import com.bysqh.guru.feature.agent.presentation.ExternalSessionUiMapper
 import com.bysqh.guru.feature.agent.presentation.AgentUIState
+import com.bysqh.guru.feature.plugin.domain.session.ExternalSessionGroup
+import com.bysqh.guru.feature.plugin.domain.session.ExternalSessionSummary
 import com.bysqh.guru.feature.agent.presentation.ChatSearchHit
 import com.bysqh.guru.feature.agent.presentation.ChatSearchState
 import com.bysqh.guru.feature.agent.presentation.BrowseClipboard
 import com.bysqh.guru.feature.agent.presentation.FileBrowseState
 import com.bysqh.guru.feature.agent.presentation.FileTreeNode
 import com.bysqh.guru.feature.agent.presentation.FileTreeRoot
+import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
+import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
+import com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper
 import com.bysqh.guru.feature.workspace.domain.isValidFileEntryName
 import com.bysqh.guru.core.ui.ChevronRotationStyle
 import com.bysqh.guru.core.ui.ExpandableChevronIcon
@@ -134,11 +140,14 @@ import compose.icons.feathericons.Folder
 import compose.icons.feathericons.FolderPlus
 import compose.icons.feathericons.Globe
 import compose.icons.feathericons.HardDrive
+import compose.icons.feathericons.Plus
 import compose.icons.feathericons.RefreshCw
 import compose.icons.feathericons.Server
 import compose.icons.feathericons.Settings
-import compose.icons.feathericons.User
 import compose.icons.feathericons.Trash2
+import compose.icons.feathericons.User
+import compose.icons.feathericons.Upload
+import compose.icons.feathericons.UploadCloud
 import compose.icons.feathericons.X
 import androidx.compose.ui.res.stringResource
 import com.bysqh.guru.R
@@ -150,18 +159,6 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.delay
-import com.bysqh.guru.feature.plugin.domain.PluginUiEntry
-import com.bysqh.guru.feature.plugin.domain.session.PluginSessionGroup
-import com.bysqh.guru.feature.plugin.domain.session.PluginSessionSummary
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
-import compose.icons.feathericons.Plus
-import compose.icons.feathericons.Upload
-import compose.icons.feathericons.UploadCloud
-import com.bysqh.guru.feature.workspace.domain.WorkspacePathMapper
-import com.bysqh.guru.feature.plugin.presentation.pluginPageIcon
 
 @Composable
 private fun DrawerProgressIndicator(
@@ -185,13 +182,16 @@ private fun DrawerProgressIndicator(
  * 侧边栏内容：顶部 Tab 切换「会话」/「文件」，底部「设置」入口卡片。
  * Tab0 为根会话列表，带子代理的会话行可就地展开；Tab1 为当前工作区的文件树。
  */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatDrawerContent(
     sessions: List<ChatSession>,
-    pluginSessionGroups: List<PluginSessionGroup> = emptyList(),
-    currentPluginSessionId: String? = null,
-    onSelectPluginSession: (PluginSessionSummary) -> Unit = {},
+    externalSessionGroups: List<ExternalSessionGroup> = emptyList(),
+    currentExternalSessionId: String? = null,
+    onSelectExternalSession: (ExternalSessionSummary) -> Unit = {},
+    onDeleteExternalSession: (ExternalSessionSummary) -> Unit = {},
+    onRenameExternalSession: (ExternalSessionSummary, String) -> Unit = { _, _ -> },
+    onTogglePinExternalSession: (ExternalSessionSummary) -> Unit = {},
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String> = emptySet(),
@@ -226,17 +226,17 @@ fun ChatDrawerContent(
     onRemoveLocalFolder: (String) -> Unit = {},
     onUploadFiles: (String, List<Uri>) -> Unit = { _, _ -> },
     onUploadFolder: (String, Uri) -> Unit = { _, _ -> },
-    onFilePluginEntry: (FileTreeNode, PluginUiEntry) -> Unit = { _, _ -> },
     onNavigateToBrowser: (() -> Unit)? = null,
+    /** [二开] 侧边栏角色入口：直达设置里的角色页。 */
+    onNavigateToRoles: (() -> Unit)? = null,
+    onNavigateToSettings: () -> Unit,
     pluginEntries: List<PluginUiEntry> = emptyList(),
     pluginLanguageTag: String = "zh-CN",
     onPluginEntry: (PluginUiEntry) -> Unit = {},
     sessionPluginEntries: List<PluginUiEntry> = emptyList(),
     onSessionPluginEntry: (ChatSession, PluginUiEntry) -> Unit = { _, _ -> },
     filePluginEntries: List<PluginUiEntry> = emptyList(),
-    // [二开] 侧边栏角色入口（移植自 Muse）
-    onNavigateToRoles: (() -> Unit)? = null,
-    onNavigateToSettings: () -> Unit,
+    onFilePluginEntry: (FileTreeNode, PluginUiEntry) -> Unit = { _, _ -> },
     searchQuery: String,
     searchState: ChatSearchState,
     onSearchQueryChange: (String) -> Unit,
@@ -247,18 +247,31 @@ fun ChatDrawerContent(
     // tab 与展开状态进 saveable：大屏下侧栏收起后整棵子树会离开组合（见 MainActivity 的
     // SaveableStateProvider），用 remember 存会让每次回到聊天页都重置回「会话」页。
     var selectedTab by rememberSaveable { mutableStateOf(0) }
-    var isSelectionMode by rememberSaveable { mutableStateOf(false) }
-    var showAllPlugins by remember { mutableStateOf(false) }
-    val selectedSessionIds = remember { mutableStateListOf<String>() }
+    val selection = rememberSaveableListSelectionState()
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<ChatSession?>(null) }
     var pendingRename by remember { mutableStateOf<ChatSession?>(null) }
     var menuSession by remember { mutableStateOf<ChatSession?>(null) }
+    var pendingExternalDelete by remember { mutableStateOf<ExternalSessionSummary?>(null) }
+    var pendingExternalRename by remember { mutableStateOf<ExternalSessionSummary?>(null) }
+    var menuExternalSession by remember { mutableStateOf<ExternalSessionSummary?>(null) }
+    var showAllPlugins by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    BackHandler(enabled = isSelectionMode) {
-        isSelectionMode = false
-        selectedSessionIds.clear()
+    val allSessionIds: List<String> = remember(sessions, subSessionsByParent) {
+        buildList {
+            sessions.forEach { s ->
+                add(s.id)
+                subSessionsByParent[s.id]?.forEach { sub -> add(sub.id) }
+            }
+        }
+    }
+    LaunchedEffect(allSessionIds, selection.isActive) {
+        selection.retainOnly(allSessionIds.toSet())
+        if (selection.isActive && allSessionIds.isEmpty()) selection.exit()
+    }
+    LaunchedEffect(selectedTab) {
+        if (selectedTab != 0 && selection.isActive) selection.exit()
     }
 
     // 点击会话/重开侧边栏保持原滚动位置；仅当同一会话的最后回复时间变化（发消息/收到回复）时滚回顶部。
@@ -290,9 +303,7 @@ fun ChatDrawerContent(
                     }
                 }
             }
-            // [二开] 侧边栏要有自己的磨砂底：页面底色已让给背景，
-            // 若沿用 settingsPageBackground() 会整块透明，文字直接压在视频上。
-            .background(MaterialTheme.colorScheme.surface)
+            .background(settingsPageBackground())
             .windowInsetsPadding(
                 WindowInsets.systemBars.only(
                     WindowInsetsSides.Horizontal + WindowInsetsSides.Top
@@ -313,86 +324,7 @@ fun ChatDrawerContent(
         )
 
         // 聊天记录搜索框放在 Tab 栏正下方，仅「会话」Tab 可见。
-        if (selectedTab == 0 && isSelectionMode) {
-            Surface(
-                color = MaterialTheme.semanticColors.cardSurface,
-                shape = RoundedCornerShape(Radius.mdLarge),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                CompositionLocalProvider(
-                    LocalMinimumInteractiveComponentSize provides 0.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .padding(horizontal = Spacing.md),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(
-                            onClick = {
-                                isSelectionMode = false
-                                selectedSessionIds.clear()
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = FeatherIcons.X,
-                                contentDescription = stringResource(R.string.common_cancel),
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Spacer(Modifier.width(Spacing.sm))
-                        Text(
-                            text = stringResource(R.string.chat_sessions_selected_count, selectedSessionIds.size),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
-                        val allSessionIds: List<String> = remember(sessions, subSessionsByParent) {
-                            val ids = mutableListOf<String>()
-                            sessions.forEach { s ->
-                                ids.add(s.id)
-                                subSessionsByParent[s.id]?.forEach { sub -> ids.add(sub.id) }
-                            }
-                            ids
-                        }
-                        val allSelected = allSessionIds.isNotEmpty() && selectedSessionIds.size == allSessionIds.size
-                        TextButton(
-                            onClick = {
-                                if (allSelected) {
-                                    selectedSessionIds.clear()
-                                } else {
-                                    selectedSessionIds.clear()
-                                    selectedSessionIds.addAll(allSessionIds)
-                                }
-                            },
-                            contentPadding = PaddingValues(horizontal = Spacing.sm, vertical = 0.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text(
-                                text = stringResource(if (allSelected) R.string.provider_models_deselect_all else R.string.provider_models_select_all),
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-                        Spacer(Modifier.width(Spacing.xs))
-                        IconButton(
-                            onClick = { showBatchDeleteConfirm = true },
-                            enabled = selectedSessionIds.isNotEmpty(),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = FeatherIcons.Trash2,
-                                contentDescription = stringResource(R.string.chat_batch_delete_title),
-                                modifier = Modifier.size(18.dp),
-                                tint = if (selectedSessionIds.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            )
-                        }
-                    }
-                }
-            }
-        } else if (selectedTab == 0) {
+        if (selectedTab == 0) {
             ChatSearchField(
                 query = searchQuery,
                 onQueryChange = onSearchQueryChange,
@@ -404,9 +336,10 @@ fun ChatDrawerContent(
             when (selectedTab) {
                 0 -> SessionListTab(
                     sessions = sessions,
-                    pluginSessionGroups = pluginSessionGroups,
-                    currentPluginSessionId = currentPluginSessionId,
-                    onSelectPluginSession = onSelectPluginSession,
+                    externalSessionGroups = externalSessionGroups,
+                    currentExternalSessionId = currentExternalSessionId,
+                    onSelectExternalSession = onSelectExternalSession,
+                    onLongClickExternalSession = { menuExternalSession = it },
                     currentSessionId = currentSessionId,
                     agentStates = agentStates,
                     awaitingPermissionSessionIds = awaitingPermissionSessionIds,
@@ -414,15 +347,9 @@ fun ChatDrawerContent(
                     listState = listState,
                     searchQuery = searchQuery,
                     searchState = searchState,
-                    selectionMode = isSelectionMode,
-                    selectedSessionIds = selectedSessionIds,
-                    onToggleSelectSession = { s ->
-                        if (s.id in selectedSessionIds) {
-                            selectedSessionIds.remove(s.id)
-                        } else {
-                            selectedSessionIds.add(s.id)
-                        }
-                    },
+                    selectionMode = selection.isActive,
+                    selectedSessionIds = selection.selectedKeys,
+                    onToggleSelectSession = { s -> selection.toggle(s.id) },
                     onSelect = onSelect,
                     onLongClick = { menuSession = it },
                     onOpenSearchHit = onOpenSearchHit
@@ -454,6 +381,30 @@ fun ChatDrawerContent(
                     onFilePluginEntry = onFilePluginEntry
                 )
             }
+
+            val allSelected = allSessionIds.isNotEmpty() && selection.selectedCount == allSessionIds.size
+            FloatingSelectionBar(
+                visible = selectedTab == 0 && selection.isActive,
+                selectedCount = selection.selectedCount,
+                allSelected = allSelected,
+                onToggleSelectAll = {
+                    if (allSelected) selection.clear() else selection.replaceAll(allSessionIds)
+                },
+                onExit = { selection.exit() },
+                showCloseButton = true,
+                selectedCountText = stringResource(R.string.chat_sessions_selected_count, selection.selectedCount),
+                selectAllText = stringResource(
+                    if (allSelected) R.string.provider_models_deselect_all else R.string.provider_models_select_all
+                ),
+                outerPadding = PaddingValues(bottom = Spacing.xs),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                SelectionActionDangerButton(
+                    text = stringResource(R.string.common_batch_delete),
+                    enabled = selection.selectedCount > 0,
+                    onClick = { showBatchDeleteConfirm = true }
+                )
+            }
         }
 
         if (pluginEntries.isNotEmpty()) {
@@ -462,7 +413,7 @@ fun ChatDrawerContent(
                 pluginEntries.take(3).forEachIndexed { index, entry ->
                     if (index > 0) SettingsDivider()
                     SettingsRow(
-                        icon = com.bysqh.guru.feature.plugin.presentation.pluginPageIcon(entry.icon),
+                        icon = pluginPageIcon(entry.icon),
                         title = entry.title.resolve(pluginLanguageTag),
                         subtitle = stringResource(R.string.plugins_ext_entry_subtitle, entry.pluginId),
                         onClick = { onPluginEntry(entry) }
@@ -480,7 +431,6 @@ fun ChatDrawerContent(
         }
 
         SettingsGroup {
-            // [二开] 角色入口：直达设置里的角色页
             if (onNavigateToRoles != null) {
                 SettingsRow(
                     icon = FeatherIcons.User,
@@ -587,9 +537,7 @@ fun ChatDrawerContent(
             },
             onBatchSelect = {
                 menuSession = null
-                isSelectionMode = true
-                selectedSessionIds.clear()
-                selectedSessionIds.add(session.id)
+                selection.enterWith(session.id)
             },
             onDelete = {
                 menuSession = null
@@ -607,14 +555,13 @@ fun ChatDrawerContent(
             onDismissRequest = { showBatchDeleteConfirm = false },
             title = { Text(stringResource(R.string.chat_batch_delete_title)) },
             text = {
-                Text(stringResource(R.string.chat_batch_delete_confirm, selectedSessionIds.size))
+                Text(stringResource(R.string.chat_batch_delete_confirm, selection.selectedCount))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showBatchDeleteConfirm = false
-                    val toDelete = selectedSessionIds.toSet()
-                    selectedSessionIds.clear()
-                    isSelectionMode = false
+                    val toDelete = selection.selectedKeys.toSet()
+                    selection.exit()
                     if (onDeleteSessions != null) {
                         onDeleteSessions(toDelete)
                     } else {
@@ -630,6 +577,78 @@ fun ChatDrawerContent(
                 TextButton(onClick = { showBatchDeleteConfirm = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
+            }
+        )
+    }
+
+    menuExternalSession?.let { ext ->
+        SessionActionSheet(
+            session = ExternalSessionUiMapper.toChatSession(ext),
+            onTogglePin = {
+                menuExternalSession = null
+                onTogglePinExternalSession(ext)
+            },
+            onRename = {
+                menuExternalSession = null
+                pendingExternalRename = ext
+            },
+            onExport = {},
+            onBatchSelect = {},
+            onDelete = {
+                menuExternalSession = null
+                pendingExternalDelete = ext
+            },
+            pluginEntries = emptyList(),
+            pluginLanguageTag = pluginLanguageTag,
+            onPluginEntry = {},
+            onDismiss = { menuExternalSession = null },
+            isExternal = true
+        )
+    }
+
+    pendingExternalDelete?.let { ext ->
+        AlertDialog(
+            onDismissRequest = { pendingExternalDelete = null },
+            title = { Text(stringResource(R.string.chat_delete_session)) },
+            text = { Text(stringResource(R.string.chat_delete_session_confirm, ext.title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteExternalSession(ext)
+                    pendingExternalDelete = null
+                }) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingExternalDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        )
+    }
+
+    pendingExternalRename?.let { ext ->
+        var renameText by remember(ext.id) { mutableStateOf(ext.title) }
+        AlertDialog(
+            onDismissRequest = { pendingExternalRename = null },
+            title = { Text(stringResource(R.string.chat_rename_session)) },
+            text = {
+                AppTextField(
+                    value = renameText,
+                    onValueChange = { renameText = it },
+                    singleLine = true,
+                    label = stringResource(R.string.chat_session_name),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = dialogTextFieldColors()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onRenameExternalSession(ext, renameText)
+                        pendingExternalRename = null
+                    },
+                    enabled = renameText.isNotBlank() && renameText != ext.title
+                ) { Text(stringResource(R.string.common_rename)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingExternalRename = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
@@ -671,9 +690,10 @@ fun ChatDrawerContent(
 @Composable
 private fun SessionListTab(
     sessions: List<ChatSession>,
-    pluginSessionGroups: List<PluginSessionGroup>,
-    currentPluginSessionId: String?,
-    onSelectPluginSession: (PluginSessionSummary) -> Unit,
+    externalSessionGroups: List<ExternalSessionGroup>,
+    currentExternalSessionId: String?,
+    onSelectExternalSession: (ExternalSessionSummary) -> Unit,
+    onLongClickExternalSession: (ExternalSessionSummary) -> Unit,
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String>,
@@ -691,9 +711,10 @@ private fun SessionListTab(
     if (searchQuery.isBlank()) {
         SessionListContent(
             sessions = sessions,
-            pluginSessionGroups = pluginSessionGroups,
-            currentPluginSessionId = currentPluginSessionId,
-            onSelectPluginSession = onSelectPluginSession,
+            externalSessionGroups = externalSessionGroups,
+            currentExternalSessionId = currentExternalSessionId,
+            onSelectExternalSession = onSelectExternalSession,
+            onLongClickExternalSession = onLongClickExternalSession,
             currentSessionId = currentSessionId,
             agentStates = agentStates,
             awaitingPermissionSessionIds = awaitingPermissionSessionIds,
@@ -711,15 +732,15 @@ private fun SessionListTab(
 }
 
 /**
- * Tab0 的会话列表本体。插件会话分组固定在最上方（分组名 = 插件名），
- * 下面是本机会话的置顶与时间分组；所有分组头都可以点击折叠/展开。
+ * Tab0 的会话列表本体：置顶与时间分组；所有分组头都可以点击折叠/展开。
  */
 @Composable
 private fun SessionListContent(
     sessions: List<ChatSession>,
-    pluginSessionGroups: List<PluginSessionGroup>,
-    currentPluginSessionId: String?,
-    onSelectPluginSession: (PluginSessionSummary) -> Unit,
+    externalSessionGroups: List<ExternalSessionGroup>,
+    currentExternalSessionId: String?,
+    onSelectExternalSession: (ExternalSessionSummary) -> Unit,
+    onLongClickExternalSession: (ExternalSessionSummary) -> Unit,
     currentSessionId: String?,
     agentStates: Map<String, AgentUIState>,
     awaitingPermissionSessionIds: Set<String>,
@@ -731,7 +752,7 @@ private fun SessionListContent(
     onSelect: (ChatSession) -> Unit,
     onLongClick: (ChatSession) -> Unit
 ) {
-    if (sessions.isEmpty() && pluginSessionGroups.isEmpty()) {
+    if (sessions.isEmpty() && externalSessionGroups.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -777,40 +798,49 @@ private fun SessionListContent(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = if (selectionMode) 80.dp else 0.dp)
     ) {
-        // 插件会话：不混入时间分组，固定放在置顶之上；组内顺序保持插件返回顺序。
-        pluginSessionGroups.forEach { pluginGroup ->
-            val groupKey = "plugin:${pluginGroup.pluginId}"
+        externalSessionGroups.forEach { extGroup ->
+            val groupKey = "external:${extGroup.pluginId}"
             val expanded = groupKey !in collapsedGroupKeys
             item(key = "group-$groupKey", contentType = "group-header") {
                 CollapsibleSessionGroupHeader(
-                    text = pluginGroup.pluginName,
-                    count = pluginGroup.sessions.size,
-                    loading = pluginGroup.loading,
+                    text = extGroup.pluginName.ifBlank { extGroup.pluginId },
+                    count = extGroup.sessions.size,
                     expanded = expanded,
+                    loading = extGroup.loading,
                     onClick = { toggleGroup(groupKey) }
                 )
             }
             if (expanded) {
-                items(
-                    items = pluginGroup.sessions,
-                    key = { pluginSession -> "plugin-session-${pluginSession.id}" },
-                    contentType = { "plugin-session" }
-                ) { pluginSession ->
-                    ChatSessionRow(
-                        session = pluginSession.asChatSession(),
-                        selected = !selectionMode && currentPluginSessionId == pluginSession.id,
-                        isExecuting = pluginSession.running,
-                        pinned = false,
-                        selectionMode = false,
-                        onClick = { onSelectPluginSession(pluginSession) },
-                        onLongClick = {}
-                    )
+                itemsIndexed(
+                    items = extGroup.sessions,
+                    key = { _, extSession -> "ext-${extSession.id}" },
+                    contentType = { _, _ -> "session" }
+                ) { index, extSession ->
+                    Column {
+                        if (index > 0) SettingsDivider()
+                        val extState = agentStates[extSession.id]
+                        val isExecuting = extSession.running ||
+                            extState is AgentUIState.Loading ||
+                            extState is AgentUIState.Streaming
+                        ChatSessionRow(
+                            session = ExternalSessionUiMapper.toChatSession(extSession),
+                            selected = !selectionMode && currentExternalSessionId == extSession.id,
+                            isExecuting = isExecuting,
+                            awaitingPermission = extSession.id in awaitingPermissionSessionIds,
+                            pinned = extSession.isPinned,
+                            selectionMode = false,
+                            checked = false,
+                            onCheckedChange = {},
+                            onClick = { onSelectExternalSession(extSession) },
+                            onLongClick = { onLongClickExternalSession(extSession) }
+                        )
+                    }
                 }
             }
         }
-
         // 本机会话：每个分组占一个 item、组内 forEach 全量渲染会让 LazyColumn 失去惰性：
         // 「最近 30 天」这种分组有上百个会话时，一个 item 就要组合上百行。分组头与会话各自成 item。
         groups.forEach { group ->
@@ -839,8 +869,7 @@ private fun SessionListContent(
                         val expanded = session.id in expandedIds
                         ChatSessionRow(
                             session = session,
-                            selected = if (selectionMode) false
-                            else currentPluginSessionId == null && session.id == currentSessionId,
+                            selected = !selectionMode && currentExternalSessionId == null && session.id == currentSessionId,
                             isExecuting = isExecuting,
                             awaitingPermission = session.id in awaitingPermissionSessionIds,
                             pinned = session.isPinned,
@@ -888,8 +917,7 @@ private fun SessionListContent(
                                     Row(modifier = Modifier.padding(start = Spacing.lg)) {
                                         ChatSessionRow(
                                             session = sub,
-                                            selected = if (selectionMode) false
-                                            else currentPluginSessionId == null && sub.id == currentSessionId,
+                                            selected = !selectionMode && currentExternalSessionId == null && sub.id == currentSessionId,
                                             isExecuting = subState is AgentUIState.Loading ||
                                                 subState is AgentUIState.Streaming,
                                             awaitingPermission = sub.id in awaitingPermissionSessionIds,
@@ -967,17 +995,6 @@ private fun CollapsibleSessionGroupHeader(
             modifier = Modifier.size(14.dp)
         )
     }
-}
-
-private fun PluginSessionSummary.asChatSession(): ChatSession {
-    val time = updatedAt ?: 0L
-    return ChatSession(
-        id = "plugin:$id",
-        title = title,
-        createdAt = time,
-        updatedAt = time,
-        workspacePath = ""
-    )
 }
 
 /** Tab0 底部搜索框：复用设置页的胶囊搜索框，非空时带清除按钮。 */
@@ -1244,7 +1261,7 @@ private fun FileBrowserTab(
                 )
             }
             if (fileOpPaths.isNotEmpty()) {
-                CircularProgressIndicator(
+                DrawerProgressIndicator(
                     modifier = Modifier.padding(end = Spacing.xs).size(16.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.primary
@@ -1280,7 +1297,7 @@ private fun FileBrowserTab(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    DrawerProgressIndicator(modifier = Modifier.size(24.dp))
                 }
 
                 is FileBrowseState.Error -> Box(
@@ -1681,6 +1698,10 @@ private fun FileTreeActionSheet(
     }
 }
 
+/** 文件树的一行：按 [FileTreeNode.depth] 缩进，目录带展开箭头。
+ * 所有行取统一的 [rowWidth]（与外层 horizontalScroll 配合），横向滑动时整树一起平移，
+ * 名称不截断、不换行。着色优先级：读取失败 > .gitignore 命中（橙）> dotfile（弱化）> 常规。 */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FileTreeRow(
     node: FileTreeNode,
@@ -1720,7 +1741,7 @@ private fun FileTreeRow(
         Spacer(Modifier.width(Spacing.lg * node.depth))
         if (node.entry.isDirectory) {
             if (showExpanding) {
-                CircularProgressIndicator(
+                DrawerProgressIndicator(
                     modifier = Modifier.size(16.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.primary
@@ -1741,7 +1762,7 @@ private fun FileTreeRow(
         }
         Spacer(Modifier.width(Spacing.xs))
         if (busy) {
-            CircularProgressIndicator(
+            DrawerProgressIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp,
                 color = MaterialTheme.colorScheme.primary
@@ -1760,7 +1781,8 @@ private fun FileTreeRow(
     }
 }
 
-/** 文件树行的类型图标：目录用文件夹，文件按扩展名挑选单色线性图标。容器根用「容器与镜像」列表同款图标。
+/** 文件树行的类型图标：目录用文件夹，文件按扩展名挑选单色线性图标。容器根用「容器与镜像」列表同款图标，
+ * 本机文件夹根用「添加外部工作区」同款磁盘图标。
  * [decorationColor] 非空时统一染色（.gitignore/dotfile 弱化）。 */
 @Composable
 private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
@@ -1783,6 +1805,15 @@ private fun FileTreeIcon(node: FileTreeNode, decorationColor: Color?) {
                 tint = tint
             )
         }
+        return
+    }
+    if (node.root is FileTreeRoot.LocalFolder) {
+        Icon(
+            imageVector = FeatherIcons.HardDrive,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = decorationColor ?: MaterialTheme.colorScheme.primary
+        )
         return
     }
     val vector = if (node.entry.isDirectory) {
@@ -1822,10 +1853,11 @@ private fun SessionActionSheet(
     onExport: () -> Unit,
     onBatchSelect: () -> Unit,
     onDelete: () -> Unit,
-    pluginEntries: List<PluginUiEntry> = emptyList(),
-    pluginLanguageTag: String = "zh-CN",
-    onPluginEntry: (PluginUiEntry) -> Unit = {},
-    onDismiss: () -> Unit
+    pluginEntries: List<PluginUiEntry>,
+    pluginLanguageTag: String,
+    onPluginEntry: (PluginUiEntry) -> Unit,
+    onDismiss: () -> Unit,
+    isExternal: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState()
     AdaptiveModalBottomSheet(
@@ -1866,24 +1898,26 @@ private fun SessionActionSheet(
                     onRename()
                 }
             )
-            SheetActionRow(
-                icon = FeatherIcons.Download,
-                label = stringResource(R.string.chat_export_session),
-                tint = MaterialTheme.colorScheme.onSurface,
-                onClick = {
-                    onDismiss()
-                    onExport()
-                }
-            )
-            SheetActionRow(
-                icon = FeatherIcons.CheckSquare,
-                label = stringResource(R.string.chat_batch_select),
-                tint = MaterialTheme.colorScheme.onSurface,
-                onClick = {
-                    onDismiss()
-                    onBatchSelect()
-                }
-            )
+            if (!isExternal) {
+                SheetActionRow(
+                    icon = FeatherIcons.Download,
+                    label = stringResource(R.string.chat_export_session),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = {
+                        onDismiss()
+                        onExport()
+                    }
+                )
+                SheetActionRow(
+                    icon = FeatherIcons.CheckSquare,
+                    label = stringResource(R.string.chat_batch_select),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = {
+                        onDismiss()
+                        onBatchSelect()
+                    }
+                )
+            }
             if (pluginEntries.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.settings_plugins),

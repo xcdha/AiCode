@@ -120,7 +120,7 @@ internal object PluginWebViewFactory {
     }
 
     fun webViewThemeRes(dark: Boolean): Int =
-        if (dark) R.style.Theme_AICode_WebView_Dark else R.style.Theme_AICode_WebView
+        if (dark) R.style.Theme_Guru_WebView_Dark else R.style.Theme_Guru_WebView
 
     private class PluginPageAssetHandler(private val root: File) : WebViewAssetLoader.PathHandler {
         override fun handle(path: String): WebResourceResponse? {

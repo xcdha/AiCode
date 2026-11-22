@@ -1,5 +1,6 @@
 package com.bysqh.guru.feature.plugin.runtime
 
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackend
 import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
 import com.bysqh.guru.feature.agent.domain.model.AgentContext
 import com.bysqh.guru.feature.agent.domain.model.AgentImage
@@ -16,7 +17,6 @@ import com.bysqh.guru.feature.agent.domain.tool.ToolResult
 import com.bysqh.guru.feature.plugin.domain.PluginHostException
 import com.bysqh.guru.feature.plugin.domain.PluginHostPaths
 import com.bysqh.guru.feature.plugin.domain.PluginManager
-import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import com.bysqh.guru.feature.workspace.data.repository.WorkspaceRepository
 import java.util.UUID
@@ -215,35 +215,27 @@ class PluginToolService @Inject constructor(
         }
     }
 
-    private data class ServerIdentity(
-        val host: String,
-        val port: Int,
-        val username: String
-    )
-
-    private fun serverIdentity(): ServerIdentity? = remoteSshConnection.config?.let {
-        ServerIdentity(it.host, it.port, it.username)
-    }
-
     private inner class ExecutionGuard(
         private val pluginId: String,
         private val workspacePath: String
     ) {
-        private val mode = executionModeHolder.currentMode()
-        private val server = if (mode == ExecutionMode.REMOTE_SSH) serverIdentity() else null
+        private val backend = executionModeHolder.currentBackend()
+        private val backendId = backend.id
+        private val environmentKey = backend.environmentCacheKey()
         private val failure = AtomicReference<PluginHostException?>()
         private val invalidated = CompletableDeferred<PluginHostException>()
 
         private fun refresh(
             currentWorkspacePath: String? = workspaceRepository.current.value?.path,
-            currentMode: ExecutionMode = executionModeHolder.currentMode(),
+            currentBackend: ExecutionBackend = executionModeHolder.currentBackend(),
             pluginActive: Boolean = pluginManager.plugins.value.any { it.id == pluginId && it.isActive }
         ) {
             if (failure.get() != null) return
             val error = when {
                 !pluginActive -> PluginHostException("PLUGIN_INACTIVE", "plugin is not active: $pluginId")
-                currentWorkspacePath != workspacePath || currentMode != mode ||
-                    (mode == ExecutionMode.REMOTE_SSH && serverIdentity() != server) ->
+                currentWorkspacePath != workspacePath ||
+                    currentBackend.id != backendId ||
+                    currentBackend.environmentCacheKey() != environmentKey ->
                     PluginHostException("STALE_CONTEXT", "tool execution context has changed")
                 else -> null
             }
@@ -262,7 +254,7 @@ class PluginToolService @Inject constructor(
                     workspaceRepository.current.collect { refresh(currentWorkspacePath = it?.path) }
                 },
                 launch(Dispatchers.Unconfined) {
-                    executionModeHolder.mode.collect { refresh(currentMode = it) }
+                    executionModeHolder.activeBackend.collect { refresh(currentBackend = it) }
                 },
                 launch(Dispatchers.Unconfined) {
                     pluginManager.plugins.collect { plugins ->

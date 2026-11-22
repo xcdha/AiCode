@@ -148,16 +148,18 @@ class ProviderDashboardRunner @Inject constructor(
             ?: provider.selectedModel.ifBlank { provider.defaultModel }
         // 多 Key 模式下查当前活动的 Key，否则面板会报一个已被切走的 Key 的余额。
         val effectiveApiKey = keyRotator.currentKey(provider) ?: provider.apiKey
+        // 面板请求跟随该 Key 自己的地址覆盖（不同 Key 走不同中转时，余额要查对应端点）。
+        val effectiveBaseUrl = provider.effectiveBaseUrl(effectiveApiKey)
 
         val envs = mutableListOf(
-            "AICODE_PROVIDER_ID=${escape(provider.id)}",
-            "AICODE_PROVIDER_NAME=${escape(provider.name)}",
-            "AICODE_PROVIDER_TYPE=${escape(provider.type.name)}",
-            "AICODE_PROVIDER_API_KEY=${escape(effectiveApiKey)}",
-            "AICODE_PROVIDER_BASE_URL=${escape(provider.baseUrl)}",
-            "AICODE_PROVIDER_DEFAULT_MODEL=${escape(provider.defaultModel)}",
-            "AICODE_PROVIDER_SELECTED_MODEL=${escape(provider.selectedModel)}",
-            "AICODE_MODEL=${escape(effectiveModel)}"
+            "GURU_PROVIDER_ID=${escape(provider.id)}",
+            "GURU_PROVIDER_NAME=${escape(provider.name)}",
+            "GURU_PROVIDER_TYPE=${escape(provider.type.name)}",
+            "GURU_PROVIDER_API_KEY=${escape(effectiveApiKey)}",
+            "GURU_PROVIDER_BASE_URL=${escape(effectiveBaseUrl)}",
+            "GURU_PROVIDER_DEFAULT_MODEL=${escape(provider.defaultModel)}",
+            "GURU_PROVIDER_SELECTED_MODEL=${escape(provider.selectedModel)}",
+            "GURU_MODEL=${escape(effectiveModel)}"
         )
 
         // 自定义脚本参数：按提供商配置注入为 AICODE_KEY_<KEY> 环境变量，
@@ -173,26 +175,26 @@ class ProviderDashboardRunner @Inject constructor(
         if (context != null) {
             envs.add("AICODE_WORKSPACE=${escape(context.workspacePath)}")
             envs.add("AICODE_WORKSPACE_NAME=${escape(context.workspaceName)}")
-            envs.add("AICODE_SESSION_ID=${escape(context.sessionId)}")
-            envs.add("AICODE_LAST_INPUT_TOKENS=${context.lastInputTokens}")
-            envs.add("AICODE_LAST_OUTPUT_TOKENS=${context.lastOutputTokens}")
-            envs.add("AICODE_LAST_CACHED_TOKENS=${context.lastCachedTokens}")
-            envs.add("AICODE_TOTAL_INPUT_TOKENS=${context.totalInputTokens}")
-            envs.add("AICODE_TOTAL_OUTPUT_TOKENS=${context.totalOutputTokens}")
-            envs.add("AICODE_MODEL_CONTEXT_TOKENS=${context.modelContextTokens}")
-            envs.add("AICODE_MODEL_MAX_INPUT_TOKENS=${context.modelMaxInputTokens}")
-            envs.add("AICODE_MODEL_MAX_OUTPUT_TOKENS=${context.modelMaxOutputTokens}")
-            envs.add("AICODE_MODEL_INPUT_COST_USD_PER_M=${context.modelInputCostUsdPerM}")
-            envs.add("AICODE_MODEL_OUTPUT_COST_USD_PER_M=${context.modelOutputCostUsdPerM}")
-            envs.add("AICODE_MODEL_CACHE_READ_COST_USD_PER_M=${context.modelCacheReadCostUsdPerM}")
-            envs.add("AICODE_MODEL_SUPPORTS_TOOLS=${context.modelSupportsTools}")
-            envs.add("AICODE_MODEL_SUPPORTS_VISION=${context.modelSupportsVision}")
-            envs.add("AICODE_MODEL_SUPPORTS_REASONING=${context.modelSupportsReasoning}")
-            envs.add("AICODE_MESSAGE_COUNT=${context.messageCount}")
-            envs.add("AICODE_AGENT_STATE=${escape(context.agentState)}")
-            envs.add("AICODE_SESSION_MODE=${escape(context.sessionMode)}")
-            envs.add("AICODE_REASONING_EFFORT=${escape(context.reasoningEffort)}")
-            envs.add("AICODE_REFRESH_REASON=${escape(context.refreshReason)}")
+            envs.add("GURU_SESSION_ID=${escape(context.sessionId)}")
+            envs.add("GURU_LAST_INPUT_TOKENS=${context.lastInputTokens}")
+            envs.add("GURU_LAST_OUTPUT_TOKENS=${context.lastOutputTokens}")
+            envs.add("GURU_LAST_CACHED_TOKENS=${context.lastCachedTokens}")
+            envs.add("GURU_TOTAL_INPUT_TOKENS=${context.totalInputTokens}")
+            envs.add("GURU_TOTAL_OUTPUT_TOKENS=${context.totalOutputTokens}")
+            envs.add("GURU_MODEL_CONTEXT_TOKENS=${context.modelContextTokens}")
+            envs.add("GURU_MODEL_MAX_INPUT_TOKENS=${context.modelMaxInputTokens}")
+            envs.add("GURU_MODEL_MAX_OUTPUT_TOKENS=${context.modelMaxOutputTokens}")
+            envs.add("GURU_MODEL_INPUT_COST_USD_PER_M=${context.modelInputCostUsdPerM}")
+            envs.add("GURU_MODEL_OUTPUT_COST_USD_PER_M=${context.modelOutputCostUsdPerM}")
+            envs.add("GURU_MODEL_CACHE_READ_COST_USD_PER_M=${context.modelCacheReadCostUsdPerM}")
+            envs.add("GURU_MODEL_SUPPORTS_TOOLS=${context.modelSupportsTools}")
+            envs.add("GURU_MODEL_SUPPORTS_VISION=${context.modelSupportsVision}")
+            envs.add("GURU_MODEL_SUPPORTS_REASONING=${context.modelSupportsReasoning}")
+            envs.add("GURU_MESSAGE_COUNT=${context.messageCount}")
+            envs.add("GURU_AGENT_STATE=${escape(context.agentState)}")
+            envs.add("GURU_SESSION_MODE=${escape(context.sessionMode)}")
+            envs.add("GURU_REASONING_EFFORT=${escape(context.reasoningEffort)}")
+            envs.add("GURU_REFRESH_REASON=${escape(context.refreshReason)}")
         }
 
         return envs.joinToString(" ")
@@ -215,7 +217,7 @@ class ProviderDashboardRunner @Inject constructor(
             "{{PROVIDER_ID}}" to provider.id,
             "{{PROVIDER_NAME}}" to provider.name,
             "{{PROVIDER_TYPE}}" to provider.type.name,
-            "{{BASE_URL}}" to provider.baseUrl,
+            "{{BASE_URL}}" to provider.effectiveBaseUrl(effectiveApiKey),
             "{{DEFAULT_MODEL}}" to provider.defaultModel,
             "{{SELECTED_MODEL}}" to provider.selectedModel,
             "{{MODEL}}" to effectiveModel

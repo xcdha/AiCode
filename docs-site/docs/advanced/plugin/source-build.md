@@ -38,7 +38,7 @@ my-plugin/
 
 ## 运行时与 SDK
 
-独立项目使用 npm 包 `@jieapi/plugin-sdk`。在 `src/index.ts` 注册 handler：
+独立项目使用 npm 包 `@jieapi/plugin-sdk`，当前契约版本为 `0.2.0`，依赖范围使用 `^0.2.0`，对应清单 `engines.pluginApi: "^1.0.0"`。SDK 包版本与宿主插件 API 版本不是同一编号。在 `src/index.ts` 注册 handler：
 
 ```ts
 import { definePlugin } from '@jieapi/plugin-sdk';
@@ -64,7 +64,7 @@ export const tools: Record<string, PluginHandler> = {
 };
 ```
 
-handler 的键必须与清单中的 `handler` 一致。工具参数由 `inputSchema` 描述，页面也可用 `aicode.invoke('tools.echo', {text: 'hello'})` 调用同一 handler。
+handler 的键必须与清单中的 `handler` 一致。工具参数由 `inputSchema` 描述，页面也可用 `guru.invoke('tools.echo', {text: 'hello'})` 调用同一 handler。
 
 | SDK 导出 | 用途 |
 | --- | --- |
@@ -132,11 +132,11 @@ app.mount('#app');
 
 ```vue
 <template>
-  <main class="aicode-page">
-    <aicode-field label="名称">
-      <aicode-input v-model="name" placeholder="输入名称" />
-    </aicode-field>
-    <aicode-button @click="save">保存</aicode-button>
+  <main class="guru-page">
+    <guru-field label="名称">
+      <guru-input v-model="name" placeholder="输入名称" />
+    </guru-field>
+    <guru-button @click="save">保存</guru-button>
     <p>{{ status }}</p>
   </main>
 </template>
@@ -149,7 +149,7 @@ const status = ref('');
 
 async function save(): Promise<void> {
   try {
-    await aicode.fs.write('data://config.json', JSON.stringify({ name: name.value }));
+    await guru.fs.write('data://config.json', JSON.stringify({ name: name.value }));
     status.value = '已保存';
   } catch (error) {
     status.value = '保存失败：' + (error as Error).message;
@@ -173,8 +173,8 @@ import '@jieapi/plugin-sdk/page/vue';
 
 | 类型入口 | 提供内容 |
 | --- | --- |
-| `@jieapi/plugin-sdk/page` | `window.aicode`、全局 `aicode`、`AicodeUI`，以及桥方法、返回值和事件 payload |
-| `@jieapi/plugin-sdk/page/vue` | Vue `GlobalComponents` 中的 `aicode-*` 组件、props 与事件类型，包括 `v-model` 更新事件 |
+| `@jieapi/plugin-sdk/page` | `window.aicode`、全局 `guru`、`AicodeUI`，以及桥方法、返回值和事件 payload |
+| `@jieapi/plugin-sdk/page/vue` | Vue `GlobalComponents` 中的 `guru-*` 组件、props 与事件类型，包括 `v-model` 更新事件 |
 
 类型声明仅用于开发，不会进入页面产物。模板的 `npm run typecheck` 使用 `tsc` 检查 `.ts` 文件；Vue SFC 还需结合 Vue 编辑器的类型提示、页面构建和真机验证。
 
@@ -200,41 +200,3 @@ import '@jieapi/plugin-sdk/page/vue';
 1. 在 `runtime.dependencies` 中声明依赖文件，写法见[依赖准备](/advanced/plugin/tools-runtime#依赖准备)。
 2. 构建时将这些包设为 esbuild 的 `external`。独立模板需在 `build.mjs` 中配置；主仓库工具链会读取声明了 `runtime.dependencies` 的插件，将其 `package.json` 的 `dependencies` 自动设为 external。
 3. 发布时保留依赖文件，使用者在插件详情点击「准备依赖」后再运行。
-
-## 在主仓库中开发
-
-主仓库的共享工具链用于 `plugins/samples/` 与 `plugin-official/` 下的项目：
-
-| 路径 | 作用 |
-| --- | --- |
-| `plugins/sdk/` | 共享 SDK 源码与页面类型 |
-| `plugins/build.mjs` | 扫描插件并构建运行时、页面 |
-| `plugins/build-pages.mjs` | Vue SFC 页面构建 |
-| `plugins/tsconfig.json` | 共享类型检查配置 |
-
-运行时 SDK 统一用 `@jieapi/plugin-sdk` 引入：仓库内由 `plugins/tsconfig.json` 与 `plugins/build.mjs` 的别名映射到 `plugins/sdk/src/index.ts`，独立项目直接安装已发布的包；两种方式同一套类型，包括 `hostCall` 的方法名与入参声明。页面类型入口（`@jieapi/plugin-sdk/page`、`@jieapi/plugin-sdk/page/vue`）保持一致。
-
-在仓库根目录执行，`<目录名>` 替换为插件的实际目录名：
-
-```bash
-npm --prefix plugins install
-npm --prefix plugins run build:plugins -- --plugin <目录名>
-npm --prefix plugins run typecheck:plugins
-```
-
-省略 `--plugin <目录名>` 会构建全部插件；`watch:plugins` 用于持续构建，`build:plugins -- --minify` 用于压缩。
-
-运行时入口优先取 `src/index.ts`，其次取 `src/main.ts`，输出位置读取 `runtime.entry`；页面输出到 `pages/`。仓库中的 `dist/` 与生成的 `pages/` 不提交，打包时包含最新产物。
-
-## 发布 SDK（维护者）
-
-`plugins/sdk` 发布为 npm 包 `@jieapi/plugin-sdk`。在仓库根目录构建，再检查包内容并发布：
-
-```bash
-npm --prefix plugins run build:sdk
-cd plugins/sdk
-npm pack --dry-run
-npm publish
-```
-
-`prepublishOnly` 会再次执行构建。SDK 使用 MIT 许可证，主项目使用 GPL-3.0；第三方插件可以闭源，使用 SDK 时需保留其版权与许可声明。

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 object Spacing {
     val xs = 4.dp
@@ -377,8 +378,14 @@ fun AIEditorTheme(
         if (appearance.uiStyle == UiStyle.MIUIX) MiuixShapes else Shapes()
     }
     val density = LocalDensity.current
-    val scaledDensity = remember(density, appearance.interfaceScale) {
-        Density(density.density, density.fontScale * appearance.interfaceScale)
+    // 用显式相等的包装值作为 remember 键：interfaceScale 是 Float，
+    // 1f 与 1.0000001f 这类浮点抖动会重建 Density，进而整棵子树重组，
+    // 抽屉阴影、过渡动画会因此闪断。这里先量化到 0.01 再比较。
+    val scaleKey = remember(appearance.interfaceScale) {
+        (appearance.interfaceScale * 100f).roundToInt()
+    }
+    val scaledDensity = remember(density, scaleKey) {
+        Density(density.density, density.fontScale * (scaleKey / 100f))
     }
 
     // [二开] 纯黑：页面底色与卡片面用的是语义色（不是 colorScheme.background），
@@ -429,7 +436,10 @@ fun AIEditorTheme(
         LocalUiStyle provides appearance.uiStyle,
         LocalBackgroundScrimColor provides themeColors.colorScheme.background
     ) {
-        CompositionLocalProvider(LocalDensity provides scaledDensity) {
+        CompositionLocalProvider(
+            LocalSystemDensity provides density,
+            LocalDensity provides scaledDensity
+        ) {
             MaterialTheme(
                 colorScheme = layeredScheme,
                 typography = if (appearance.uiStyle == UiStyle.MIUIX) {

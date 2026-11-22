@@ -35,7 +35,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 工具授权规则的持久化。全局规则存 app 私有目录 (`filesDir/aicode/permissions.json`)，
+ * 工具授权规则的持久化。全局规则存 app 私有目录 (`filesDir/guru/permissions.json`)，
  * 项目级规则存工作区目录 (`.guru/permissions.json`)，方便团队通过 git 共享。
  *
  * 文件格式为紧凑的 `Tool(pattern)` 风格，示例：
@@ -70,7 +70,7 @@ class PermissionRulesRepository @Inject constructor(
         val JSON = Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = true }
     }
 
-    /** 全局权限文件：`filesDir/aicode/permissions.json`，与 mcp.json 同级。 */
+    /** 全局权限文件：`filesDir/guru/permissions.json`，与 mcp.json 同级。 */
     private val globalFile: File
         get() = File(File(context.filesDir, "guru"), PERMISSIONS_FILE)
 

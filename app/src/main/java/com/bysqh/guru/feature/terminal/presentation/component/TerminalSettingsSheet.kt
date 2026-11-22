@@ -80,7 +80,7 @@ fun TerminalSettingsSheet(
     onChangeFontSize: (Int) -> Unit,
     onChangeCursorStyle: (Int) -> Unit,
     onChangeFontPath: (String) -> Unit,
-    onChangeShowPluginTabs: (Boolean) -> Unit = {}
+    onChangeShowPluginTabs: (Boolean) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -383,7 +383,7 @@ private fun TerminalPreviewCard(settings: TerminalSettings) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "root@aicode",
+                    text = "root@guru",
                     color = greenColor,
                     fontFamily = fontFamily,
                     fontSize = settings.fontSizeSp.sp,

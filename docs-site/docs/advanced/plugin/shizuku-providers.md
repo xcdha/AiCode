@@ -19,7 +19,7 @@ Shizuku 用于执行 Android 系统命令，需要插件级独立授权；插件
 页面调用：
 
 ```ts
-const result = await aicode.shizuku.exec('settings get global airplane_mode_on', {timeout: 30});
+const result = await guru.shizuku.exec('settings get global airplane_mode_on', {timeout: 30});
 ```
 
 进程调用：
@@ -58,19 +58,19 @@ const result = await hostCall('host.shizuku.exec', {
 
 | 页面调用 | 进程调用 | 作用 |
 | --- | --- | --- |
-| `aicode.providers.listModels(providerId)` | `host.providers.listModels({providerId})` | 读取配置，返回 `{providerId, models, selectedModel}`，不访问上游 |
-| `aicode.providers.addModel(providerId, model, options?)` | `host.providers.addModel({providerId, model, contextTokens?})` | 追加模型；重复添加视为成功，尚无选中模型时自动选中它 |
-| `aicode.providers.deleteModel(providerId, model)` | `host.providers.deleteModel({providerId, model})` | 返回 `{providerId, model, models, selectedModel, removed}`；不存在时 `removed: false`，删除选中模型时回退到剩余模型 |
-| `aicode.providers.setModelContext(providerId, model, contextTokens)` | `host.providers.setModelContext({providerId, model, contextTokens})` | 写入模型上下文窗口 |
-| `aicode.providers.setApiKey(providerId, apiKey)` | `host.providers.setApiKey({providerId, apiKey})` | 设置单 Key；空串清除，值不回显 |
+| `guru.providers.listModels(providerId)` | `host.providers.listModels({providerId})` | 读取配置，返回 `{providerId, models, selectedModel}`，不访问上游 |
+| `guru.providers.addModel(providerId, model, options?)` | `host.providers.addModel({providerId, model, contextTokens?})` | 追加模型；重复添加视为成功，尚无选中模型时自动选中它 |
+| `guru.providers.deleteModel(providerId, model)` | `host.providers.deleteModel({providerId, model})` | 返回 `{providerId, model, models, selectedModel, removed}`；不存在时 `removed: false`，删除选中模型时回退到剩余模型 |
+| `guru.providers.setModelContext(providerId, model, contextTokens)` | `host.providers.setModelContext({providerId, model, contextTokens})` | 写入模型上下文窗口 |
+| `guru.providers.setApiKey(providerId, apiKey)` | `host.providers.setApiKey({providerId, apiKey})` | 设置单 Key；空串清除，值不回显 |
 
 服务启动后可在页面同步配置：
 
 ```ts
-await aicode.providers.addModel('gateway', 'local-model', {contextTokens: 32768});
-const token = (await aicode.secrets.get('gateway-token')).value;
-await aicode.providers.setApiKey('gateway', token);
-const {models, selectedModel} = await aicode.providers.listModels('gateway');
+await guru.providers.addModel('gateway', 'local-model', {contextTokens: 32768});
+const token = (await guru.secrets.get('gateway-token')).value;
+await guru.providers.setApiKey('gateway', token);
+const {models, selectedModel} = await guru.providers.listModels('gateway');
 ```
 
 进程中通过 SDK 调用对应的 `host.providers.*`，参数统一放入对象：

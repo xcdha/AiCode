@@ -19,7 +19,7 @@ class MarkdownPreprocessorTest {
     fun `inline math becomes math image link`() {
         val out = process("质能方程 \$E = mc^2\$ 很有名")
         assertTrue(out.contains(MarkdownPreprocessor.MATH_INLINE_SCHEME))
-        val link = Regex("""!\[]\((aicode-math-inline://[^)]+)\)""").find(out)!!.groupValues[1]
+        val link = Regex("""!\[]\((guru-math-inline://[^)]+)\)""").find(out)!!.groupValues[1]
         val (latex, block) = MarkdownPreprocessor.decodeMathLink(link)!!
         assertEquals("E = mc^2", latex)
         assertFalse(block)
@@ -28,7 +28,7 @@ class MarkdownPreprocessorTest {
     @Test
     fun `block math becomes block math image link`() {
         val out = process("公式：\n\$\$\\int_a^b f(x)dx\$\$\n完")
-        val link = Regex("""!\[]\((aicode-math-block://[^)]+)\)""").find(out)!!.groupValues[1]
+        val link = Regex("""!\[]\((guru-math-block://[^)]+)\)""").find(out)!!.groupValues[1]
         val (latex, block) = MarkdownPreprocessor.decodeMathLink(link)!!
         assertEquals("\\int_a^b f(x)dx", latex)
         assertTrue(block)
@@ -51,7 +51,7 @@ class MarkdownPreprocessorTest {
     fun `latex paren inline math becomes math image link`() {
         val out = process("""令 \(S=a+b+c\)。算法只需枚举较小的因子 \(b\)：""")
         assertTrue(out.contains(MarkdownPreprocessor.MATH_INLINE_SCHEME))
-        val matches = Regex("""!\[]\((aicode-math-inline://[^)]+)\)""").findAll(out).toList()
+        val matches = Regex("""!\[]\((guru-math-inline://[^)]+)\)""").findAll(out).toList()
         assertEquals(2, matches.size)
         val first = MarkdownPreprocessor.decodeMathLink(matches[0].groupValues[1])!!
         assertEquals("S=a+b+c", first.first)
@@ -65,7 +65,7 @@ class MarkdownPreprocessorTest {
     fun `latex bracket block math becomes block math image link`() {
         val out = process("""公式：\[\sum_{i=1}^n i = \frac{n(n+1)}{2}\]完""")
         assertTrue(out.contains(MarkdownPreprocessor.MATH_BLOCK_SCHEME))
-        val link = Regex("""!\[]\((aicode-math-block://[^)]+)\)""").find(out)!!.groupValues[1]
+        val link = Regex("""!\[]\((guru-math-block://[^)]+)\)""").find(out)!!.groupValues[1]
         val (latex, block) = MarkdownPreprocessor.decodeMathLink(link)!!
         assertEquals("""\sum_{i=1}^n i = \frac{n(n+1)}{2}""", latex)
         assertTrue(block)

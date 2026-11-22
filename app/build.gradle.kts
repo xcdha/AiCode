@@ -6,7 +6,7 @@ plugins {
     kotlin("android")
 
     kotlin("plugin.compose")
-    kotlin("plugin.serialization") version "2.4.20"
+    kotlin("plugin.serialization") version "2.2.21"
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
 }
@@ -87,7 +87,7 @@ val syncAiDocs = tasks.register<Sync>("syncAiDocs") {
 
 android {
     namespace = "com.bysqh.guru"
-    compileSdk = 37
+    compileSdk = 36
     buildToolsVersion = "35.0.0"
 
     signingConfigs {
@@ -156,15 +156,15 @@ android {
     // 客户机二进制不由内核 execve，而是 proot 的 loader 用 mmap(PROT_EXEC) 映射进内存，
     // 不受 W^X 约束。故命名必须是 lib*.so（libproot-loader32.so 实为 32 位 ELF，同样有效）。
     sourceSets {
-        getByName("universal") { assets.directories.add("src/_armAssets") }
-        getByName("universal") { assets.directories.add("src/_x86Assets") }
-        getByName("armsolo") { assets.directories.add("src/_armAssets") }
-        getByName("x86solo") { assets.directories.add("src/_x86Assets") }
-        getByName("universal") { jniLibs.directories.addAll(listOf("src/_armJniLibs", "src/_x86JniLibs")) }
-        getByName("armsolo") { jniLibs.directories.add("src/_armJniLibs") }
-        getByName("x86solo") { jniLibs.directories.add("src/_x86JniLibs") }
+        getByName("universal") { assets.srcDir("src/_armAssets") }
+        getByName("universal") { assets.srcDir("src/_x86Assets") }
+        getByName("armsolo") { assets.srcDir("src/_armAssets") }
+        getByName("x86solo") { assets.srcDir("src/_x86Assets") }
+        getByName("universal") { jniLibs.srcDirs("src/_armJniLibs", "src/_x86JniLibs") }
+        getByName("armsolo") { jniLibs.srcDir("src/_armJniLibs") }
+        getByName("x86solo") { jniLibs.srcDir("src/_x86JniLibs") }
         // 文档不放在 app/src/main/assets 下，改由 syncAiDocs 从 docs-site/docs 生成后并入
-        getByName("main") { assets.directories.add(aiDocsGeneratedDir.get().asFile.path) }
+        getByName("main") { assets.srcDir(aiDocsGeneratedDir) }
     }
 
     buildTypes {
@@ -205,6 +205,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         // sora-editor 的 language-textmate 在 API 33 以下设备必须依赖核心库脱糖（minSdk 26）。
         isCoreLibraryDesugaringEnabled = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     buildFeatures {
@@ -271,7 +275,7 @@ android {
     // 合并进 Robolectric 的 assets（test_config.properties 指向 mergeUniversalDebugAssets），
     // 故挂在 debug 变体上：迁移测试只跑 universalDebug，release 包不会带上 schema。
     sourceSets {
-        getByName("debug").assets.directories.add("$projectDir/schemas")
+        getByName("debug").assets.srcDir("$projectDir/schemas")
     }
 }
 
@@ -305,8 +309,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.0")
 
     // Hilt 依赖注入
-    implementation("com.google.dagger:hilt-android:2.60.1")
-    ksp("com.google.dagger:hilt-compiler:2.60.1")
+    implementation("com.google.dagger:hilt-android:2.56.1")
+    ksp("com.google.dagger:hilt-compiler:2.56.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Room 数据库
@@ -425,9 +429,3 @@ tasks.register<Exec>("checkMigrations") {
 
 // assets 合并前必须先生成文档，否则首次构建（或 clean 后）APK 里会没有 docs/。
 tasks.named("preBuild") { dependsOn(syncAiDocs) }
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    }
-}

@@ -93,7 +93,7 @@ fun PluginWebPanelScreen(
     }
     var failed by remember(page.cacheKey) { mutableStateOf(false) }
     var viewportReady by remember(page.cacheKey) { mutableStateOf(false) }
-    // 插件页自报的背景色：状态栏那条区域由宿主绘制，颜色跟页面一致才不会出色差。
+    // [二开] 插件页自报的背景色：状态栏那条区域由宿主绘制，颜色跟页面一致才不会出色差。
     var pageBackground by remember(page.cacheKey) { mutableStateOf<Color?>(null) }
     // WebView 在窗口中的位置与尺寸；布局线程更新，桥线程读取，用原子引用避免跨线程直接访问 View。
     val webViewOrigin = remember(page.cacheKey) { AtomicReference(Offset.Zero) }
@@ -243,8 +243,7 @@ fun PluginWebPanelScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            // 背景先于系统栏内边距绘制，所以能盖住状态栏那条区域；
-            // 色值由页面自报，页面硬编码背景色也能对齐。
+            // [二开] 背景先于系统栏内边距绘制，能盖住状态栏那条区域；色值由页面自报。
             .background(if (applySystemBarInsets) pageBackground ?: Color.Transparent else Color.Transparent)
             .drawBehind {
                 if (fillNavigationBar) {

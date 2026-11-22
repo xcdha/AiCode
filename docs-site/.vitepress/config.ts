@@ -28,7 +28,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Guide', link: '/en/guide/quick-start', activeMatch: '/en/guide/' },
-          { text: 'Download', link: 'https://github.com/jieapi/aicode/releases/latest' },
+          { text: 'Download', link: 'https://github.com/jieapi/guru/releases/latest' },
           { text: 'User Agreement', link: '/en/terms' },
           { text: 'Privacy', link: '/en/privacy' }
         ],
@@ -59,7 +59,7 @@ export default defineConfig({
         sidebarMenuLabel: 'Menu',
         returnToTopLabel: 'Back to top',
         editLink: {
-          pattern: 'https://github.com/jieapi/aicode/edit/main/docs-site/docs/:path',
+          pattern: 'https://github.com/jieapi/guru/edit/main/docs-site/docs/:path',
           text: 'Edit this page on GitHub'
         },
         footer: {
@@ -75,7 +75,7 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   sitemap: {
-    hostname: 'https://aicode.murk.top'
+    hostname: 'https://guru.murk.top'
   },
   head: [
     ['link', { rel: 'icon', href: '/logo.png', type: 'image/png' }],
@@ -86,18 +86,18 @@ export default defineConfig({
     ['meta', { property: 'og:site_name', content: 'Guru' }],
     ['meta', { property: 'og:title', content: 'Guru - 手机端 AI 编程工具与内置 Linux 终端' }],
     ['meta', { property: 'og:description', content: 'Android 端全功能 AI 编程工具：内置 Linux 容器与终端、AI Agent 自动修改代码与执行命令、MCP 工具扩展、Git 版本管理与远程 SSH 连接。' }],
-    ['meta', { property: 'og:image', content: 'https://aicode.murk.top/logo.png' }],
-    ['meta', { property: 'og:url', content: 'https://aicode.murk.top/' }],
+    ['meta', { property: 'og:image', content: 'https://guru.murk.top/logo.png' }],
+    ['meta', { property: 'og:url', content: 'https://guru.murk.top/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'Guru - 手机端 AI 编程工具与内置 Linux 终端' }],
     ['meta', { name: 'twitter:description', content: 'Android 端全功能 AI 编程工具：内置 Linux 容器与终端、AI Agent 自动修改代码与执行命令、MCP 工具扩展、Git 版本管理与远程 SSH 连接。' }],
-    ['meta', { name: 'twitter:image', content: 'https://aicode.murk.top/logo.png' }]
+    ['meta', { name: 'twitter:image', content: 'https://guru.murk.top/logo.png' }]
   ],
   themeConfig: {
     nav: [
       { text: '使用手册', link: '/guide/quick-start', activeMatch: '/guide/' },
       { text: '进阶教程', link: '/advanced/build-android-app', activeMatch: '/advanced/' },
-      { text: '下载', link: 'https://github.com/jieapi/aicode/releases/latest' },
+      { text: '下载', link: 'https://github.com/jieapi/guru/releases/latest' },
       { text: '用户协议', link: '/terms' },
       { text: '隐私政策', link: '/privacy' }
     ],
@@ -166,7 +166,9 @@ export default defineConfig({
             { text: '日志与故障排查', link: '/guide/logs' },
             { text: '常见错误提示', link: '/guide/error-codes' },
             { text: '存储空间', link: '/guide/storage' },
+            { text: '会话管理', link: '/guide/session-management' },
             { text: '备份与还原', link: '/guide/backup' },
+            { text: '赞助', link: '/guide/sponsor' },
             { text: '关于与更新', link: '/guide/about' },
             { text: '用户协议', link: '/terms' },
             { text: '隐私政策', link: '/privacy' }
@@ -233,7 +235,7 @@ export default defineConfig({
       ]
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/jieapi/aicode' }
+      { icon: 'github', link: 'https://github.com/jieapi/guru' }
     ],
     search: {
       provider: 'local'
@@ -247,7 +249,7 @@ export default defineConfig({
     sidebarMenuLabel: '菜单',
     returnToTopLabel: '回到顶部',
     editLink: {
-      pattern: 'https://github.com/jieapi/aicode/edit/main/docs-site/docs/:path',
+      pattern: 'https://github.com/jieapi/guru/edit/main/docs-site/docs/:path',
       text: '在 GitHub 上编辑此页'
     },
     footer: {

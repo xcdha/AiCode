@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.dp
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.BatchDeleteConfirmDialog
+import com.bysqh.guru.core.ui.FloatingSelectionBar
 import com.bysqh.guru.core.ui.ListSelectionState
-import com.bysqh.guru.core.ui.SelectionActionBar
 import com.bysqh.guru.core.ui.SelectionActionButton
 import com.bysqh.guru.core.ui.SelectionActionIconButton
 import com.bysqh.guru.core.ui.SwipeToDeleteRow
@@ -96,44 +96,16 @@ internal fun ProvidersSection(
     val hapticFeedback = LocalHapticFeedback.current
     val allSelected = selection.selectedCount > 0 && selection.selectedCount == allKeys.size
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (selection.isActive) {
-            SelectionActionBar(
-                selectedCount = selection.selectedCount,
-                allSelected = allSelected,
-                onToggleSelectAll = {
-                    if (allSelected) selection.clear() else selection.replaceAll(allKeys)
-                },
-                onExit = { selection.exit() }
-            ) {
-                val enabled = selection.selectedCount > 0
-                SelectionActionButton(
-                    text = stringResource(R.string.common_batch_enable),
-                    enabled = enabled,
-                    onClick = { onBatchSetEnabled(selection.selectedKeys.toSet(), true) }
-                )
-                SelectionActionButton(
-                    text = stringResource(R.string.common_batch_disable),
-                    enabled = enabled,
-                    onClick = { onBatchSetEnabled(selection.selectedKeys.toSet(), false) }
-                )
-                SelectionActionIconButton(
-                    icon = FeatherIcons.Trash2,
-                    contentDescription = stringResource(R.string.common_batch_delete),
-                    enabled = enabled,
-                    onClick = { showBatchDeleteConfirm = true },
-                    tint = MaterialTheme.colorScheme.error
-                )
-            }
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             state = lazyListState,
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = Spacing.lg)
-                .padding(bottom = Spacing.xl),
-            contentPadding = PaddingValues(top = Spacing.sm),
+                .fillMaxSize()
+                .padding(horizontal = Spacing.lg),
+            contentPadding = PaddingValues(
+                top = Spacing.sm,
+                bottom = if (selection.isActive) 88.dp else Spacing.xl
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(
@@ -191,6 +163,37 @@ internal fun ProvidersSection(
                     }
                 }
             }
+        }
+
+        FloatingSelectionBar(
+            visible = selection.isActive,
+            selectedCount = selection.selectedCount,
+            allSelected = allSelected,
+            onToggleSelectAll = {
+                if (allSelected) selection.clear() else selection.replaceAll(allKeys)
+            },
+            onExit = { selection.exit() },
+            modifier = Modifier.align(Alignment.BottomCenter)
+        ) {
+            val enabled = selection.selectedCount > 0
+            SelectionActionButton(
+                text = stringResource(R.string.common_batch_enable),
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = { onBatchSetEnabled(selection.selectedKeys.toSet(), true) }
+            )
+            SelectionActionButton(
+                text = stringResource(R.string.common_batch_disable),
+                enabled = enabled,
+                onClick = { onBatchSetEnabled(selection.selectedKeys.toSet(), false) }
+            )
+            SelectionActionIconButton(
+                icon = FeatherIcons.Trash2,
+                contentDescription = stringResource(R.string.common_batch_delete),
+                enabled = enabled,
+                onClick = { showBatchDeleteConfirm = true },
+                tint = MaterialTheme.colorScheme.error
+            )
         }
     }
 

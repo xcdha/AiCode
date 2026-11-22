@@ -1,7 +1,6 @@
 package com.bysqh.guru.feature.settings.presentation.component
 
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -46,23 +45,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * [二开] 取视频首帧作为预览缩略图，失败返回 null。
- * 仅用于设置弹窗里的预览图，与全局背景的播放链路无关。
- */
-internal fun decodeBackgroundVideoFrame(path: String): ImageBitmap? = runCatching {
-    val retriever = MediaMetadataRetriever()
-    try {
-        retriever.setDataSource(path)
-        // 取首帧；部分编码在 0 位置取不到帧时退到 0.1s 处再试一次。
-        val frame = retriever.getFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            ?: retriever.getFrameAtTime(100_000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-        frame?.asImageBitmap()
-    } finally {
-        runCatching { retriever.release() }
-    }
-}.getOrNull()
-
-/**
  * 按目标尺寸采样解码背景图（inSampleSize 2 的幂缩放，控制峰值内存），失败返回 null。
  * 全局背景层与设置弹窗缩略图共用。
  */
@@ -79,12 +61,11 @@ internal fun decodeBackgroundBitmap(path: String, maxWidth: Int, maxHeight: Int)
     }.getOrNull()
 
 /**
- * 自定义背景设置弹窗：缩略图预览 + 透明度滑块 + 选图/选视频/移除。
+ * 自定义背景图设置弹窗：缩略图预览 + 透明度滑块 + 选图/移除。
  *
- * @param imagePath 当前背景文件路径，null 表示未设置。
- * @param kind 当前背景类型（[二开] 静态图 / GIF / MP4），决定缩略图的取帧方式。
+ * @param imagePath 当前背景图路径，null 表示未设置。
  * @param alpha 当前透明度（0.05~1.0）。
- * @param onPickImage 用户选定媒体后回调，携带 MIME（可能为 null）供上层判定背景类型。
+ * @param onPickImage 用户选定图片后回调。
  * @param onAlphaChange 透明度变化回调（写 DataStore，全局背景随之变化；落盘节流在 ViewModel 侧）。
  * @param onRemove 移除背景回调。
  * @param onDismiss 关闭弹窗。
@@ -93,7 +74,6 @@ internal fun decodeBackgroundBitmap(path: String, maxWidth: Int, maxHeight: Int)
 @Composable
 internal fun BackgroundImageSheet(
     imagePath: String?,
-    kind: BackgroundSettingsRepository.Kind,
     alpha: Float,
     onPickImage: (Uri, String?) -> Unit,
     onAlphaChange: (Float) -> Unit,
@@ -106,19 +86,17 @@ internal fun BackgroundImageSheet(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
+            // GIF 属于图片、MP4 属于视频，都交给仓储按文件头判定实际类型
             val mime = runCatching { context.contentResolver.getType(uri) }.getOrNull()
             onPickImage(uri, mime)
         }
     }
 
-    // 缩略图预览：按屏幕宽度采样，避免大图全量解码；MP4 取首帧。
-    val previewBitmap by produceState<ImageBitmap?>(initialValue = null, imagePath, kind) {
+    // 缩略图预览：按屏幕宽度采样，避免大图全量解码
+    val previewBitmap by produceState<ImageBitmap?>(initialValue = null, imagePath) {
         value = imagePath?.let { path ->
             withContext(Dispatchers.IO) {
-                when (kind) {
-                    BackgroundSettingsRepository.Kind.MP4 -> decodeBackgroundVideoFrame(path)
-                    else -> decodeBackgroundBitmap(path, 1024, 1024)
-                }
+                decodeBackgroundBitmap(path, 1024, 1024)
             }
         }
     }
@@ -141,14 +119,6 @@ internal fun BackgroundImageSheet(
             Text(
                 text = stringResource(R.string.settings_background_image),
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = Spacing.md)
-            )
-
-            // [二开] 说明支持的媒体类型，避免用户以为只能选静态图。
-            Text(
-                text = stringResource(R.string.settings_background_image_hint),
-                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = Spacing.md)
             )
@@ -192,8 +162,6 @@ internal fun BackgroundImageSheet(
                 valueRange = 0f..100f
             )
 
-
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -203,7 +171,6 @@ internal fun BackgroundImageSheet(
                 Button(
                     onClick = {
                         imagePicker.launch(
-                            // [二开] 放开视频选择，GIF 属于图片由系统分类，MP4 属于视频。
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                         )
                     },

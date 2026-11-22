@@ -20,6 +20,7 @@ import com.bysqh.guru.feature.agent.data.remote.gemini.GeminiApi
 import com.bysqh.guru.feature.agent.data.remote.openai.OpenAIApi
 import com.bysqh.guru.feature.agent.domain.container.CommandEngine
 import com.bysqh.guru.feature.agent.domain.container.DelegatingCommandEngine
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
 import com.bysqh.guru.feature.agent.domain.container.LinuxContainerEngine
 import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
 import com.bysqh.guru.feature.agent.domain.container.RemoteSshEngine
@@ -27,8 +28,6 @@ import com.bysqh.guru.feature.agent.domain.container.SharedPrefsSshHostKeyStore
 import com.bysqh.guru.feature.agent.domain.container.SharedPrefsSshLoginKeyStore
 import com.bysqh.guru.feature.agent.domain.container.SshHostKeyStore
 import com.bysqh.guru.feature.agent.domain.container.SshLoginKeyStore
-import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
-import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import com.bysqh.guru.feature.agent.domain.tool.file.ReadFileTool
 import com.bysqh.guru.feature.agent.domain.tool.file.SendFileTool
 import com.bysqh.guru.feature.agent.domain.tool.file.GenerateImageTool
@@ -174,7 +173,7 @@ object AgentModule {
         @ApplicationContext context: Context,
         pluginHttpHookInterceptor: dagger.Lazy<com.bysqh.guru.feature.plugin.runtime.PluginHttpHookInterceptor>
     ): OkHttpClient {
-        // 统一 UA 为 aicode/<版本> (Android)；请求已带显式 UA（如用户自定义头）时不覆盖。
+        // 统一 UA 为 guru/<版本> (Android)；请求已带显式 UA（如用户自定义头）时不覆盖。
         // 版本号走 PackageManager（项目未开启 BuildConfig），dev 构建为 1.x.y-dev.N+hash 天然可溯源。
         val userAgent = runCatching {
             val name = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
@@ -335,10 +334,10 @@ object AgentModule {
     @Provides
     @Singleton
     fun provideDelegatingTerminalSessionProvider(
-        modeHolder: ExecutionModeHolder,
-        local: TerminalSessionManager,
-        remote: RemoteTerminalSessionManager
-    ): DelegatingTerminalSessionProvider = DelegatingTerminalSessionProvider(modeHolder, local, remote)
+        executionBackendRegistry: ExecutionBackendRegistry,
+        local: TerminalSessionManager
+    ): DelegatingTerminalSessionProvider =
+        DelegatingTerminalSessionProvider(executionBackendRegistry, local)
 
     @Provides
     @Singleton

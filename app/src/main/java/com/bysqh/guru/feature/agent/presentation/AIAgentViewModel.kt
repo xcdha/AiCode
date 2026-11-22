@@ -18,26 +18,21 @@ import com.bysqh.guru.R
 import com.bysqh.guru.core.util.FileLogger
 import com.bysqh.guru.core.util.GitIgnoreMatcher
 import com.bysqh.guru.core.util.toUserMessage
-import com.bysqh.guru.core.util.formatCostUsd
 import com.bysqh.guru.feature.agent.data.local.dao.AgentMessageDao
 import com.bysqh.guru.feature.agent.domain.checkpoint.CheckpointManager
 import com.bysqh.guru.feature.agent.data.local.dao.CheckpointDao
 import com.bysqh.guru.feature.agent.data.local.dao.ChatSessionDao
-import com.bysqh.guru.feature.agent.data.local.dao.LlmCallRecordDao
 import com.bysqh.guru.feature.agent.data.local.dao.TodoItemDao
 import com.bysqh.guru.feature.agent.domain.model.TodoItem
 import com.bysqh.guru.feature.agent.data.local.entity.AgentMessageEntity
 import com.bysqh.guru.feature.agent.data.local.entity.ChatSessionEntity
 import com.bysqh.guru.feature.agent.domain.container.ContainerInitState
 import com.bysqh.guru.feature.agent.domain.container.ContainerOsDetector
+import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
 import com.bysqh.guru.feature.agent.domain.container.LinuxContainerEngine
-import com.bysqh.guru.feature.settings.domain.model.ProviderType
-import com.bysqh.guru.feature.settings.domain.service.ModelCostCalculator
-import com.bysqh.guru.feature.settings.domain.repository.AIProviderRepository
 import com.bysqh.guru.feature.settings.data.repository.AgentSoundSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.ContainerSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.DefaultModelSettingsRepository
-import com.bysqh.guru.feature.settings.data.repository.ExecutionMode
 import com.bysqh.guru.feature.settings.data.repository.ExecutionModeHolder
 import com.bysqh.guru.feature.settings.data.repository.GeneralSettingsRepository
 import com.bysqh.guru.feature.settings.data.repository.KeepaliveSettingsRepository
@@ -69,6 +64,13 @@ import com.bysqh.guru.feature.agent.domain.subagent.SubAgentDigester
 import com.bysqh.guru.feature.agent.domain.subagent.SubAgentDigest
 import com.bysqh.guru.feature.agent.domain.subagent.SubAgentEventType
 import com.bysqh.guru.feature.agent.domain.workflow.AgentWorkflow
+import com.bysqh.guru.feature.agent.domain.workflow.AgentWorkflowRegistry
+import com.bysqh.guru.feature.agent.domain.workflow.WorkflowDescriptor
+import com.bysqh.guru.feature.plugin.domain.session.ExternalSessionGroup
+import com.bysqh.guru.feature.plugin.domain.session.ExternalSessionMessage
+import com.bysqh.guru.feature.plugin.domain.session.ExternalSessionSummary
+import com.bysqh.guru.feature.plugin.runtime.ExternalSessionService
+import com.bysqh.guru.feature.plugin.runtime.ExternalSessionStore
 import com.bysqh.guru.feature.terminal.domain.TabFinishedEvent
 import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
 import com.bysqh.guru.feature.terminal.domain.TerminalSessionManager
@@ -83,6 +85,9 @@ import com.bysqh.guru.feature.agent.domain.workflow.AgentEvent
 import com.bysqh.guru.feature.agent.domain.tool.ToolPermissionManager
 import com.bysqh.guru.feature.agent.domain.tool.ToolRegistry
 import com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice
+import com.bysqh.guru.feature.agent.presentation.component.PendingUploadAttachment
+import com.bysqh.guru.feature.agent.presentation.component.toAgentAttachments
+import com.bysqh.guru.feature.agent.presentation.component.toPendingAttachment
 import com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalManager
 import com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalRequest
 import com.bysqh.guru.feature.agent.domain.tool.question.AskUserQuestionManager
@@ -101,7 +106,6 @@ import com.bysqh.guru.feature.backup.domain.BackupManager
 import com.bysqh.guru.feature.agent.domain.command.SlashCommand
 import com.bysqh.guru.feature.agent.domain.command.SlashCommandContext
 import com.bysqh.guru.feature.agent.domain.command.SlashCommandRegistry
-import com.bysqh.guru.feature.agent.domain.command.SlashCommandRegistry.ResolvedCommand
 import com.bysqh.guru.feature.agent.domain.mention.FileMentionRepository
 import com.bysqh.guru.feature.agent.domain.mention.FileMentionState
 import com.bysqh.guru.feature.agent.domain.skill.Skill
@@ -110,17 +114,9 @@ import com.bysqh.guru.feature.agent.presentation.notification.AgentLiveNotificat
 import com.bysqh.guru.feature.agent.presentation.notification.AgentApprovalNotificationManager
 import com.bysqh.guru.feature.agent.presentation.run.AgentRunManager
 import com.bysqh.guru.feature.agent.presentation.run.ReasoningDurationEvent
-import com.bysqh.guru.feature.plugin.domain.session.PluginSessionGroup
-import com.bysqh.guru.feature.plugin.domain.session.PluginSessionSummary
-import com.bysqh.guru.feature.plugin.runtime.PluginSessionSourceService
-import com.bysqh.guru.feature.plugin.runtime.PluginRemoteRunManager
-import com.bysqh.guru.feature.plugin.runtime.PluginSessionEventBus
-import com.bysqh.guru.feature.plugin.runtime.PluginSessionRegistry
-import com.bysqh.guru.feature.plugin.runtime.PluginEventBus
 import com.bysqh.guru.feature.agent.presentation.notification.AgentApprovalNotificationManager.ApprovalKind
 import com.bysqh.guru.feature.agent.presentation.component.RewindOption
 import com.bysqh.guru.feature.agent.presentation.component.toolRunningLabelRes
-import com.bysqh.guru.feature.agent.presentation.component.formatTokenCount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -130,7 +126,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -152,42 +147,22 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.longOrNull
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.FileAlreadyExistsException
-import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-/** 插件会话流式增量（仅当前打开会话的 assistant 未完成内容）。 */
-private data class PluginStreaming(
-    val sessionId: String,
-    val text: String = "",
-    val reasoning: String = "",
-    val active: Boolean = false
-)
-
 @HiltViewModel
 class AIAgentViewModel @Inject constructor(
     private val agentWorkflow: AgentWorkflow,
     private val toolRegistry: ToolRegistry,
     private val agentMessageDao: AgentMessageDao,
     private val chatSessionDao: ChatSessionDao,
-    private val llmCallRecordDao: LlmCallRecordDao,
-    private val modelCostCalculator: ModelCostCalculator,
-    private val aiProviderRepository: AIProviderRepository,
     private val defaultModelSettingsRepository: DefaultModelSettingsRepository,
     private val modelReasoningEffortRepository: ModelReasoningEffortRepository,
     private val toolPermissionManager: ToolPermissionManager,
@@ -222,11 +197,9 @@ class AIAgentViewModel @Inject constructor(
     private val fileChangeHub: FileChangeHub,
     private val executionModeHolder: ExecutionModeHolder,
     private val agentRunManager: AgentRunManager,
-    private val pluginSessionSourceService: PluginSessionSourceService,
-    private val pluginSessionRegistry: PluginSessionRegistry,
-    private val pluginEventBus: PluginEventBus,
-    private val pluginRemoteRunManager: PluginRemoteRunManager,
-    private val pluginSessionEventBus: PluginSessionEventBus,
+    private val workflowRegistry: AgentWorkflowRegistry,
+    private val externalSessionStore: ExternalSessionStore,
+    private val externalSessionService: ExternalSessionService,
     @param:ApplicationContext private val context: Context
 ) : ViewModel(), SlashCommandContext {
 
@@ -235,10 +208,7 @@ class AIAgentViewModel @Inject constructor(
     val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
 
     private fun updateSelectedSessionId(sessionId: String?) {
-        agentRunManager.setSelectedLocalSession(
-            streamingAssistantOwner,
-            sessionId.takeIf { _activePluginSession.value == null }
-        )
+        agentRunManager.setSelectedLocalSession(streamingAssistantOwner, sessionId)
         _currentSessionId.value = sessionId
     }
 
@@ -247,59 +217,25 @@ class AIAgentViewModel @Inject constructor(
         super.onCleared()
     }
 
-    // ── 插件会话（PluginSessionSourceService）──
-    // 插件会话只在内存中展示：消息不写 Room，也不经过本地 AgentRunManager。
+    val externalSessionGroups: StateFlow<List<ExternalSessionGroup>> = externalSessionStore.groups
 
-    /** 插件会话列表，按 pluginId 分组且保持 service 返回顺序。 */
-    private val _pluginSessionGroups = MutableStateFlow<List<PluginSessionGroup>>(emptyList())
-    val pluginSessionGroups: StateFlow<List<PluginSessionGroup>> = _pluginSessionGroups.asStateFlow()
+    private val _activeExternalSession = MutableStateFlow<ExternalSessionSummary?>(null)
+    val activeExternalSession: StateFlow<ExternalSessionSummary?> = _activeExternalSession.asStateFlow()
 
-    /** 当前打开的插件会话；非空时 [messagesState] / [currentSessionState] 切换到插件数据源。 */
-    private val _activePluginSession = MutableStateFlow<PluginSessionSummary?>(null)
-    val activePluginSession: StateFlow<PluginSessionSummary?> = _activePluginSession.asStateFlow()
-
-    /** 插件会话消息快照；仅在插件会话激活时参与 [messagesState]。 */
-    private val _pluginMessagesState = MutableStateFlow(
-        ChatMessagesState(sessionId = null, messages = emptyList(), loaded = false)
+    private val _externalMessagesState = MutableStateFlow(
+        ChatMessagesState(null, emptyList(), loaded = false)
     )
+    private var externalRawMessages: List<ExternalSessionMessage> = emptyList()
+    private var externalNextCursor: kotlinx.serialization.json.JsonElement? = null
+    private var externalLoadJob: Job? = null
+    private var localSessionIdBeforeExternal: String? = null
 
-    /** 插件会话加载/发送错误；通过 [agentState] 复用现有错误横幅展示。 */
-    private val _pluginSessionError = MutableStateFlow<String?>(null)
-    val pluginSessionError: StateFlow<String?> = _pluginSessionError.asStateFlow()
-
-    /** 进入插件会话前的本地会话 id，close 时原样恢复（之前为空则恢复为 null）。 */
-    private var localSessionIdBeforePlugin: String? = null
-
-    /** 插件会话更早一页的游标；只存在内存里，不落库。 */
-    private var pluginNextCursor: JsonElement? = null
-
-    /** 插件会话当前选中的 provider/model（仅内存，插件会话不对应 Room 行）。 */
-    private val _pluginSessionProviderModel = MutableStateFlow<Pair<String?, String?>>(null to null)
-
-    /** 打开/上拉加载插件消息的协程；切会话时取消，避免迟到结果覆盖新状态。 */
-    private var pluginLoadJob: Job? = null
-
-    /** 插件发送串行化：同一会话连续发送按顺序提交，避免并发刷新互相覆盖消息快照。 */
-    private val pluginSendMutex = Mutex()
-
-    /** 插件会话流式增量（来自插件 plugin.event）；仅当前打开的会话生效。 */
-    private val _pluginStreaming = MutableStateFlow<PluginStreaming?>(null)
-
-    /** 插件通过 host API 主动设置的“正在思考”文案；仅当前插件会话生效。 */
     val pluginThinkingLabel: StateFlow<String?> = combine(
-        _activePluginSession,
-        pluginSessionRegistry.thinking
-    ) { session, labels ->
-        session?.let { labels[it.id] }
+        _activeExternalSession,
+        externalSessionStore.thinking
+    ) { active, thinkingMap ->
+        active?.let { thinkingMap[it.id] }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
-    /** 当前订阅的插件事件取消器。 */
-    private var pluginEventUnsubscribe: (() -> Unit)? = null
-    /** 当前跟随的插件会话 opaque id（用于 unfollow 对账）。 */
-    private var pluginStreamSessionId: String? = null
-    /** 当前跟随会话所属的 sourceKey（用于 unfollow）。 */
-    private var pluginStreamSourceKey: String? = null
-    private var pluginGenericEventJob: Job? = null
-    private var pluginSnapshotRevision: Long? = null
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentSessionTodoItems: StateFlow<List<TodoItem>> = _currentSessionId
@@ -316,21 +252,10 @@ class AIAgentViewModel @Inject constructor(
     val subAgentCards: StateFlow<Map<String, SubAgentCardState>> = agentRunManager.subAgentCards
 
     val agentState: StateFlow<AgentUIState> = combine(
-        _activePluginSession,
         _currentSessionId,
-        agentRunManager.agentStates,
-        _pluginSessionError,
-        pluginRemoteRunManager.states
-    ) { pluginSession, id, states, pluginError, remoteStates ->
-        if (pluginSession != null) {
-            val remote = remoteStates[pluginSession.id]
-            (pluginError ?: remote?.error)?.let { AgentUIState.Error(it) }
-                ?: if (remote?.running == true) AgentUIState.Streaming else AgentUIState.Idle
-        } else if (id == null) {
-            AgentUIState.Idle
-        } else {
-            states[id] ?: AgentUIState.Idle
-        }
+        agentRunManager.agentStates
+    ) { id, states ->
+        if (id == null) AgentUIState.Idle else (states[id] ?: AgentUIState.Idle)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AgentUIState.Idle)
 
     private val _messageLimit = MutableStateFlow<Map<String, Int>>(emptyMap())
@@ -376,6 +301,66 @@ class AIAgentViewModel @Inject constructor(
         val id = _currentSessionId.value ?: return
         _inputDrafts.value = _inputDrafts.value - id
         draftPrefs.edit().remove(id).apply()
+        updateAttachmentDraft(emptyList(), id)
+    }
+
+    private val attachmentDraftPrefs = context.getSharedPreferences("agent_input_attachment_drafts", Context.MODE_PRIVATE)
+    private val attachmentDraftJson = Json { ignoreUnknownKeys = true }
+    private val _attachmentDrafts = MutableStateFlow<Map<String, List<PendingUploadAttachment>>>(emptyMap())
+    internal val attachmentDraft: StateFlow<List<PendingUploadAttachment>> = _currentSessionId
+        .flatMapLatest { id ->
+            if (id == null) flowOf(emptyList()) else _attachmentDrafts.map { it[id].orEmpty() }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val restored = attachmentDraftPrefs.all.mapNotNull { (k, v) ->
+                val raw = (v as? String)?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                val list = runCatching {
+                    attachmentDraftJson.decodeFromString<List<AgentAttachment>>(raw)
+                }.getOrNull()?.map { it.toPendingAttachment() }
+                list?.takeIf { it.isNotEmpty() }?.let { k to it }
+            }.toMap()
+            if (restored.isNotEmpty()) {
+                _attachmentDrafts.update { current -> restored + current }
+            }
+        }
+    }
+
+    internal fun updateAttachmentDraft(
+        attachments: List<PendingUploadAttachment>,
+        sessionId: String? = _currentSessionId.value
+    ) {
+        val id = sessionId ?: return
+        val editor = attachmentDraftPrefs.edit()
+        if (attachments.isEmpty()) {
+            _attachmentDrafts.value = _attachmentDrafts.value - id
+            editor.remove(id)
+        } else {
+            _attachmentDrafts.value = _attachmentDrafts.value + (id to attachments)
+            editor.putString(id, attachmentDraftJson.encodeToString(attachments.toAgentAttachments()))
+        }
+        editor.apply()
+    }
+
+    internal fun addAttachmentDraft(
+        attachment: PendingUploadAttachment,
+        sessionId: String? = _currentSessionId.value
+    ) {
+        val id = sessionId ?: return
+        val next = _attachmentDrafts.value[id].orEmpty() + attachment
+        updateAttachmentDraft(next, id)
+    }
+
+    internal fun removeAttachmentDraft(
+        index: Int,
+        sessionId: String? = _currentSessionId.value
+    ) {
+        val id = sessionId ?: return
+        val current = _attachmentDrafts.value[id].orEmpty()
+        if (index !in current.indices) return
+        updateAttachmentDraft(current.filterIndexed { i, _ -> i != index }, id)
     }
 
     /**
@@ -426,22 +411,11 @@ class AIAgentViewModel @Inject constructor(
     val reasoningDurations = mutableStateMapOf<String, Long>()
 
     fun loadMoreMessages() {
-        val pluginSession = _activePluginSession.value
-        if (pluginSession != null) {
-            val pluginState = _pluginMessagesState.value
-            if (pluginState.sessionId != pluginSession.id || !pluginState.loaded ||
-                !pluginState.hasMore || pluginState.isLoadingMore
-            ) {
-                return
-            }
-            // 先同步占位，避免连续滚动事件在协程启动前重复发起同一页请求。
-            _pluginMessagesState.value = pluginState.copy(isLoadingMore = true)
-            pluginLoadJob = viewModelScope.launch(Dispatchers.IO) {
-                loadPluginPage(pluginSession, pluginNextCursor, append = true)
-            }
+        val ext = _activeExternalSession.value
+        if (ext != null) {
+            loadMoreExternalMessages(ext)
             return
         }
-
         val sid = _currentSessionId.value ?: return
         val state = messagesState.value
         if (state.sessionId != sid || !state.loaded || !state.hasMore) return
@@ -454,6 +428,32 @@ class AIAgentViewModel @Inject constructor(
 
     /** 容器初始化实时进度（解压/部署/装包），AI 页底部气泡展示。 */
     val containerInit: StateFlow<ContainerInitState> = containerEngine.initProgress
+
+    /** 从设置→会话管理页打开或移动当前会话并跟随切换时，暂存目标 `(workspacePath, sessionId)`，切区落地时优先选中。 */
+    @Volatile
+    private var pendingFollowSession: Pair<String, String>? = null
+
+    fun prepareFollowSession(workspacePath: String, sessionId: String) {
+        if (workspacePath.isBlank() || sessionId.isBlank()) return
+        if (_currentWorkspace.value == workspacePath) {
+            selectSession(sessionId)
+            return
+        }
+        pendingFollowSession = workspacePath to sessionId
+        leaveExternalSessionForLocalSwitch()
+    }
+
+    /** 若当前选中的本地会话已在会话管理页被删除或移走，切到当前工作区其余会话或补建空会话。 */
+    fun ensureCurrentSessionStillInWorkspace() = viewModelScope.launch {
+        if (_activeExternalSession.value != null) return@launch
+        val ws = _currentWorkspace.value
+        if (ws.isBlank()) return@launch
+        val curId = _currentSessionId.value
+        val cur = curId?.let { sessionUseCase.getSessionById(it) }
+        if (cur != null && cur.workspacePath == ws) return@launch
+        val nextId = sessionUseCase.getFirstSessionOfWorkspace(ws)?.id ?: createAndUpsertSession(ws)
+        updateSelectedSessionId(nextId)
+    }
 
     private val _currentWorkspace = MutableStateFlow<String>("")
     fun setWorkspace(path: String) {
@@ -664,10 +664,16 @@ class AIAgentViewModel @Inject constructor(
     private val browseWatchJobs = HashMap<String, Job>()
 
     /**
-     * 文件树作用域：工作区 / 容器 profile / 执行模式。任一变化，目录内容就是另一批文件，
+     * 文件树作用域：工作区 / 容器 profile / 执行后端及其环境能力。任一变化，目录内容就是另一批文件，
      * 缓存要丢弃重读（展开集按工作区各自持久化）。
      */
-    private data class BrowseScope(val workspace: String, val profileId: String, val mode: ExecutionMode)
+    private data class BrowseScope(
+        val workspace: String,
+        val profileId: String,
+        val backendId: String,
+        val isRemote: Boolean,
+        val fileWatch: Boolean
+    )
 
     private var browseScope: BrowseScope? = null
 
@@ -680,17 +686,26 @@ class AIAgentViewModel @Inject constructor(
 
     private val browseCommands = Channel<BrowseReload>(Channel.UNLIMITED)
 
-    /** 工作区 / 容器 profile / 执行模式，附带容器根节点的显示信息。 */
+    /** 工作区 / 容器 profile / 执行后端，附带容器根节点的显示信息。 */
     private val browseScopeFlow: Flow<Pair<BrowseScope, FileTreeRoot.Container>> = combine(
         _currentWorkspace,
         containerSettingsRepository.activeProfileFlow,
-        executionModeHolder.mode,
+        executionModeHolder.activeBackend,
         containerOsDetector.osMap
-    ) { workspace, profile, mode, osMap ->
-        BrowseScope(workspace, profile.id, mode) to FileTreeRoot.Container(
-            label = profile.name,
-            osId = osMap[profile.id],
-            remote = mode == ExecutionMode.REMOTE_SSH
+    ) { workspace, profile, backend, osMap ->
+        val isBuiltinBackend = backend.id == ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID ||
+            backend.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID
+        val effectiveProfileId = if (isBuiltinBackend) profile.id else backend.id
+        BrowseScope(
+            workspace = workspace,
+            profileId = effectiveProfileId,
+            backendId = backend.id,
+            isRemote = backend.capabilities.isRemoteEnvironment,
+            fileWatch = backend.capabilities.fileWatch
+        ) to FileTreeRoot.Container(
+            label = if (isBuiltinBackend) profile.name else backend.displayName,
+            osId = if (isBuiltinBackend) osMap[profile.id] else null,
+            remote = backend.capabilities.isRemoteEnvironment
         )
     }
 
@@ -914,8 +929,8 @@ class AIAgentViewModel @Inject constructor(
     /** 按展开集增删目录监听：只新开/关闭变化的那几个，不重挂全部（否则每次点开都重建所有 inotify）。 */
     private fun syncBrowseWatches() {
         val scope = browseScope ?: return
-        // 无人订阅或远程模式（没有宿主目录可监听）：不挂任何监听
-        val wanted = if (!browseSubscribed || scope.mode == ExecutionMode.REMOTE_SSH) {
+        // 无人订阅或当前后端不支持本地文件监控：不挂任何监听
+        val wanted = if (!browseSubscribed || !scope.fileWatch) {
             emptySet()
         } else {
             _expandedPaths.value + WorkspacePathMapper.CONTAINER_ROOT
@@ -1319,15 +1334,14 @@ class AIAgentViewModel @Inject constructor(
 
     /**
      * 当前会话完整信息（根会话与子会话通用；null 表示尚未解析出会话）。
-     * 插件会话返回一个不落库的合成 ChatSession，仅供顶栏标题等只读展示。
      */
     val currentSessionState: StateFlow<ChatSession?> = combine(
         _currentSessionId,
-        _activePluginSession
-    ) { id, pluginSession -> id to pluginSession }
-        .flatMapLatest { (id, pluginSession) ->
+        _activeExternalSession
+    ) { id, ext -> id to ext }
+        .flatMapLatest { (id, ext) ->
             when {
-                pluginSession != null -> flowOf(PluginSessionUiMapper.toChatSession(pluginSession))
+                ext != null -> flowOf(ExternalSessionUiMapper.toChatSession(ext))
                 id == null -> flowOf(null)
                 else -> chatSessionDao.getByIdFlow(id).map { it?.toDomain() }
             }
@@ -1356,47 +1370,26 @@ class AIAgentViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /** 当前会话绑定的 providerId/model（null 表示未绑定，回退全局 active provider）。 */
-    val currentSessionProviderModel: StateFlow<Pair<String?, String?>> = combine(
-        currentSessionState,
-        _activePluginSession,
-        _pluginSessionProviderModel
-    ) { session, pluginSession, pluginModel ->
-        if (pluginSession != null) pluginModel
-        else (session?.providerId ?: "") to (session?.model ?: "")
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, Pair(null, null))
+    val currentSessionProviderModel: StateFlow<Pair<String?, String?>> = currentSessionState
+        .map { session ->
+            (session?.providerId ?: "") to (session?.model ?: "")
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Pair(null, null))
 
     /**
-     * 当前会话的消息状态：插件会话激活时收集内存中的插件消息快照（完全不查 Room）；
-     * 否则保持原有 Room/AgentMessageDao 分页流，行为不变。
+     * 当前会话的消息状态：Room/AgentMessageDao 分页流。
      */
     val messagesState: StateFlow<ChatMessagesState> = combine(
-        _activePluginSession,
         _currentSessionId,
-        _messageLimit
-    ) { pluginSession, id, limitMap ->
-        Triple(pluginSession, id, limitMap[id] ?: defaultLimit)
+        _messageLimit,
+        _activeExternalSession,
+        _externalMessagesState
+    ) { id, limitMap, ext, extState ->
+        Triple(id, limitMap[id] ?: defaultLimit, if (ext != null) extState else null)
     }
-        .flatMapLatest { (pluginSession, id, limit) ->
-            if (pluginSession != null) {
-                combine(_pluginMessagesState, _pluginStreaming, pluginRemoteRunManager.states) { state, stream, remoteStates ->
-                    val base = state.messages
-                    val overlay = if (stream != null && stream.active
-                        && stream.sessionId == pluginSession.sessionId
-                        && (stream.text.isNotEmpty() || stream.reasoning.isNotEmpty())) {
-                        base + AgentUIMessage(
-                            id = "plugin-stream-${pluginSession.id}",
-                            role = MessageRole.ASSISTANT,
-                            content = stream.text,
-                            timestamp = System.currentTimeMillis(),
-                            reasoning = stream.reasoning.ifBlank { null }
-                        )
-                    } else {
-                        base
-                    }
-                    val settled = remoteStates[pluginSession.id]?.settled.orEmpty()
-                    val ids = overlay.mapTo(HashSet()) { it.id }
-                    state.copy(messages = overlay + settled.filterNot { it.id in ids })
-                }
+        .flatMapLatest { (id, limit, extState) ->
+            if (extState != null) {
+                flowOf(extState)
             } else if (id == null) {
                 flowOf(ChatMessagesState(null, emptyList(), loaded = false))
             } else {
@@ -1423,8 +1416,8 @@ class AIAgentViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, ChatMessagesState(null, emptyList(), loaded = false))
 
 
-    val runningTool: StateFlow<List<RunningToolOutput>> = combine(_currentSessionId, agentRunManager.runningTools, pluginRemoteRunManager.states) { id, tools, remote ->
-        if (id == null) emptyList() else remote[id]?.tools?.values?.toList() ?: tools[id]?.values?.toList() ?: emptyList()
+    val runningTool: StateFlow<List<RunningToolOutput>> = combine(_currentSessionId, agentRunManager.runningTools) { id, tools ->
+        if (id == null) emptyList() else tools[id]?.values?.toList() ?: emptyList()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val preparingTool: StateFlow<String?> = combine(_currentSessionId, agentRunManager.preparingTools) { id, tools ->
@@ -1440,17 +1433,17 @@ class AIAgentViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val streamingAssistant: StateFlow<StreamingAssistantMessage?> = combine(
-        _currentSessionId, agentRunManager.streamingAssistants, pluginRemoteRunManager.states
-    ) { id, assistants, remote ->
-        if (id == null) null else remote[id]?.assistant ?: assistants[id]
+        _currentSessionId, agentRunManager.streamingAssistants
+    ) { id, assistants ->
+        if (id == null) null else assistants[id]
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun acknowledgeRenderedAssistant(sessionId: String, messageId: String) {
         agentRunManager.acknowledgeRenderedAssistant(sessionId, messageId)
     }
 
-    val retryState: StateFlow<RetryState?> = combine(_currentSessionId, agentRunManager.retryStates, pluginRemoteRunManager.states) { id, states, remote ->
-        if (id == null) null else remote[id]?.retry ?: states[id]
+    val retryState: StateFlow<RetryState?> = combine(_currentSessionId, agentRunManager.retryStates) { id, states ->
+        if (id == null) null else states[id]
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val keySwitchState: StateFlow<KeySwitchState?> = combine(_currentSessionId, agentRunManager.keySwitchStates) { id, states ->
@@ -1531,20 +1524,6 @@ class AIAgentViewModel @Inject constructor(
         /** 写文件会连珠触发多个 inotify 事件，合并后再重读目录。 */
         const val BROWSE_DEBOUNCE_MS = 300L
 
-        /** 插件会话每页消息数（与独立插件会话面板保持一致）。 */
-        const val PLUGIN_SESSION_PAGE_SIZE = 50
-
-        /** 发送后首次刷新延迟与轮询间隔/次数：插件 sendMessage 只代表入队。 */
-        const val PLUGIN_SEND_REFRESH_DELAY_MS = 700L
-        const val PLUGIN_SEND_POLL_INTERVAL_MS = 1_200L
-        const val PLUGIN_SEND_REFRESH_ATTEMPTS = 8
-
-        /** PluginSessionPage.status 的运行中取值。 */
-        const val PLUGIN_STATUS_RUNNING = "running"
-
-        /** 会话目标文本长度上限，避免 system 提示词过长。 */
-        const val MAX_GOAL_CHARS = 2000
-
         /** 当前容器在容器内的根路径，对应宿主上的 rootfs 目录（随当前 profile 变化）。 */
         const val CONTAINER_FS_ROOT = "/"
 
@@ -1604,8 +1583,12 @@ class AIAgentViewModel @Inject constructor(
         viewModelScope.launch {
             _currentWorkspace.collectLatest { path ->
                 if (path.isBlank()) return@collectLatest
-                // 切工作区等价于离开插件会话：插件会话属于原工作区的上下文。
-                if (_activePluginSession.value != null) clearPluginSessionState(restoreLocalSessionId = false)
+                _activeExternalSession.value = null
+                externalLoadJob?.cancel()
+                val pending = pendingFollowSession?.takeIf { it.first == path }
+                if (pending != null) {
+                    pendingFollowSession = null
+                }
                 val recent = sessionUseCase.getMostRecentSessionOfWorkspace(path)
                 // Activity 被回收重建时，若原会话仍在运行，优先回到它，而不是跳去新会话。
                 val saved = sessionSelectionStore.load()
@@ -1614,9 +1597,11 @@ class AIAgentViewModel @Inject constructor(
                 }
                 val runningSaved = savedId?.takeIf { agentRunManager.isSessionRunning(it) }
                 // 立即确定并设置当前会话，确保首帧 UI 秒开、侧边栏立即出现新会话，彻底消除转圈卡顿。
+                // 若存在从会话管理页切过来的目标会话且已落在该工作区，优先直接选中它；
                 // 「打开最近会话」有历史就直接进最近那个（按 updatedAt，不受置顶影响）；
                 // 「新开会话」复用还没发过消息的空会话（避免每次启动都堆一个空会话），其余情况新建。
                 val targetId = when {
+                    pending != null && sessionUseCase.getSessionById(pending.second)?.workspacePath == path -> pending.second
                     runningSaved != null -> runningSaved
                     recent == null -> createAndUpsertSession(path)
                     generalSettingsRepository.startupSessionMode() == StartupSessionMode.RECENT_SESSION -> savedId ?: recent.id
@@ -1635,15 +1620,10 @@ class AIAgentViewModel @Inject constructor(
         }
 
         // 记住当前会话：Activity 被回收重建后按它恢复。
-        // 插件会话的 id 是插件外部 id，不能写进本地会话选择记录。
         viewModelScope.launch {
-            combine(
-                _currentSessionId,
-                _currentWorkspace,
-                _activePluginSession
-            ) { id, ws, pluginSession -> Triple(id, ws, pluginSession) }
-                .collect { (id, ws, pluginSession) ->
-                    if (pluginSession == null && id != null && ws.isNotBlank()) {
+            combine(_currentSessionId, _currentWorkspace) { id, ws -> id to ws }
+                .collect { (id, ws) ->
+                    if (id != null && ws.isNotBlank()) {
                         sessionSelectionStore.save(id, ws)
                     }
                 }
@@ -1659,21 +1639,13 @@ class AIAgentViewModel @Inject constructor(
                 reasoningDurations[event.messageId] = event.durationMs
             }
         }
-
-        // 插件会话列表首屏预热：插件清单同步后立即显示分组，会话数据由插件异步推送。
-        viewModelScope.launch {
-            pluginSessionSourceService.sessionGroups.collect { _pluginSessionGroups.value = it }
-        }
-        refreshPluginSessions()
     }
 
-    /** 消费插件会话请求：发送/停止由运行器处理，切会话/写草稿/删除仍由聊天页执行。 */
+    /** 消费来自运行器/外部的会话 UI 请求：发送/停止由运行器处理，切会话/写草稿/删除仍由聊天页执行。 */
     private suspend fun handleUiRequest(request: AgentChatRequest) {
         when (request) {
             is AgentChatRequest.Select -> selectSession(request.sessionId)
             is AgentChatRequest.SetDraft -> {
-                // 插件会话激活时写本地草稿等同于切回本地会话：先退出插件状态。
-                if (request.sessionId != null) leavePluginSessionForLocalSwitch()
                 val target = request.sessionId ?: _currentSessionId.value ?: ensureSession()
                 if (target.isBlank() || sessionUseCase.getSessionById(target) == null) return
                 updateSelectedSessionId(target)
@@ -1710,11 +1682,9 @@ class AIAgentViewModel @Inject constructor(
         persistUserMessage: Boolean = true,
         targetSessionId: String? = null
     ) {
-        // 插件会话由插件自己的 Agent 循环负责：不启动本地 AgentRunManager/workflow，
-        // 只把用户文本转交给 sessionSource.sendMessage。
-        val pluginSession = _activePluginSession.value
-        if (pluginSession != null) {
-            sendPluginMessage(pluginSession, request.ifBlank { modelRequest })
+        val ext = _activeExternalSession.value
+        if (ext != null && (targetSessionId == null || targetSessionId == ext.id)) {
+            sendExternalTurn(ext, request, modelRequest, projectRoot)
             return
         }
         agentRunManager.enqueueAgentRequest(
@@ -1754,27 +1724,6 @@ class AIAgentViewModel @Inject constructor(
         _currentSessionId.value?.let { agentRunManager.interjectQueuedRequest(it, id) }
     }
 
-    /**
-     * 执行斜杠命令：先把命令文本作为用户消息落库（进入对话上下文），再按类型派发——
-     * 内置命令走本地动作，技能则把其正文作为本轮指令触发 agent 回合。
-     * 执行期间标记为命令占用（防新消息并行执行），结束后接续队列中排队的下一条。
-     */
-    private fun runResolvedCommand(resolved: ResolvedCommand, input: String, sessionId: String) {
-        viewModelScope.launch {
-            agentRunManager.markCommandStarted(sessionId)
-            try {
-                messagePersistenceUseCase.persist(sessionId, MessageRole.USER, input)
-                sessionUseCase.touch(sessionId, messagePersistenceUseCase.nextTimestamp())
-                when (resolved) {
-                    is ResolvedCommand.Action -> resolved.handler.execute(this@AIAgentViewModel, resolved.args)
-                    is ResolvedCommand.SkillCommand -> runSkill(resolved.skill, resolved.args)
-                }
-            } finally {
-                agentRunManager.onCommandFinished(sessionId)
-            }
-        }
-    }
-
     fun resolveToolPermission(id: String, choice: PermissionChoice) {
         toolPermissionManager.resolve(id, choice)
     }
@@ -1783,10 +1732,11 @@ class AIAgentViewModel @Inject constructor(
         askUserQuestionManager.resolve(id, answer)
     }
 
-    /** 停止当前工作区所有正在运行的 AI 会话并关闭所有终端标签（切换工作区前调用）。 */
+    /** 停止当前工作区所有正在运行的 AI 会话并关闭所有终端标签（切换工作区/后端前调用）。 */
     fun stopAllAndCloseTerminal() {
         stopAllAgents()
         terminalSessionManager.tabs.value.map { it.id }.forEach { terminalSessionManager.closeTab(it) }
+        terminalSessionProvider.listTabs().forEach { terminalSessionProvider.closeTab(it.id) }
     }
 
     /** 停止当前工作区所有正在运行的 AI 会话（切换工作区前调用）。 */
@@ -1808,21 +1758,6 @@ class AIAgentViewModel @Inject constructor(
      * 取消 job 并把未完成的流式内容落库为「已停止」；队列下一条照常执行。
      */
     fun stopAgentSession(sessionId: String) {
-        val plugin = _activePluginSession.value?.takeIf { it.id == sessionId }
-        if (plugin != null) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    pluginSessionSourceService.interruptSession(plugin.sourceKey, plugin.sessionId)
-                    pluginRemoteRunManager.stop(sessionId)
-                    loadPluginPage(plugin, null, false)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    _pluginSessionError.value = e.message ?: e.javaClass.simpleName
-                }
-            }
-            return
-        }
         agentRunManager.stopAgentSession(sessionId)
     }
 
@@ -1837,13 +1772,13 @@ class AIAgentViewModel @Inject constructor(
         agentRunManager.clearSessionRuntimeState(sessionId)
         _inputDrafts.value = _inputDrafts.value - sessionId
         draftPrefs.edit().remove(sessionId).apply()
+        _attachmentDrafts.value = _attachmentDrafts.value - sessionId
+        attachmentDraftPrefs.edit().remove(sessionId).apply()
     }
 
     /** 新建会话；工作区里已有空会话时直接切过去复用（当前会话为空则优先），避免堆积空会话。 */
     fun newSession() = viewModelScope.launch {
-        // 插件会话下新建本地会话：先退出插件状态并恢复进入前的本地 id，
-        // 避免把外部会话 id 当作可复用的空会话。
-        leavePluginSessionForLocalSwitch()
+        leaveExternalSessionForLocalSwitch()
         val ws = _currentWorkspace.value
         if (ws.isBlank()) return@launch
         val curId = _currentSessionId.value
@@ -1864,11 +1799,7 @@ class AIAgentViewModel @Inject constructor(
     }
 
     fun setCurrentSessionId(id: String) {
-        val pluginSession = _activePluginSession.value
-        if (pluginSession != null) {
-            leavePluginSessionForLocalSwitch()
-            if (id == pluginSession.id) return
-        }
+        leaveExternalSessionForLocalSwitch()
         if (_currentSessionId.value == id) return
         updateSelectedSessionId(id)
     }
@@ -1909,15 +1840,37 @@ class AIAgentViewModel @Inject constructor(
         }
     }
 
-    fun setSessionProviderModel(providerId: String, model: String) {
-        val pluginSession = _activePluginSession.value
-        if (pluginSession != null) {
-            val expected = pluginSession.providerId?.let {
-                com.bysqh.guru.feature.plugin.runtime.PluginProviderIds.idOf(pluginSession.pluginId, it)
+    val workflows: StateFlow<List<WorkflowDescriptor>> = workflowRegistry.workflows
+
+    fun setSessionWorkflow(workflowId: String?) {
+        val normalized = workflowId?.trim()?.takeIf {
+            it.isNotEmpty() && it != AgentWorkflowRegistry.BUILTIN_WORKFLOW_ID
+        }
+        val ext = _activeExternalSession.value
+        if (ext != null) {
+            val updated = ext.copy(workflowId = normalized)
+            _activeExternalSession.value = updated
+            externalSessionStore.updateSummary(ext.sourceKey, ext.sessionId) {
+                it.copy(workflowId = normalized)
             }
-            if (pluginSession.executionMode == "remote" && providerId != expected) return
-            _pluginSessionProviderModel.value = providerId to model
-            _activePluginSession.value = pluginSession.copy(model = model)
+            return
+        }
+        val sid = _currentSessionId.value ?: return
+        viewModelScope.launch {
+            val existing = sessionUseCase.getSessionById(sid)
+            if (existing?.workflowId == normalized) return@launch
+            sessionUseCase.updateWorkflow(sid, normalized, workflowState = null)
+        }
+    }
+
+    fun setSessionProviderModel(providerId: String, model: String) {
+        val ext = _activeExternalSession.value
+        if (ext != null) {
+            val updated = ext.copy(providerId = providerId, model = model)
+            _activeExternalSession.value = updated
+            externalSessionStore.updateSummary(ext.sourceKey, ext.sessionId) {
+                it.copy(providerId = providerId, model = model)
+            }
             return
         }
         val sid = _currentSessionId.value ?: return
@@ -2001,166 +1954,25 @@ class AIAgentViewModel @Inject constructor(
     /** /usage —— 以 Markdown 表格输出今日与累计的调用次数、token 用量与预估费用。 */
     override fun showUsage() {
         val sid = _currentSessionId.value ?: return
-        viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            val todayStart = Calendar.getInstance().apply {
-                timeInMillis = now
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
-            val today = loadUsageSummary(todayStart)
-            val allTime = loadUsageSummary(0L)
-            val table = buildString {
-                appendLine("| 项目 | 今日 | 累计 |")
-                appendLine("|---|---|---|")
-                appendLine("| 调用次数 | ${today.calls} | ${allTime.calls} |")
-                appendLine("| 输入 tokens | ${formatTokenCount(today.inputTokens)} | ${formatTokenCount(allTime.inputTokens)} |")
-                appendLine("| 输出 tokens | ${formatTokenCount(today.outputTokens)} | ${formatTokenCount(allTime.outputTokens)} |")
-                appendLine("| 缓存命中 tokens | ${formatTokenCount(today.cachedInputTokens)} | ${formatTokenCount(allTime.cachedInputTokens)} |")
-                appendLine("| 预估费用 | ${formatCostUsd(today.costUsd)} | ${formatCostUsd(allTime.costUsd)} |")
-            }
-            sessionUseCase.touch(sid, messagePersistenceUseCase.nextTimestamp())
-            messagePersistenceUseCase.persist(sid, MessageRole.ASSISTANT, table.trimEnd(), isContextExcluded = true)
-        }
+        agentRunManager.showUsage(sid)
     }
 
     /** /goal —— 管理当前会话的持续目标。 */
     override fun setSessionGoal(rawArgs: String) {
         val sid = _currentSessionId.value ?: return
-        viewModelScope.launch {
-            val session = sessionUseCase.getSessionById(sid) ?: return@launch
-            val arg = rawArgs.trim()
-            when {
-                arg.isEmpty() -> persistGoalNotice(sid, goalSummary(session))
-                arg.equals("clear", ignoreCase = true) || arg.equals("off", ignoreCase = true) -> clearGoal(sid)
-                arg.equals("pause", ignoreCase = true) -> pauseGoal(sid)
-                arg.equals("resume", ignoreCase = true) -> resumeGoal(sid)
-                else -> setGoalText(sid, session, arg)
-            }
-        }
+        agentRunManager.setSessionGoal(sid, rawArgs, _currentWorkspace.value)
     }
 
     /** UI：暂停/恢复当前会话的 goal 自主循环。 */
     fun setGoalPaused(paused: Boolean) {
         val sid = _currentSessionId.value ?: return
-        viewModelScope.launch { if (paused) pauseGoal(sid) else resumeGoal(sid) }
+        agentRunManager.setGoalPaused(sid, paused)
     }
 
     /** UI：清除当前会话的 goal。 */
     fun clearGoal() {
         val sid = _currentSessionId.value ?: return
-        viewModelScope.launch { clearGoal(sid) }
-    }
-
-    private fun goalSummary(session: ChatSessionEntity): String {
-        val goal = session.goal?.takeIf { it.isNotBlank() }
-            ?: return "当前会话未设定目标。用 `/goal <目标>` 设定后，AI 会自主循环推进直到达成、受阻或预算耗尽。"
-        val status = session.goalStatus
-            ?.let { runCatching { GoalStatus.valueOf(it) }.getOrNull() }
-            ?: GoalStatus.ACTIVE
-        val statusLabel = when (status) {
-            GoalStatus.ACTIVE -> "进行中"
-            GoalStatus.PAUSED -> "已暂停"
-            GoalStatus.COMPLETED -> "已完成"
-            GoalStatus.BLOCKED -> "受阻"
-            GoalStatus.EXHAUSTED -> "预算耗尽"
-        }
-        return "当前目标（$statusLabel，已续跑 ${session.goalTurnCount} 轮）：\n$goal"
-    }
-
-    private suspend fun setGoalText(sid: String, session: ChatSessionEntity, text: String) {
-        val goalText = text.trim().take(MAX_GOAL_CHARS)
-        if (goalText.isEmpty()) return
-        agentRunManager.resetGoalEmptyTurns(sid)
-        sessionUseCase.setGoal(sid, goalText, session.totalInputTokens, session.totalOutputTokens)
-        // goal 与 PLAN 互斥：自主循环期间 PLAN 退出门禁需人工审查，故设定 goal 时若处于 PLAN 则强制退出。
-        if (runCatching { AgentMode.valueOf(session.mode) }.getOrNull() == AgentMode.PLAN) {
-            sessionUseCase.updateMode(sid, AgentMode.BUILD.name)
-        }
-        persistGoalNotice(
-            sid,
-            "已设定目标：$goalText\nAI 将自主循环推进（工具自动放行、PLAN 停用），直到达成、受阻或预算耗尽。" +
-                "可随时 `/goal pause` / `/goal resume` / `/goal clear`。"
-        )
-        enqueueGoalTurn(sid, session.workspacePath, buildGoalPrompt(goalText, 1))
-    }
-
-    private suspend fun clearGoal(sid: String) {
-        agentRunManager.resetGoalEmptyTurns(sid)
-        sessionUseCase.setGoal(sid, null, 0, 0)
-        persistGoalNotice(sid, "已清除当前目标。")
-    }
-
-    private suspend fun pauseGoal(sid: String) {
-        val session = sessionUseCase.getSessionById(sid) ?: return
-        if (session.goal.isNullOrBlank()) {
-            persistGoalNotice(sid, "当前会话未设定目标。")
-            return
-        }
-        sessionUseCase.updateGoalStatus(sid, GoalStatus.PAUSED)
-        persistGoalNotice(sid, "目标已暂停。用 `/goal resume` 继续。")
-    }
-
-    private suspend fun resumeGoal(sid: String) {
-        val session = sessionUseCase.getSessionById(sid) ?: return
-        val goal = session.goal?.takeIf { it.isNotBlank() }
-        if (goal == null) {
-            persistGoalNotice(sid, "当前会话未设定目标。")
-            return
-        }
-        sessionUseCase.updateGoalStatus(sid, GoalStatus.ACTIVE)
-        persistGoalNotice(sid, "目标已恢复，继续自主循环。")
-        enqueueGoalTurn(sid, session.workspacePath, buildGoalPrompt(goal, session.goalTurnCount + 1))
-    }
-
-    /** 把一轮 goal 续跑/启动请求交给会话：空闲则立即执行，忙则入队（用户消息优先）。不落库。 */
-    private fun enqueueGoalTurn(sessionId: String, workspacePath: String, prompt: String) {
-        enqueueAgentRequest(
-            request = prompt,
-            modelRequest = prompt,
-            projectRoot = workspacePath,
-            isAutoTrigger = true,
-            persistUserMessage = false,
-            targetSessionId = sessionId
-        )
-    }
-
-    private fun buildGoalPrompt(goal: String, turn: Int): String =
-        "【目标自主循环 · 第 $turn 轮】继续推进目标：$goal\n" +
-            "按系统提示中的完成审计与受阻审计规则决定是否调用 goalStatus；未达成则直接继续下一步。"
-
-    private suspend fun persistGoalNotice(sid: String, text: String) {
-        sessionUseCase.touch(sid, messagePersistenceUseCase.nextTimestamp())
-        messagePersistenceUseCase.persist(sid, MessageRole.ASSISTANT, text, isContextExcluded = true)
-    }
-
-    private data class UsageSummary(
-        val calls: Int,
-        val inputTokens: Long,
-        val outputTokens: Long,
-        val cachedInputTokens: Long,
-        val costUsd: Double
-    )
-
-    /** 汇总自 [start] 起的调用次数、token 与预估费用；费用按「渠道 + 模型」分组逐组估算，才取得到自定义单价。 */
-    private suspend fun loadUsageSummary(start: Long): UsageSummary = withContext(Dispatchers.IO) {
-        val summary = llmCallRecordDao.getSummary(start).first()
-        val providerTypes = aiProviderRepository.getAllProviders().first().associate { it.id to it.type }
-        val cost = llmCallRecordDao.getModelProviderCostStats(start).first().sumOf { stat ->
-            val model = stat.model ?: return@sumOf 0.0
-            modelCostCalculator.costUsd(
-                providerId = stat.providerId.orEmpty(),
-                providerType = stat.providerId?.let { providerTypes[it] } ?: ProviderType.OPENAI,
-                model = model,
-                inputTokens = stat.inputTokens,
-                cachedInputTokens = stat.cachedInputTokens,
-                outputTokens = stat.outputTokens,
-                cacheCreationTokens = stat.cacheCreationTokens
-            ) ?: 0.0
-        }
-        UsageSummary(summary.calls, summary.inputTokens, summary.outputTokens, summary.cachedInputTokens, cost)
+        agentRunManager.clearGoal(sid)
     }
 
     /** /compress —— 手动触发当前会话的上下文压缩。 */
@@ -2183,49 +1995,35 @@ class AIAgentViewModel @Inject constructor(
         planApprovalManager.resolve(id, PlanApprovalChoice.REFINE)
     }
 
-    // region 插件会话
+    fun selectSession(id: String) {
+        leaveExternalSessionForLocalSwitch()
+        if (_currentSessionId.value == id) return
+        updateSelectedSessionId(id)
+    }
 
-    /**
-     * 同步插件会话分组并请求插件异步刷新会话列表。
-     *
-     * 分组本身来自插件清单，这里不再等待 `sessionSource.listSessions`；插件收到 refresh 后
-     * 通过 `host.sessionSource.setSessions` 推送，侧栏数量位置由插件控制 loading 转圈。
-     */
-    fun refreshPluginSessions() {
+    // region 外部会话源
+
+    fun refreshExternalSessions() {
         viewModelScope.launch(Dispatchers.IO) {
-            try {
-                pluginSessionSourceService.syncDeclaredSources()
-                pluginSessionSourceService.requestRefresh()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                FileLogger.w(TAG, "刷新插件会话失败", e)
+            runCatching {
+                externalSessionService.syncDeclaredSources()
+                externalSessionService.requestRefresh()
+            }.onFailure {
+                FileLogger.w(TAG, "刷新外部会话列表失败", it)
             }
         }
     }
 
-    /**
-     * 打开插件会话：记录进入前的本地会话 id，把 currentSessionId 切到插件外部 id，
-     * 先把消息态置为加载中，再异步拉第一页。插件消息不写 Room，也不启动本地 AgentRunManager。
-     */
-    fun openPluginSession(session: PluginSessionSummary) {
-        // 插件之间互切时保留最初进入插件前的本地会话，close 后仍能回到原处。
-        if (_activePluginSession.value == null) {
-            localSessionIdBeforePlugin = _currentSessionId.value
+    fun openExternalSession(session: ExternalSessionSummary) {
+        if (_activeExternalSession.value == null) {
+            localSessionIdBeforeExternal = _currentSessionId.value
         }
-        pluginLoadJob?.cancel()
-        pluginNextCursor = null
-        pluginSnapshotRevision = null
-        _pluginSessionProviderModel.value = session.providerId?.let {
-            com.bysqh.guru.feature.plugin.runtime.PluginProviderIds.idOf(session.pluginId, it)
-        } to session.model
-        _pluginSessionError.value = null
-        agentRunManager.setSelectedLocalSession(streamingAssistantOwner, null)
-        _activePluginSession.value = session
-        // UI 的 messagesReady 依赖 sessionId == currentSessionId；这里同步指向外部 id。
+        externalLoadJob?.cancel()
+        externalNextCursor = null
+        externalRawMessages = emptyList()
+        _activeExternalSession.value = session
         updateSelectedSessionId(session.id)
-        _pluginStreaming.value = null
-        _pluginMessagesState.value = ChatMessagesState(
+        _externalMessagesState.value = ChatMessagesState(
             sessionId = session.id,
             messages = emptyList(),
             loaded = false,
@@ -2233,357 +2031,213 @@ class AIAgentViewModel @Inject constructor(
             isLoadingMore = true,
             limit = 0
         )
-        startPluginStream(session)
-        pluginLoadJob = viewModelScope.launch(Dispatchers.IO) {
-            loadPluginPage(session, cursor = null, append = false)
-            if (_activePluginSession.value?.id == session.id && session.executionMode == "remote" && session.running) {
-                pluginRemoteRunManager.start(session, null) {
-                    if (_activePluginSession.value?.id == session.id) loadPluginPage(session, null, false)
-                }
+        externalLoadJob = viewModelScope.launch(Dispatchers.IO) {
+            loadExternalMessagesPage(session, cursor = null, appendOlder = false)
+        }
+    }
+
+    fun deleteExternalSession(session: ExternalSessionSummary) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                agentRunManager.stopAgentSession(session.id)
+                externalSessionService.deleteSession(session.sourceKey, session.sessionId)
+            }.onFailure {
+                FileLogger.w(TAG, "删除外部会话失败: ${session.id}", it)
+            }
+            if (_activeExternalSession.value?.id == session.id) {
+                closeExternalSession()
             }
         }
     }
 
-    /** 关闭插件会话：清空插件消息并恢复进入前的本地会话；之前为空则恢复为 null。 */
-    fun closePluginSession() {
-        if (_activePluginSession.value == null) return
-        clearPluginSessionState(restoreLocalSessionId = true)
+    fun renameExternalSession(session: ExternalSessionSummary, newTitle: String) {
+        val trimmed = newTitle.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                externalSessionService.renameSession(session.sourceKey, session.sessionId, trimmed)
+            }.onSuccess { updated ->
+                if (updated != null && _activeExternalSession.value?.id == session.id) {
+                    _activeExternalSession.value = updated
+                }
+            }.onFailure {
+                FileLogger.w(TAG, "重命名外部会话失败: ${session.id}", it)
+            }
+        }
     }
 
-    /**
-     * 拉取一页插件消息。[append] 为真时把更早的消息 prepend 到现有列表前
-     * （AIChatPanel 顶部上拉懒加载）；为假时整体替换（首次打开 / 发送后刷新）。
-     */
-    private suspend fun loadPluginPage(
-        session: PluginSessionSummary,
-        cursor: JsonElement?,
-        append: Boolean
+    fun togglePinExternalSession(session: ExternalSessionSummary) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                externalSessionService.pinSession(session.sourceKey, session.sessionId, !session.isPinned)
+            }.onSuccess { updated ->
+                if (updated != null && _activeExternalSession.value?.id == session.id) {
+                    _activeExternalSession.value = updated
+                }
+            }.onFailure {
+                FileLogger.w(TAG, "置顶外部会话失败: ${session.id}", it)
+            }
+        }
+    }
+
+    fun closeExternalSession() {
+        if (_activeExternalSession.value == null) return
+        clearExternalSessionState(restoreLocalSessionId = true)
+    }
+
+    private fun leaveExternalSessionForLocalSwitch() {
+        if (_activeExternalSession.value != null) {
+            clearExternalSessionState(restoreLocalSessionId = false)
+        }
+    }
+
+    private fun clearExternalSessionState(restoreLocalSessionId: Boolean) {
+        externalLoadJob?.cancel()
+        externalLoadJob = null
+        externalNextCursor = null
+        externalRawMessages = emptyList()
+        _activeExternalSession.value = null
+        _externalMessagesState.value = ChatMessagesState(null, emptyList(), loaded = false)
+        if (restoreLocalSessionId) {
+            val restoreId = localSessionIdBeforeExternal
+            localSessionIdBeforeExternal = null
+            updateSelectedSessionId(restoreId)
+        } else {
+            localSessionIdBeforeExternal = null
+        }
+    }
+
+    private fun loadMoreExternalMessages(session: ExternalSessionSummary) {
+        val state = _externalMessagesState.value
+        val cursor = externalNextCursor ?: return
+        if (state.sessionId != session.id || !state.loaded || !state.hasMore || state.isLoadingMore) return
+        _externalMessagesState.value = state.copy(isLoadingMore = true)
+        externalLoadJob = viewModelScope.launch(Dispatchers.IO) {
+            loadExternalMessagesPage(session, cursor = cursor, appendOlder = true)
+        }
+    }
+
+    private suspend fun loadExternalMessagesPage(
+        session: ExternalSessionSummary,
+        cursor: kotlinx.serialization.json.JsonElement?,
+        appendOlder: Boolean
     ) {
         try {
-            val page = withContext(Dispatchers.IO) {
-                pluginSessionSourceService.readSession(
-                    sourceKey = session.sourceKey,
-                    sessionId = session.sessionId,
-                    cursor = cursor,
-                    maxMessages = PLUGIN_SESSION_PAGE_SIZE
-                )
+            val page = externalSessionService.readMessages(
+                sourceKey = session.sourceKey,
+                sessionId = session.sessionId,
+                cursor = cursor,
+                maxMessages = 50
+            )
+            if (_activeExternalSession.value?.id != session.id) return
+            page.session?.let { refreshed ->
+                _activeExternalSession.value = refreshed
             }
-            if (_activePluginSession.value?.id != session.id) return
-            val converted = PluginSessionUiMapper.toUiMessages(page.messages)
-            pluginNextCursor = page.nextCursor
-            _pluginMessagesState.update { current ->
-                current.copy(
-                    sessionId = session.id,
-                    messages = if (append) converted + current.messages else converted,
-                    loaded = true,
-                    hasMore = page.hasMore,
-                    isLoadingMore = false,
-                    // 作为顶部补载触发信号：即使一页全是不可见项，也要让 limit 变化。
-                    limit = current.limit + 1
-                )
-            }
-            pluginRemoteRunManager.retainMessages(session.id, converted.mapTo(HashSet()) { it.id })
-            _pluginSessionError.value = null
+            val mergedRaw = if (appendOlder) page.messages + externalRawMessages else page.messages
+            externalRawMessages = mergedRaw
+            externalNextCursor = page.nextCursor
+            val uiMessages = ExternalSessionUiMapper.toUiMessages(mergedRaw)
+            _externalMessagesState.value = _externalMessagesState.value.copy(
+                sessionId = session.id,
+                messages = uiMessages,
+                loaded = true,
+                hasMore = page.hasMore && page.nextCursor != null,
+                isLoadingMore = false,
+                limit = _externalMessagesState.value.limit + 1
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            FileLogger.w(TAG, "读取插件会话失败: ${session.id}", e)
-            if (_activePluginSession.value?.id != session.id) return
-            _pluginSessionError.value = "插件会话加载失败：${e.message ?: e.javaClass.simpleName}"
-            // 必须落成 loaded=true，否则 UI 永远停在「加载中」；空列表 + 错误横幅可重试。
-            _pluginMessagesState.update { current ->
-                if (current.sessionId == session.id) {
-                    current.copy(loaded = true, isLoadingMore = false)
-                } else {
-                    current
-                }
-            }
-        }
-    }
-
-    /**
-     * 向当前插件会话发送文本：发送串行化，成功后延迟轮询 readSession 刷新消息。
-     * 只更新内存快照，不写 Room，也不启动本地 AgentRunManager/workflow。
-     */
-    private fun sendPluginMessage(session: PluginSessionSummary, rawMessage: String) {
-        val message = rawMessage.trim()
-        if (message.isEmpty()) return
-        if (session.executionMode == "remote") {
-            if (pluginRemoteRunManager.states.value[session.id]?.running == true) return
-            appendOptimisticUserMessage(session, message)
-            pluginRemoteRunManager.start(session, message) {
-                if (_activePluginSession.value?.id == session.id) loadPluginPage(session, null, false)
-            }
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            _pluginStreaming.value = null
-            appendOptimisticUserMessage(session, message)
-            runCatching { pluginSessionSourceService.followSession(session.sourceKey, session.sessionId) }
-            val baseline = _pluginMessagesState.value.messages.size
-            val accepted = try {
-                pluginSendMutex.withLock {
-                    if (_activePluginSession.value?.id != session.id) return@withLock false
-                    pluginSessionSourceService.sendMessage(
-                        sourceKey = session.sourceKey,
-                        sessionId = session.sessionId,
-                        message = message
-                    )
-                    true
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                FileLogger.w(TAG, "发送插件会话消息失败: ${session.id}", e)
-                if (_activePluginSession.value?.id == session.id) {
-                    _pluginSessionError.value =
-                        "插件会话发送失败：${e.message ?: e.javaClass.simpleName}"
-                }
-                return@launch
-            }
-            if (!accepted) return@launch
-            _pluginSessionError.value = null
-            refreshPluginSessionAfterSend(session, baseline)
-        }
-    }
-
-    /** 发送时本地乐观插入用户气泡，避免「消息消失」；快照刷新后会被真实消息覆盖。 */
-    private fun appendOptimisticUserMessage(session: PluginSessionSummary, message: String) {
-        if (_activePluginSession.value?.id != session.id) return
-        _pluginMessagesState.update { current ->
-            current.copy(
+            FileLogger.w(TAG, "读取外部会话消息失败: ${session.id}", e)
+            if (_activeExternalSession.value?.id != session.id) return
+            _externalMessagesState.value = _externalMessagesState.value.copy(
                 sessionId = session.id,
                 loaded = true,
-                messages = current.messages + AgentUIMessage(
-                    id = "plugin-optimistic-${System.currentTimeMillis()}",
-                    role = MessageRole.USER,
-                    content = message,
-                    timestamp = System.currentTimeMillis()
-                )
+                isLoadingMore = false
             )
         }
     }
 
-    /** 订阅当前插件会话的实时事件（插件 session/follow 推送）。 */
-    private fun startPluginStream(session: PluginSessionSummary) {
-        stopPluginStream()
-        pluginSessionRegistry.clearThinking(session.id)
-        pluginStreamSessionId = session.sessionId
-        pluginStreamSourceKey = session.sourceKey
-        pluginGenericEventJob = viewModelScope.launch {
-            pluginSessionEventBus.events.collect { event ->
-                if (event.sessionId == session.id && _activePluginSession.value?.id == session.id) {
-                    handleGenericPluginEvent(session, event.payload)
-                }
-            }
-        }
-        pluginEventUnsubscribe = pluginEventBus.subscribe(session.pluginId) { event ->
-            handlePluginStreamEvent(session, event)
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            runCatching { pluginSessionSourceService.followSession(session.sourceKey, session.sessionId) }
-        }
-    }
-
-    private fun stopPluginStream() {
-        pluginGenericEventJob?.cancel()
-        pluginGenericEventJob = null
-        pluginEventUnsubscribe?.invoke()
-        pluginEventUnsubscribe = null
-        _activePluginSession.value?.let { pluginSessionRegistry.clearThinking(it.id) }
-        val sourceKey = pluginStreamSourceKey
-        val sessionId = pluginStreamSessionId
-        pluginStreamSessionId = null
-        pluginStreamSourceKey = null
-        _pluginStreaming.value = null
-        if (sourceKey != null && sessionId != null) {
-            viewModelScope.launch(Dispatchers.IO) {
-                runCatching { pluginSessionSourceService.unfollowSession(sourceKey, sessionId) }
-            }
-        }
-    }
-
-    private fun handleGenericPluginEvent(session: PluginSessionSummary, event: JsonObject) {
-        val revision = event["revision"]?.jsonPrimitive?.longOrNull
-        if (revision != null && pluginSnapshotRevision?.let { revision < it } == true) return
-        when (event["type"]?.jsonPrimitive?.contentOrNull) {
-            "snapshot" -> {
-                val page = event["page"] as? JsonObject ?: return
-                val parsed = pluginSessionSourceService.parsePage(page, session.sessionId)
-                val messages = PluginSessionUiMapper.toUiMessages(parsed.messages)
-                pluginNextCursor = parsed.nextCursor
-                pluginSnapshotRevision = revision ?: pluginSnapshotRevision
-                _pluginMessagesState.update {
-                    it.copy(messages = messages, loaded = true, hasMore = parsed.hasMore, isLoadingMore = false)
-                }
-                pluginRemoteRunManager.retainMessages(session.id, messages.mapTo(HashSet()) { it.id })
-            }
-            "message" -> {
-                val parsed = pluginSessionSourceService.parseMessage(event["message"] as? JsonObject) ?: return
-                val messages = PluginSessionUiMapper.toUiMessages(parsed)
-                val ids = messages.mapTo(HashSet()) { it.id }
-                _pluginMessagesState.update { state ->
-                    state.copy(messages = state.messages.filterNot { it.id in ids || it.id.startsWith("plugin-optimistic-") && parsed.role == "user" } + messages)
-                }
-                pluginRemoteRunManager.retainMessages(session.id, _pluginMessagesState.value.messages.mapTo(HashSet()) { it.id })
-            }
-            "tool-start", "tool-output", "tool-end" -> {
-                val callId = event["callId"]?.jsonPrimitive?.contentOrNull ?: return
-                val type = event["type"]?.jsonPrimitive?.contentOrNull
-                val previous = pluginRemoteRunManager.states.value[session.id]?.tools?.get(callId)
-                val name = event["name"]?.jsonPrimitive?.contentOrNull ?: previous?.toolName.orEmpty()
-                val input = event["input"]?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.contentOrNull else it.toString() }
-                    ?: previous?.toolArgs.orEmpty()
-                val output = event["output"]?.let { if (it is kotlinx.serialization.json.JsonPrimitive) it.contentOrNull else it.toString() }.orEmpty()
-                val messageId = "remote-tool-$callId"
-                val message = AgentUIMessage(
-                    id = messageId, role = MessageRole.TOOL, content = output,
-                    toolName = name, toolArgs = input,
-                    isError = event["isError"]?.jsonPrimitive?.booleanOrNull == true
-                )
-                _pluginMessagesState.update { state ->
-                    val index = state.messages.indexOfFirst { it.id == messageId }
-                    state.copy(messages = if (index < 0) state.messages + message
-                        else state.messages.toMutableList().also { it[index] = message })
-                }
-                pluginRemoteRunManager.updateTool(session.id, callId,
-                    if (type == "tool-end") null else RunningToolOutput(messageId, output, name, input))
-            }
-            "turn-end" -> {
-                if (session.executionMode != "remote") reloadPluginSnapshot(session, true)
-            }
-        }
-    }
-
-    private fun handlePluginStreamEvent(session: PluginSessionSummary, event: JsonObject) {
-        if (_activePluginSession.value?.id != session.id) return
-        if (event["name"]?.jsonPrimitive?.contentOrNull != "ds-harness.session") return
-        val payload = event["payload"] as? JsonObject ?: return
-        val sid = payload["sessionId"]?.jsonPrimitive?.contentOrNull ?: return
-        if (sid != session.sessionId) return
-        when (payload["type"]?.jsonPrimitive?.contentOrNull) {
-            "start" -> {
-                pluginSessionRegistry.clearThinking(session.id)
-                _pluginStreaming.value = PluginStreaming(sessionId = sid, active = true)
-            }
-            "chunk" -> {
-                pluginSessionRegistry.clearThinking(session.id)
-                val part = payload["part"]?.jsonPrimitive?.contentOrNull ?: "text"
-                val text = payload["text"]?.jsonPrimitive?.contentOrNull ?: return
-                _pluginStreaming.update { prev ->
-                    val cur = prev?.takeIf { it.sessionId == sid && it.active }
-                        ?: PluginStreaming(sessionId = sid, active = true)
-                    if (part == "reasoning") cur.copy(reasoning = cur.reasoning + text)
-                    else cur.copy(text = cur.text + text)
-                }
-            }
-            "message" -> reloadPluginSnapshot(session, clearStreaming = false)
-            "done" -> {
-                pluginSessionRegistry.clearThinking(session.id)
-                reloadPluginSnapshot(session, clearStreaming = true)
-            }
-        }
-    }
-
-    /** 事件驱动刷新快照（最终消息落库后以快照为准）。 */
-    private fun reloadPluginSnapshot(session: PluginSessionSummary, clearStreaming: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            loadPluginPage(session, cursor = null, append = false)
-            if (_activePluginSession.value?.id == session.id && clearStreaming) {
-                _pluginStreaming.value = null
-            }
-        }
-    }
-
-    /**
-     * 发送后的刷新：插件 sendMessage 只代表入队，先等一拍再 readSession 取用户消息/回答。
-     * 若远端仍在 running 则短轮询几次；会话已关闭或切走立即停止，不回写任何本地表。
-     */
-    private suspend fun refreshPluginSessionAfterSend(
-        session: PluginSessionSummary,
-        baselineMessageCount: Int
+    private fun sendExternalTurn(
+        session: ExternalSessionSummary,
+        displayRequest: String,
+        modelRequest: String,
+        projectRoot: String
     ) {
-        delay(PLUGIN_SEND_REFRESH_DELAY_MS)
-        for (attempt in 0 until PLUGIN_SEND_REFRESH_ATTEMPTS) {
-            if (_activePluginSession.value?.id != session.id) return
-            try {
-                val page = withContext(Dispatchers.IO) {
-                    pluginSessionSourceService.readSession(
-                        sourceKey = session.sourceKey,
-                        sessionId = session.sessionId,
-                        cursor = null,
-                        maxMessages = PLUGIN_SESSION_PAGE_SIZE
+        val now = System.currentTimeMillis()
+        val userMsgId = "ext-user-$now-${UUID.randomUUID()}"
+        val historySnapshot = ExternalSessionUiMapper.toAgentHistory(externalRawMessages)
+        val userUiMessage = AgentUIMessage(
+            id = userMsgId,
+            role = MessageRole.USER,
+            content = displayRequest,
+            timestamp = now
+        )
+        externalRawMessages = externalRawMessages + ExternalSessionMessage(
+            id = userMsgId,
+            role = "user",
+            blocks = listOf(com.bysqh.guru.feature.plugin.domain.session.ExternalMessageBlock.Text(displayRequest)),
+            timestamp = now
+        )
+        if (_activeExternalSession.value?.id == session.id) {
+            _externalMessagesState.value = _externalMessagesState.value.copy(
+                sessionId = session.id,
+                loaded = true,
+                messages = _externalMessagesState.value.messages + userUiMessage
+            )
+        }
+        val workspacePath = projectRoot.ifBlank { session.workspaceId ?: _currentWorkspace.value }
+        agentRunManager.launchExternalTurn(
+            externalSessionId = session.id,
+            workflowId = session.workflowId,
+            request = modelRequest,
+            workspacePath = workspacePath,
+            history = historySnapshot,
+            providerId = session.providerId,
+            model = session.model,
+            onCommittedEvent = { event ->
+                if (_activeExternalSession.value?.id != session.id) return@launchExternalTurn
+                val appended = when (event) {
+                    is AgentEvent.AssistantText -> AgentUIMessage(
+                        id = event.messageId,
+                        role = MessageRole.ASSISTANT,
+                        content = event.content,
+                        timestamp = System.currentTimeMillis(),
+                        reasoning = event.reasoning.takeIf { it.isNotBlank() },
+                        attachments = event.attachments,
+                        inputTokens = event.inputTokens,
+                        outputTokens = event.outputTokens,
+                        cachedInputTokens = event.cachedInputTokens
                     )
+                    is AgentEvent.ToolCallFinished -> AgentUIMessage(
+                        id = "tool_${event.id}",
+                        role = MessageRole.TOOL,
+                        content = event.result,
+                        timestamp = System.currentTimeMillis(),
+                        toolName = event.toolName,
+                        toolArgs = event.argsPreview.orEmpty(),
+                        isError = event.isError,
+                        attachments = event.attachments
+                    )
+                    else -> null
                 }
-                if (_activePluginSession.value?.id != session.id) return
-                val converted = PluginSessionUiMapper.toUiMessages(page.messages)
-                pluginNextCursor = page.nextCursor
-                _pluginMessagesState.update { current ->
-                    current.copy(
+                if (appended != null) {
+                    _externalMessagesState.value = _externalMessagesState.value.copy(
                         sessionId = session.id,
-                        messages = converted,
-                        loaded = true,
-                        hasMore = page.hasMore,
-                        isLoadingMore = false,
-                        limit = current.limit + 1
+                        messages = _externalMessagesState.value.messages.filterNot { it.id == appended.id } + appended
                     )
                 }
-                _pluginSessionError.value = null
-                // 远端已不在运行且消息有增长，说明本轮回答已落到快照，停止轮询。
-                if (page.status != PLUGIN_STATUS_RUNNING && converted.size > baselineMessageCount) return
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                FileLogger.w(TAG, "刷新插件会话消息失败: ${session.id}", e)
-                if (_activePluginSession.value?.id != session.id) return
-                _pluginSessionError.value = "插件会话刷新失败：${e.message ?: e.javaClass.simpleName}"
+            },
+            onFinished = {
+                externalSessionStore.clearThinking(session.id)
+                if (_activeExternalSession.value?.id == session.id) {
+                    loadExternalMessagesPage(session, cursor = null, appendOlder = false)
+                }
             }
-            if (attempt < PLUGIN_SEND_REFRESH_ATTEMPTS - 1) delay(PLUGIN_SEND_POLL_INTERVAL_MS)
-        }
-    }
-
-    /**
-     * 清空插件会话状态。[restoreLocalSessionId] 为真时把 currentSessionId 回退到
-     * 进入插件前的本地会话（null 就恢复 null）；本地切换场景由调用方随后写入目标 id。
-     */
-    private fun clearPluginSessionState(restoreLocalSessionId: Boolean) {
-        val previousLocalSessionId = localSessionIdBeforePlugin
-        pluginLoadJob?.cancel()
-        pluginLoadJob = null
-        stopPluginStream()
-        if (restoreLocalSessionId) {
-            agentRunManager.setSelectedLocalSession(streamingAssistantOwner, previousLocalSessionId)
-        }
-        _activePluginSession.value = null
-        _pluginMessagesState.value = ChatMessagesState(null, emptyList(), loaded = false)
-        _pluginSessionError.value = null
-        _pluginSessionProviderModel.value = null to null
-        pluginNextCursor = null
-        localSessionIdBeforePlugin = null
-        if (restoreLocalSessionId) {
-            updateSelectedSessionId(previousLocalSessionId)
-        }
-    }
-
-    /** 本地会话切换前调用：有插件会话先退出，避免残留的插件状态遮住本地消息。 */
-    private fun leavePluginSessionForLocalSwitch() {
-        if (_activePluginSession.value != null) {
-            clearPluginSessionState(restoreLocalSessionId = true)
-        }
+        )
     }
 
     // endregion
-
-    fun selectSession(id: String) {
-        val pluginSession = _activePluginSession.value
-        if (pluginSession != null) {
-            leavePluginSessionForLocalSwitch()
-            // 目标就是插件外部 id：已经退出插件模式，恢复到进入前的本地会话即可。
-            if (id == pluginSession.id) return
-        }
-        if (_currentSessionId.value == id) return
-        updateSelectedSessionId(id)
-    }
 
     fun deleteSessions(ids: Set<String>) = viewModelScope.launch {
         if (ids.isEmpty()) return@launch

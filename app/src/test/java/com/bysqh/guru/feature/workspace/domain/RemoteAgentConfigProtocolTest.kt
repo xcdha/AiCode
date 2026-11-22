@@ -19,7 +19,7 @@ class RemoteAgentConfigProtocolTest {
 
     private fun encoded(value: String): String = Base64.getEncoder().encodeToString(value.toByteArray(Charsets.UTF_8))
     private fun manifest(vararg paths: Pair<String, String>): ByteArray = buildString {
-        append("AICODE_CONFIG_1 M\n")
+        append("GURU_CONFIG_1 M\n")
         paths.forEach { (path, body) ->
             append("F\t${encoded(path)}\t${RemoteAgentConfigProtocol.sha256(body.toByteArray(Charsets.UTF_8))}\t${body.toByteArray(Charsets.UTF_8).size}\n")
         }
@@ -40,7 +40,7 @@ class RemoteAgentConfigProtocolTest {
         assertTrue(RemoteAgentConfigProtocol.manifest(manifest(), AgentConfigKind.AGENTS).isEmpty())
         assertThrows(IOException::class.java) { RemoteAgentConfigProtocol.manifest(ByteArray(0), AgentConfigKind.AGENTS) }
         assertThrows(IOException::class.java) {
-            RemoteAgentConfigProtocol.manifest("AICODE_CONFIG_1 M\n".toByteArray(), AgentConfigKind.AGENTS)
+            RemoteAgentConfigProtocol.manifest("GURU_CONFIG_1 M\n".toByteArray(), AgentConfigKind.AGENTS)
         }
     }
 
@@ -51,14 +51,14 @@ class RemoteAgentConfigProtocolTest {
             assertThrows(IOException::class.java) { RemoteAgentConfigProtocol.manifest(manifest(path to ""), AgentConfigKind.SKILLS) }
         }
         listOf(
-            "AICODE_CONFIG_1 M\nF\t!!!!\t$hash\t0\nEND\n",
-            "AICODE_CONFIG_1 M\nF\t${encoded("x.md")}\tbad\t0\nEND\n",
-            "AICODE_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t-1\nEND\n",
-            "AICODE_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t01\nEND\n",
-            "AICODE_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t${RemoteAgentConfigProtocol.MAX_FILE_BYTES + 1}\nEND\n",
-            "AICODE_CONFIG_1 M\nEND\ntrailing\n",
-            "AICODE_CONFIG_1 M\nEND",
-            "AICODE_CONFIG_1 M\nEND\nEND\n"
+            "GURU_CONFIG_1 M\nF\t!!!!\t$hash\t0\nEND\n",
+            "GURU_CONFIG_1 M\nF\t${encoded("x.md")}\tbad\t0\nEND\n",
+            "GURU_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t-1\nEND\n",
+            "GURU_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t01\nEND\n",
+            "GURU_CONFIG_1 M\nF\t${encoded("x.md")}\t$hash\t${RemoteAgentConfigProtocol.MAX_FILE_BYTES + 1}\nEND\n",
+            "GURU_CONFIG_1 M\nEND\ntrailing\n",
+            "GURU_CONFIG_1 M\nEND",
+            "GURU_CONFIG_1 M\nEND\nEND\n"
         ).forEach { wire ->
             assertThrows(IOException::class.java) { RemoteAgentConfigProtocol.manifest(wire.toByteArray(), AgentConfigKind.AGENTS) }
         }
@@ -70,7 +70,7 @@ class RemoteAgentConfigProtocolTest {
     @Test
     fun bodyHashSizeCompletenessAndCanonicalBase64AreVerified() {
         val expected = RemoteAgentConfigProtocol.manifest(manifest("空 格\n.md" to "正文\n", "empty.md" to ""), AgentConfigKind.AGENTS)
-        val good = "AICODE_CONFIG_1 B\nB\t${encoded("空 格\n.md")}\t${encoded("正文\n")}\nB\t${encoded("empty.md")}\t\nEND\n"
+        val good = "GURU_CONFIG_1 B\nB\t${encoded("空 格\n.md")}\t${encoded("正文\n")}\nB\t${encoded("empty.md")}\t\nEND\n"
         assertEquals(mapOf("空 格\n.md" to "正文\n", "empty.md" to ""), RemoteAgentConfigProtocol.bodies(good.toByteArray(), expected))
         listOf(
             good.replace(encoded("正文\n"), encoded("改变\n")),
@@ -87,7 +87,7 @@ class RemoteAgentConfigProtocolTest {
         val wire = manifest(*(0..RemoteAgentConfigProtocol.MAX_FILES).map { "$it.md" to "" }.toTypedArray())
         assertThrows(IOException::class.java) { RemoteAgentConfigProtocol.manifest(wire, AgentConfigKind.AGENTS) }
         val oversizedTotal = buildString {
-            append("AICODE_CONFIG_1 M\n")
+            append("GURU_CONFIG_1 M\n")
             repeat(5) { append("F\t${encoded("$it.md")}\t${"0".repeat(64)}\t${RemoteAgentConfigProtocol.MAX_FILE_BYTES}\n") }
             append("END\n")
         }

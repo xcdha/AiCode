@@ -12,12 +12,7 @@
 // 基础类型
 // ---------------------------------------------------------------------------
 
-export type JsonPrimitive = string | number | boolean | null;
-
-/** 可 JSON 序列化的值，对应宿主与插件进程之间的数据。 */
-export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
-
-export type JsonObject = { [key: string]: JsonValue };
+export type { JsonObject, JsonPrimitive, JsonValue } from './common';
 
 /** 宿主失败时 reject 的错误；`code` 为稳定错误码，例如 `FILE_EXISTS`、`STALE_CONTEXT`。 */
 export interface AicodeError extends Error {
@@ -75,6 +70,8 @@ export type AicodeErrorCode =
   | 'IMAGE_TOO_LARGE'
   | 'IMAGE_TYPE_UNSUPPORTED'
   | 'ALL_KEYS_FAILED'
+  // 终端
+  | 'CONTAINER_NOT_INITIALIZED'
   // 工具
   | 'TOOL_NOT_ALLOWED'
   | 'TOOL_NOT_FOUND'
@@ -952,11 +949,6 @@ export interface AicodeBridge {
     set(key: string, value: string): Promise<{ ok: boolean }>;
     delete(key: string): Promise<{ ok: boolean }>;
     list(): Promise<{ keys: string[] }>;
-  };
-
-  sessionSource: {
-    setMessages(options: import('./host').HostParamsOf<'host.sessionSource.setMessages'>): Promise<{ ok: boolean }>;
-    pushEvent(options: import('./host').HostParamsOf<'host.sessionSource.pushEvent'>): Promise<{ ok: boolean }>;
   };
 
   /** 仅本次用户决定；不会覆盖宿主权限策略或记忆授权。 */

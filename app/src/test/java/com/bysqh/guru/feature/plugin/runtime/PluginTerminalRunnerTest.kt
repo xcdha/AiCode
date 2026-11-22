@@ -2,6 +2,7 @@ package com.bysqh.guru.feature.plugin.runtime
 
 import com.bysqh.guru.feature.plugin.domain.InstalledPlugin
 import com.bysqh.guru.feature.plugin.domain.PluginManager
+import com.bysqh.guru.feature.agent.domain.container.ContainerNotInitializedException
 import com.bysqh.guru.feature.terminal.domain.TerminalSessionProvider
 import com.bysqh.guru.feature.terminal.domain.TerminalTabStatus
 import io.mockk.coEvery
@@ -79,6 +80,21 @@ class PluginTerminalRunnerTest {
 
         assertTrue(runner.stop("demo.test", "term-2"))
         assertTrue(runner.close("demo.test", "term-2"))
+    }
+
+    @Test
+    fun startReportsUninitializedContainer() = runTest {
+        val provider = mockk<TerminalSessionProvider>()
+        coEvery { provider.startPluginCommand(any(), any(), any()) } throws ContainerNotInitializedException()
+        val runner = runner(provider, activePlugin("demo.test"))
+
+        var errorCode: String? = null
+        try {
+            runner.start("demo.test", "echo hi", null)
+        } catch (e: PluginTerminalException) {
+            errorCode = e.code
+        }
+        assertEquals("CONTAINER_NOT_INITIALIZED", errorCode)
     }
 
     @Test

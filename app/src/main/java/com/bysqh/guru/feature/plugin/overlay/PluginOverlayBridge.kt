@@ -36,8 +36,7 @@ internal class PluginOverlayBridge(
     private val page: PluginPage,
     private val density: Float,
     private val window: PluginOverlayWindow,
-    private val permissionService: com.bysqh.guru.feature.plugin.runtime.PluginPermissionService,
-    private val sessionSourceService: com.bysqh.guru.feature.plugin.runtime.PluginSessionHostService,
+    private val hostApiDispatcher: com.bysqh.guru.feature.plugin.runtime.PluginHostApiDispatcher,
     private val onPageMessage: (JsonElement) -> Unit,
     private val onClose: () -> Unit
 ) {
@@ -74,10 +73,13 @@ internal class PluginOverlayBridge(
     }
 
     private suspend fun dispatch(method: String, params: JsonObject): JsonElement = when (method) {
-        "sessionSource.setMessages" -> sessionSourceService.setMessages(pluginId, params)
-        "sessionSource.pushEvent" -> sessionSourceService.pushEvent(pluginId, params)
-        "permissions.request" -> permissionService.request(pluginId, params)
-        "permissions.cancel" -> permissionService.cancel(pluginId, params)
+        "permissions.request", "permissions.cancel" -> hostApiDispatcher.dispatch(
+            pluginId = pluginId,
+            method = method,
+            params = params,
+            origin = com.bysqh.guru.feature.plugin.runtime.PluginHostApiOrigin.OVERLAY,
+            workspaceRoot = { "" }
+        )
         "context" -> buildJsonObject {
             put("pluginId", pluginId)
             put("overlayId", overlayId)

@@ -8,7 +8,7 @@ import org.junit.Test
 class UpdateDownloadUrlTest {
 
     private val original =
-        "https://github.com/jieapi/aicode/releases/download/v1.12.0-rc4/aicode-arm64-v1.12.0-rc4.apk"
+        "https://github.com/jieapi/aicode/releases/download/v1.12.0-rc4/guru-arm64-v1.12.0-rc4.apk"
 
     // ---- isValidDownloadMirror ----
 
