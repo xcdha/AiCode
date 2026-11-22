@@ -294,9 +294,24 @@ class SystemPromptProvider @Inject constructor(
         val identity = roleIdentity()
 
         if (PromptFragmentResolver.isBuiltinDisabled(customDir)) {
-            return prependIdentity(identity, buildCustomOnly(agentContext))
+            val customOnly = buildCustomOnly(agentContext)
+            // 角色身份能补上就不算空；两者都没有时必须回落，否则模型没有任何约束。
+            if (customOnly.isNotEmpty() || identity.isNotEmpty()) {
+                return prependIdentity(identity, customOnly)
+            }
+            FileLogger.w(
+                TAG,
+                "已启用 ${PromptFragmentResolver.DISABLE_BUILTIN_FILE}，但自定义片段与角色身份均为空，" +
+                    "回落到内置提示词以免模型失去全部约束"
+            )
+            return buildWithBuiltin(agentContext, identity)
         }
 
+        return buildWithBuiltin(agentContext, identity)
+    }
+
+    /** 常规路径：内置片段 + 运行期变量展开，前面拼角色身份。 */
+    private fun buildWithBuiltin(agentContext: AgentContext, identity: String): String {
         // 1. 获取各个 Source 的基线快照。
         val rawStatic = staticRuleSource.build(agentContext, hasIdentity = identity.isNotEmpty())
         val skillsContent = activeSkillsSource.build(agentContext)
