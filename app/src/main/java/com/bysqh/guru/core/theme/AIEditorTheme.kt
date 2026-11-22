@@ -436,7 +436,10 @@ fun AIEditorTheme(
         LocalUiStyle provides appearance.uiStyle,
         LocalBackgroundScrimColor provides themeColors.colorScheme.background
     ) {
-        CompositionLocalProvider(LocalDensity provides scaledDensity) {
+        CompositionLocalProvider(
+            LocalSystemDensity provides density,
+            LocalDensity provides scaledDensity
+        ) {
             MaterialTheme(
                 colorScheme = layeredScheme,
                 typography = if (appearance.uiStyle == UiStyle.MIUIX) {

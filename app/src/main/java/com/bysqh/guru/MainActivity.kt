@@ -2,6 +2,8 @@ package com.bysqh.guru
 
 import android.os.Build
 import android.os.Bundle
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,7 +49,6 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
@@ -66,6 +67,9 @@ import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.view.Surface
 import android.view.TextureView
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -81,6 +85,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.bysqh.guru.core.theme.AIEditorTheme
 import com.bysqh.guru.core.theme.AppThemePreset
+import com.bysqh.guru.core.theme.LocalSystemDensity
 import com.bysqh.guru.core.ui.BetaWatermark
 import com.bysqh.guru.core.ui.EndModalDrawer
 import com.bysqh.guru.core.ui.ImageSource
@@ -158,6 +163,7 @@ import com.bysqh.guru.feature.terminal.presentation.component.TerminalScreen
 import com.bysqh.guru.feature.workspace.presentation.WorkspaceViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -554,6 +560,8 @@ fun AppNavigation(
     agreementAccepted: Boolean
 ) {
     val navController = rememberNavController()
+    // 抽屉几何用原始密度（见 LocalSystemDensity 说明），内容仍用当前缩放密度
+    val interfaceDensity = LocalDensity.current
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -647,6 +655,30 @@ fun AppNavigation(
     // 侧边栏打开时，系统返回键先收起侧边栏。
     BackHandler(enabled = drawerState.isOpen) {
         scope.launch { drawerState.close() }
+    }
+
+    // 侧边栏打开时收起输入法。ModalNavigationDrawer 展开过程中会请求焦点，
+    // 抽屉里第一个可聚焦元素是聊天搜索框，焦点落到它上面就弹出键盘；
+    // 所以要在它请求之后再清，清早了会被覆盖。
+    val drawerFocusManager = LocalFocusManager.current
+    val drawerKeyboardController = LocalSoftwareKeyboardController.current
+    val drawerHostView = LocalView.current
+    LaunchedEffect(drawerState.targetValue) {
+        if (drawerState.targetValue == DrawerValue.Open) {
+            delay(120)
+            drawerFocusManager.clearFocus(force = true)
+            drawerKeyboardController?.hide()
+            val imm = drawerHostView.context
+                .getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.hideSoftInputFromWindow(drawerHostView.windowToken, 0)
+        }
+    }
+    // 抽屉收起时也清一次焦点，让抽屉里的搜索框彻底失焦，
+    // 下次展开就不会带着上次的光标和输入法回来。
+    LaunchedEffect(drawerState.currentValue) {
+        if (drawerState.currentValue == DrawerValue.Closed) {
+            drawerFocusManager.clearFocus(force = true)
+        }
     }
     BackHandler(enabled = rightDrawerState.isOpen) {
         scope.launch { rightDrawerState.close() }
@@ -1407,34 +1439,42 @@ fun AppNavigation(
                 VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             }
             Box(modifier = Modifier.weight(1f)) {
-                EndModalDrawer(
-                    state = rightDrawerState,
-                    gesturesEnabled = currentRoute == "chat",
-                    drawerWidth = drawerWidth(),
-                    drawerContent = { rightDrawerSheet() }
-                ) {
-                    navBody()
+                CompositionLocalProvider(LocalDensity provides LocalSystemDensity.current) {
+                    EndModalDrawer(
+                        state = rightDrawerState,
+                        gesturesEnabled = currentRoute == "chat",
+                        drawerWidth = drawerWidth(),
+                        drawerContent = { rightDrawerSheet() }
+                    ) {
+                        CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                            navBody()
+                        }
+                    }
                 }
             }
         }
     } else {
+        CompositionLocalProvider(LocalDensity provides LocalSystemDensity.current) {
         ModalNavigationDrawer(
             drawerState = drawerState,
+            // [二开] 有背景时也要遮罩：右侧内容与抽屉同为浅色时，没有遮罩就分不出层次。
+            scrimColor = Color.Black.copy(alpha = 0.32f),
             // 仅在聊天页启用手势滑出；其他页面禁止（但已打开时始终可关闭）。
             gesturesEnabled = currentRoute == "chat" || drawerState.isOpen,
             drawerContent = {
                 ModalDrawerSheet(
                     drawerShape = RectangleShape,
-                    drawerContainerColor = settingsPageBackground(),
+                    // [二开] 抽屉用实底（卡片色）：页面底色在有背景时是透明的，沿用会让抽屉变全透。
+                    drawerContainerColor = MaterialTheme.colorScheme.surface,
                     drawerTonalElevation = 0.dp,
-                    modifier = Modifier
-                        .width(drawerWidth())
-                        .shadow(elevation = 12.dp, shape = RectangleShape, clip = false)
+                    modifier = Modifier.width(drawerWidth())
                 ) {
-                    drawerBody(
-                        drawerState.currentValue == DrawerValue.Open ||
-                            drawerState.targetValue == DrawerValue.Open
-                    )
+                    CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                        drawerBody(
+                            drawerState.currentValue == DrawerValue.Open ||
+                                drawerState.targetValue == DrawerValue.Open
+                        )
+                    }
                 }
             }
         ) {
@@ -1444,8 +1484,11 @@ fun AppNavigation(
                 drawerWidth = drawerWidth(),
                 drawerContent = { rightDrawerSheet() }
             ) {
-                navBody()
+                CompositionLocalProvider(LocalDensity provides interfaceDensity) {
+                    navBody()
+                }
             }
+        }
         }
     }
 

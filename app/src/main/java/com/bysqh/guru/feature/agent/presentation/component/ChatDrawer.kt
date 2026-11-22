@@ -67,6 +67,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -281,9 +287,22 @@ fun ChatDrawerContent(
     }
 
     val imeInset = rememberImeBottomInset()
+    val drawerFocusManager = LocalFocusManager.current
     Column(
         modifier = modifier
             .fillMaxSize()
+            // 按下抽屉内任意位置先清焦点：点搜索框以外的地方搜索框就失焦，
+            // 输入法随之收起；点中搜索框时它自己的按下事件会重新聚焦。
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        if (event.type == PointerEventType.Press) {
+                            drawerFocusManager.clearFocus()
+                        }
+                    }
+                }
+            }
             .background(settingsPageBackground())
             .windowInsetsPadding(
                 WindowInsets.systemBars.only(
@@ -985,11 +1004,28 @@ private fun ChatSearchField(
     onQueryChange: (String) -> Unit,
     onClear: () -> Unit
 ) {
+    // 抽屉展开时焦点会自动落到搜索框（Compose 1.12 起的行为，代码里没有任何 requestFocus），
+    // 于是没点它也会弹出输入法。默认禁止聚焦；只有按下搜索框时才放开，用户点击照常可用。
+    var searchFocusAllowed by remember { mutableStateOf(false) }
     ModelSearchField(
         query = query,
         onQueryChange = onQueryChange,
         placeholder = stringResource(R.string.chat_search_hint),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            // 失焦后复位闸门：抽屉下次展开时的自动聚焦会再次被拒绝。
+            .onFocusChanged { if (!it.hasFocus) searchFocusAllowed = false }
+            .focusProperties { canFocus = searchFocusAllowed }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        if (event.type == PointerEventType.Press && !searchFocusAllowed) {
+                            searchFocusAllowed = true
+                        }
+                    }
+                }
+            },
         trailing = if (query.isEmpty()) null else {
             {
                 IconButton(onClick = onClear, modifier = Modifier.size(24.dp)) {

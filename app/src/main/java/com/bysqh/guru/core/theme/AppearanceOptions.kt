@@ -18,6 +18,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.unit.Density
 import com.bysqh.guru.R
 import kotlin.math.roundToInt
 
@@ -70,6 +71,16 @@ enum class UiStyle(val id: String, val labelRes: Int) {
  * Miuix 下分组卡片 / 列表行 / 按钮形态会切换成 Miui 语言，而不是只换色板。
  */
 val LocalUiStyle = staticCompositionLocalOf { UiStyle.STANDARD }
+
+/**
+ * [二开] 未叠加界面缩放的字号密度。
+ *
+ * Material3 的 ModalNavigationDrawer 用 `remember(LocalDensity.current)` 缓存抽屉的锚点最小值，
+ * 而锚点初始化标志并不跟随该键重置。界面缩放一旦改变 Density，scrim 的透明度就用不匹配的
+ * 锚点算成 NaN，表现为「侧栏还在、右侧遮罩永久消失」。因此抽屉几何固定使用这里的原始密度，
+ * 字号缩放只作用于抽屉内部内容。
+ */
+internal val LocalSystemDensity = staticCompositionLocalOf { Density(1f) }
 
 /**
  * [二开] 是否正在显示自定义背景。
