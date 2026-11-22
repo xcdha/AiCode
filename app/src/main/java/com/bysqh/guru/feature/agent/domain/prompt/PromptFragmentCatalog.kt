@@ -116,15 +116,38 @@ class PromptFragmentCatalog @Inject constructor(
     /**
      * 渲染静态片段。
      *
-     * [skipIdentity] 为 true 时跳过 00-identity：调用方已有自己的身份文本（如角色身份），
-     * 再拼内置身份会在提示词里出现两段「你是……」，互相削弱指令权重。
+     * [skipIdentity] 为 true 时调用方已有自己的身份文本（角色身份），此时**只抽掉
+     * `00-identity.md` 的 `## 身份` 一节**，其余小节（如「## 官方文档」）照常保留。
+     *
+     * 早前是整份跳过 00-identity，导致开了角色就丢掉文档指引等非身份内容，
+     * 用户看到的现象是「有角色时内置提示词不生效」。
      */
     fun renderStatic(projectRoot: String?, skipIdentity: Boolean): String =
         list(projectRoot)
             .filter { it.number !in disabledNumbersCache }
-            .filter { !skipIdentity || it.number != IDENTITY_NUMBER }
-            .mapNotNull { it.content.replace(LEADING_COMMENT, "").trim().takeIf { text -> text.isNotEmpty() } }
+            .mapNotNull { fragment ->
+                val text = fragment.content.replace(LEADING_COMMENT, "").trim()
+                val body = if (skipIdentity && fragment.number == IDENTITY_NUMBER) {
+                    stripSection(text, IDENTITY_SECTION_TITLE)
+                } else {
+                    text
+                }
+                body.takeIf { it.isNotEmpty() }
+            }
             .joinToString("\n\n")
+
+    /** 去掉正文中标题为 [title] 的二级小节（`## title` 起，到下一个同级标题前）。 */
+    private fun stripSection(text: String, title: String): String {
+        val out = StringBuilder()
+        var skipping = false
+        for (line in text.lines()) {
+            if (line.trimStart().startsWith("## ")) {
+                skipping = line.substringAfter("## ").trim() == title
+            }
+            if (!skipping) out.appendLine(line)
+        }
+        return out.toString().trim()
+    }
 
     /** 「仅自定义片段」模式：只取项目层与全局层的自定义片段正文。 */
     fun renderCustomOnly(projectRoot: String?): String =
@@ -331,6 +354,9 @@ class PromptFragmentCatalog @Inject constructor(
         const val CUSTOM_DIR = "prompts.custom"
         /** 内置身份片段编号；角色身份存在时用它替换。 */
         const val IDENTITY_NUMBER = 0
+
+        /** 角色身份替代的内置小节标题。 */
+        private const val IDENTITY_SECTION_TITLE = "身份"
         const val LOCAL_DIR = "prompts"
         val LEADING_COMMENT = Regex("(?s)^\\s*<!--.*?-->\\s*")
         val DESCRIPTION = Regex("^\\s*<!--\\s*(.*?)\\s*-->", RegexOption.DOT_MATCHES_ALL)
