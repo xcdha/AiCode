@@ -97,9 +97,11 @@ class RoleRepository @Inject constructor(
 
     @Synchronized
     fun current(): Role {
-        val index = readIndex()
-        val roles = if (index.roles.isEmpty()) list() else index.roles
-        return roles.firstOrNull { it.id == index.currentId } ?: roles.first()
+        // 必须走 list()：它会比对内置 00-identity 并刷新默认角色的旧快照。
+        // 直接读 readIndex() 会拿到过期身份，品牌改名后提示词里仍是旧名字。
+        val roles = list()
+        val currentId = readIndex().currentId
+        return roles.firstOrNull { it.id == currentId } ?: roles.first()
     }
 
     @Synchronized
