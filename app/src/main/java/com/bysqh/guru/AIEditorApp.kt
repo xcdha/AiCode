@@ -166,6 +166,10 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var gestureSettings: com.bysqh.guru.feature.settings.data.repository.GestureSettingsRepository
 
+    /** [二开] 提示词片段开关：启动时把「被关闭的编号」刷进缓存，保证首轮对话就生效。 */
+    @Inject
+    lateinit var promptFragmentCatalog: com.bysqh.guru.feature.agent.domain.prompt.PromptFragmentCatalog
+
     /** 后台保活开关持久化。 */
     @Inject
     lateinit var keepaliveSettings: KeepaliveSettingsRepository
@@ -309,6 +313,8 @@ class AIEditorApp : Application(), Configuration.Provider {
         logDeviceInfo()
         // 补记 Java 未捕获异常处理器覆盖不到的异常退出（native 崩溃 / ANR / 低内存被杀 / 被信号杀死）。
         appScope.launch { reportAbnormalExits() }
+        // [二开] 预载片段开关缓存（DataStore 读取是挂起的，不能等到渲染提示词时再读）。
+        appScope.launch { promptFragmentCatalog.refreshDisabledCache() }
         // [二开] 跟随设置同步系统级预测性返回开关（App 锁 targetSdk 28，需反射打开）；失败静默降级。
         appScope.launch {
             gestureSettings.predictiveBackFlow.collectLatest { enabled ->

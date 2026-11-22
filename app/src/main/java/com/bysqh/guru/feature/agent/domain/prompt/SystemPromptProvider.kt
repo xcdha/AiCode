@@ -8,6 +8,7 @@ import com.bysqh.guru.feature.agent.domain.memory.MemoryScope
 import com.bysqh.guru.feature.agent.domain.model.AgentContext
 import com.bysqh.guru.feature.agent.domain.model.AgentMode
 import com.bysqh.guru.feature.agent.domain.model.GoalStatus
+import com.bysqh.guru.feature.agent.domain.role.RoleRepository
 import com.bysqh.guru.feature.agent.domain.skill.SkillRepository
 import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinition
 import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionRepository
@@ -39,7 +40,9 @@ class SystemPromptProvider @Inject constructor(
     private val promptFragmentCatalog: PromptFragmentCatalog,
     private val containerInstaller: ContainerInstaller,
     private val agentDefinitionRepository: AgentDefinitionRepository,
-    private val executionModeHolder: ExecutionModeHolder
+    private val executionModeHolder: ExecutionModeHolder,
+    // [二开] 角色身份：当前角色优先于内置 00-identity 片段
+    private val roleRepository: RoleRepository
 ) {
     // 抽象独立的 Source
     interface PromptSource {
@@ -49,7 +52,15 @@ class SystemPromptProvider @Inject constructor(
     private inner class StaticRuleSource : PromptSource {
         // 每次都重新读盘：未编辑时字符串一致，KV Cache 照常命中；编辑后立即生效，无需重启。
         // 技能/记忆等运行期内容由末尾的 99-runtime-context.md 片段用 {{GURU_*}} 变量承载。
-        override fun build(ctx: AgentContext): String = promptFragmentCatalog.renderStatic(ctx.projectRoot)
+        override fun build(ctx: AgentContext): String {
+            // [二开] 角色身份提示词放在规则最前：选中哪个角色，就用它的身份对话。
+            // 角色身份为空时保持上游行为（只用内置片段）；非空时跳过内置 00-identity，
+            // 否则提示词里会出现两段「你是……」，互相削弱指令权重。
+            val identity = runCatching { roleRepository.current().identity }.getOrDefault("").trim()
+            val rules = promptFragmentCatalog.renderStatic(ctx.projectRoot, skipIdentity = identity.isNotEmpty())
+            if (identity.isEmpty()) return rules
+            return "$identity\n\n$rules"
+        }
     }
 
     private inner class ActiveSkillsSource : PromptSource {

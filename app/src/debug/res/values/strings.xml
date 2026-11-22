@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AiCode (Debug)</string>
+    <!-- debug 包名后缀 .debug，与正式版可同机共存；名称带后缀便于区分 -->
+    <string name="app_name">Guru (Debug)</string>
 </resources>
