@@ -374,9 +374,9 @@ class MessagePersistenceUseCase @Inject constructor(
             )
         }
         return try {
-            val (mime, base64) = com.bysqh.guru.core.util.ImageDownscaler.downscaleToBase64(
-                file.readBytes(), mimeType.ifBlank { "image/jpeg" }
-            )
+            val (mime, base64) = com.bysqh.guru.core.util.ImageDownscaler.downscaleFileToBase64(
+                file, mimeType.ifBlank { "image/jpeg" }
+            ) ?: return null
             cacheImageBase64(key, CachedImage(mime, base64))
             com.bysqh.guru.feature.agent.domain.model.AgentImage(
                 mimeType = mime,

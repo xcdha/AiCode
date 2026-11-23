@@ -104,6 +104,11 @@
     <string name="settings_max_network_retries_desc">Exponential-backoff retries after a network failure</string>
     <string name="settings_retries_count">%1$d</string>
     <string name="settings_retries_input_hint">0 disables retries</string>
+    <string name="settings_general_remote">Remote</string>
+    <string name="settings_sftp_channel_limit">SFTP channels</string>
+    <string name="settings_sftp_channel_limit_desc">Concurrent file-transfer channels in remote mode; opened on demand, reclaimed after 30s idle</string>
+    <string name="settings_sftp_channel_limit_value">%1$d</string>
+    <string name="settings_sftp_channel_limit_input_hint">Range 1-20, default 3</string>
     <string name="settings_general_input">Input</string>
     <string name="settings_enter_to_send">Enter key sends message</string>
     <string name="settings_enter_to_send_desc">When off, Enter inserts a newline and you send with the button</string>
@@ -275,6 +280,8 @@
     <string name="provider_cache_anthropic_subtitle">Mark system/tools/messages prefixes with explicit cache breakpoints to cut repeated input cost</string>
     <string name="provider_cache_openai_chat_title">OpenAI-compatible cache key</string>
     <string name="provider_cache_openai_chat_subtitle">Send prompt_cache_key with requests</string>
+    <string name="provider_response_websocket_title">Responses WebSocket</string>
+    <string name="provider_response_websocket_subtitle">Reuse a connection and continue response state in long runs to reduce repeated context transfer</string>
     <string name="provider_section_dashboard">Custom Dashboard</string>
     <string name="provider_dashboard_script">Dashboard Script</string>
     <string name="provider_dashboard_script_placeholder">e.g. demo_balance.py</string>
@@ -528,6 +535,10 @@
     <string name="chat_add_attachment">Add attachment</string>
     <string name="chat_take_photo">Take photo</string>
     <string name="chat_reasoning_effort">Reasoning effort</string>
+    <string name="chat_fast_mode_title">Fast mode</string>
+    <string name="chat_fast_mode_label">Fast</string>
+    <string name="chat_fast_mode_cost_hint">Faster responses may incur additional charges</string>
+    <string name="chat_fast_mode_active_description">Fast mode on, reasoning %1$s</string>
     <string name="chat_reasoning_effort_none">None</string>
     <string name="chat_reasoning_effort_minimal">Minimal</string>
     <string name="chat_reasoning_effort_low">Low</string>
@@ -2102,6 +2113,7 @@
     <string name="browser_back">Back</string>
     <string name="browser_forward">Forward</string>
     <string name="browser_reload">Reload</string>
+    <string name="browser_render_process_gone">Web render process exited. Tap reload to recover.</string>
     <string name="browser_not_ready">Browser not ready. Enter a URL in the address bar to start browsing.</string>
     <string name="browser_new_tab">New tab</string>
     <string name="browser_close_tab">Close tab</string>
@@ -2462,4 +2474,9 @@
     <string name="appearance_swipe_back_desc">Swipe inward from the left or right edge to go back (the chat page keeps it for the sidebar)</string>
     <string name="appearance_predictive_back">Predictive back animation</string>
     <string name="appearance_predictive_back_desc">The page follows your finger; release past the threshold to go back, otherwise it springs back</string>
+    <string name="chat_touch_lock">Touch lock</string>
+    <string name="touch_lock_active_title">Touch lock active</string>
+    <string name="touch_lock_hold_hint">Hold %1$d s to exit</string>
+    <string name="touch_lock_holding_countdown">Keep holding (%1$d s)</string>
+    <string name="touch_lock_unlock_cd">Hold for 3 seconds to exit touch lock</string>
 </resources>

@@ -104,6 +104,11 @@
     <string name="settings_max_network_retries_desc">网络失败后的指数退避重试次数</string>
     <string name="settings_retries_count">%1$d 次</string>
     <string name="settings_retries_input_hint">填 0 表示不重试</string>
+    <string name="settings_general_remote">远程连接</string>
+    <string name="settings_sftp_channel_limit">SFTP 通道上限</string>
+    <string name="settings_sftp_channel_limit_desc">远程模式下并发读写文件的通道数，拥挤时按需新建、空闲 30 秒后回收</string>
+    <string name="settings_sftp_channel_limit_value">%1$d 条</string>
+    <string name="settings_sftp_channel_limit_input_hint">范围 1-20，默认 3</string>
     <string name="settings_general_input">输入</string>
     <string name="settings_enter_to_send">回车键发送消息</string>
     <string name="settings_enter_to_send_desc">关闭后回车换行，需点发送按钮发送</string>
@@ -275,6 +280,8 @@
     <string name="provider_cache_anthropic_subtitle">为 system/工具/消息前缀打显式缓存断点，降低重复输入成本</string>
     <string name="provider_cache_openai_chat_title">OpenAI 兼容缓存键</string>
     <string name="provider_cache_openai_chat_subtitle">为请求携带 prompt_cache_key 缓存键</string>
+    <string name="provider_response_websocket_title">Responses WebSocket</string>
+    <string name="provider_response_websocket_subtitle">长任务复用连接并续传响应状态，减少重复上下文传输</string>
     <string name="provider_section_dashboard">自定义面板</string>
     <string name="provider_dashboard_script">面板脚本</string>
     <string name="provider_dashboard_script_placeholder">例如 demo_balance.py</string>
@@ -528,6 +535,10 @@
     <string name="chat_add_attachment">添加附件</string>
     <string name="chat_take_photo">拍照</string>
     <string name="chat_reasoning_effort">思考强度</string>
+    <string name="chat_fast_mode_title">快速模式</string>
+    <string name="chat_fast_mode_label">Fast</string>
+    <string name="chat_fast_mode_cost_hint">响应更快，可能产生额外费用</string>
+    <string name="chat_fast_mode_active_description">Fast 模式已开启，思考强度 %1$s</string>
     <string name="chat_reasoning_effort_none">不思考</string>
     <string name="chat_reasoning_effort_minimal">极低</string>
     <string name="chat_reasoning_effort_low">低</string>
@@ -2101,6 +2112,7 @@
     <string name="browser_back">后退</string>
     <string name="browser_forward">前进</string>
     <string name="browser_reload">刷新</string>
+    <string name="browser_render_process_gone">网页渲染进程已退出，请点击刷新重新加载</string>
     <string name="browser_not_ready">浏览器未就绪，请在地址栏输入网址开始浏览</string>
     <string name="browser_new_tab">新建标签页</string>
     <string name="browser_close_tab">关闭标签页</string>
@@ -2461,4 +2473,9 @@
     <string name="appearance_swipe_back_desc">从屏幕左/右边缘向内滑动返回上一页（聊天页留给侧栏手势）</string>
     <string name="appearance_predictive_back">预测性返回动画</string>
     <string name="appearance_predictive_back_desc">拖动时页面跟手位移并预览，松手超过阈值完成返回，否则回弹</string>
+    <string name="chat_touch_lock">防误触</string>
+    <string name="touch_lock_active_title">防误触模式已开启</string>
+    <string name="touch_lock_hold_hint">长按 %1$d 秒退出</string>
+    <string name="touch_lock_holding_countdown">继续按住（%1$d 秒）</string>
+    <string name="touch_lock_unlock_cd">长按 3 秒退出防误触模式</string>
 </resources>

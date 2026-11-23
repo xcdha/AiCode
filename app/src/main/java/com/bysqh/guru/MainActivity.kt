@@ -3,6 +3,9 @@ package com.bysqh.guru
 import android.os.Build
 import android.os.Bundle
 import android.content.Context
+import android.os.SystemClock
+import android.view.KeyEvent
+import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.view.WindowManager
 import android.widget.Toast
@@ -74,6 +77,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -93,6 +98,7 @@ import com.bysqh.guru.core.ui.ImageViewerHost
 import com.bysqh.guru.core.ui.ImageViewerRequest
 import com.bysqh.guru.core.ui.LocalImageViewer
 import com.bysqh.guru.core.ui.PAGE_MOTION_MS
+import com.bysqh.guru.core.ui.TouchLockOverlay
 import com.bysqh.guru.core.ui.VerticalSplitHandle
 import com.bysqh.guru.core.ui.drawerWidth
 import com.bysqh.guru.core.ui.isExpandedWidth
@@ -101,6 +107,7 @@ import com.bysqh.guru.core.ui.pageExit
 import com.bysqh.guru.core.ui.rememberEndDrawerState
 import com.bysqh.guru.core.ui.rememberImageViewerState
 import com.bysqh.guru.core.ui.rememberViewerDecodeSpec
+import com.bysqh.guru.core.ui.resolveTouchLockTargetBrightness
 import com.bysqh.guru.core.util.ApkInstaller
 import com.bysqh.guru.feature.agent.presentation.AIAgentViewModel
 import com.bysqh.guru.feature.agent.presentation.AgentAttachment
@@ -161,15 +168,17 @@ import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
 import com.bysqh.guru.feature.terminal.presentation.TerminalViewModel
 import com.bysqh.guru.feature.terminal.presentation.component.TerminalScreen
 import com.bysqh.guru.feature.workspace.presentation.WorkspaceViewModel
+import com.bysqh.guru.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import com.bysqh.guru.R
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -222,6 +231,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var browserManager: com.bysqh.guru.feature.agent.domain.tool.browser.BrowserManager
 
+    private var lastStoppedElapsedMs: Long = 0L
+    private val touchLockActiveFlow = MutableStateFlow(false)
+    private var savedScreenBrightness: Float? = null
+    private var currentDarkTheme: Boolean = false
+
+    private companion object {
+        const val KEY_TOUCH_LOCK_ACTIVE = "touch_lock_active"
+        const val KEY_SAVED_BRIGHTNESS = "touch_lock_saved_brightness"
+    }
+
     override fun attachBaseContext(newBase: android.content.Context) {
         // 在 Activity 创建前同步应用用户选择的语言，确保冷启动也生效。
         // Hilt 尚未注入，直接从 SharedPreferences 同步读取。
@@ -239,11 +258,20 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("DEPRECATION") // 全局更新 application resources locale，createConfigurationContext 无法替代
     override fun onCreate(savedInstanceState: Bundle?) {
+        com.bysqh.guru.core.util.FileLogger.i(
+            "MainActivity",
+            "onCreate: restored=${savedInstanceState != null}, mem=${AIEditorApp.collectMemorySummary(this)}"
+        )
         // 从冷启动闪屏主题恢复为应用主主题
         setTheme(R.style.Theme_Guru)
         // 绘制到系统状态栏/导航栏之下，让应用背景与系统栏融为一体（消除割裂的色块）。
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        touchLockActiveFlow.value = savedInstanceState?.getBoolean(KEY_TOUCH_LOCK_ACTIVE) ?: false
+        if (savedInstanceState?.containsKey(KEY_SAVED_BRIGHTNESS) == true) {
+            savedScreenBrightness = savedInstanceState.getFloat(KEY_SAVED_BRIGHTNESS)
+        }
 
         // 挂载离屏 WebView 隐藏宿主，确保后台/离屏状态下 WebView 也能触发 onAttachedToWindow 完成首帧真实光栅化渲染
         val hiddenHost = android.widget.FrameLayout(this).apply {
@@ -272,10 +300,13 @@ class MainActivity : ComponentActivity() {
                 recreate()
             }
         }
-        // 屏幕常亮：窗口标志只在 Activity 可见时约束屏幕，退到后台系统自动放开，无需手动释放。
+        // 屏幕常亮：窗口标志只在 Activity 可见时约束屏幕，退到后台系统自动放开，无需手动释放；
+        // 进入防误触模式期间即便设置开关未开启，也强制维持前台常亮。
         lifecycleScope.launch {
-            screenOnSettings.enabledFlow.collect { enabled ->
-                if (enabled) {
+            combine(screenOnSettings.enabledFlow, touchLockActiveFlow) { screenOn, touchLock ->
+                screenOn || touchLock
+            }.distinctUntilChanged().collect { keepScreenOn ->
+                if (keepScreenOn) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 } else {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -316,11 +347,24 @@ class MainActivity : ComponentActivity() {
                 AppThemeMode.DARK -> true
                 AppThemeMode.LIGHT -> false
             }
+            val touchLockActive by touchLockActiveFlow.collectAsStateWithLifecycle()
             val view = LocalView.current
             SideEffect {
+                currentDarkTheme = darkTheme
                 val controller = WindowCompat.getInsetsController(window, view)
-                controller.isAppearanceLightStatusBars = !darkTheme
-                controller.isAppearanceLightNavigationBars = !darkTheme
+                controller.isAppearanceLightStatusBars = if (touchLockActive) false else !darkTheme
+                controller.isAppearanceLightNavigationBars = if (touchLockActive) false else !darkTheme
+            }
+
+            var appliedTouchLock by remember { mutableStateOf(false) }
+            LaunchedEffect(touchLockActive, view) {
+                if (touchLockActive) {
+                    appliedTouchLock = true
+                    applyTouchLockWindowMode(locked = true, darkTheme = currentDarkTheme, anchorView = view)
+                } else if (appliedTouchLock) {
+                    appliedTouchLock = false
+                    applyTouchLockWindowMode(locked = false, darkTheme = currentDarkTheme, anchorView = view)
+                }
             }
 
             LaunchedEffect(darkTheme) {
@@ -377,9 +421,11 @@ class MainActivity : ComponentActivity() {
                             AppNavigation(
                                 onboardingRepository = onboardingRepository,
                                 starPromptCoordinator = starPromptCoordinator,
-                                agreementAccepted = agreementAccepted
+                                agreementAccepted = agreementAccepted,
+                                touchLockActive = touchLockActive,
+                                onEnterTouchLock = { touchLockActiveFlow.value = true }
                             )
-                            if (agreementAccepted) {
+                            if (agreementAccepted && !touchLockActive) {
                                 // 全局凭据弹窗：覆盖所有页面，命令行 git 缺凭据在任意页面都能弹。
                                 com.bysqh.guru.feature.credentials.presentation.component.GlobalCredentialDialogHost(
                                     bridge = credentialRequestBridge
@@ -399,6 +445,11 @@ class MainActivity : ComponentActivity() {
                         }
                         // beta 包全局水印，置于最上层，不拦截触摸。
                         BetaWatermark()
+                        if (touchLockActive) {
+                            TouchLockOverlay(
+                                onUnlock = { touchLockActiveFlow.value = false }
+                            )
+                        }
                     }
                 }
             }
@@ -410,6 +461,12 @@ class MainActivity : ComponentActivity() {
                 TerminalKeepaliveService.enablePersistent(this@MainActivity)
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        browserManager.setAppForeground(true)
+        (applicationContext as? AIEditorApp)?.syncSshKeepalive()
     }
 
     override fun onResume() {
@@ -425,7 +482,107 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStop() {
+        lastStoppedElapsedMs = SystemClock.elapsedRealtime()
+        browserManager.setAppForeground(false)
+        super.onStop()
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ||
+            level in android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW..android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL
+        ) {
+            com.bysqh.guru.core.util.FileLogger.i(
+                "MainActivity",
+                "onTrimMemory: level=$level, mem=${AIEditorApp.collectMemorySummary(this)}"
+            )
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_TOUCH_LOCK_ACTIVE, touchLockActiveFlow.value)
+        savedScreenBrightness?.let { outState.putFloat(KEY_SAVED_BRIGHTNESS, it) }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && touchLockActiveFlow.value) {
+            applyTouchLockSystemBars(
+                locked = true,
+                darkTheme = currentDarkTheme,
+                anchorView = window.decorView
+            )
+        }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (touchLockActiveFlow.value && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun applyTouchLockWindowMode(
+        locked: Boolean,
+        darkTheme: Boolean,
+        anchorView: View = window.decorView
+    ) {
+        if (locked) {
+            if (savedScreenBrightness == null) {
+                savedScreenBrightness = window.attributes.screenBrightness
+            }
+            val target = resolveTouchLockTargetBrightness(
+                savedScreenBrightness ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            )
+            if (window.attributes.screenBrightness != target) {
+                window.attributes = window.attributes.apply { screenBrightness = target }
+            }
+        } else {
+            savedScreenBrightness?.let { previous ->
+                if (window.attributes.screenBrightness != previous) {
+                    window.attributes = window.attributes.apply { screenBrightness = previous }
+                }
+                savedScreenBrightness = null
+            }
+        }
+        applyTouchLockSystemBars(locked = locked, darkTheme = darkTheme, anchorView = anchorView)
+    }
+
+    private fun applyTouchLockSystemBars(
+        locked: Boolean,
+        darkTheme: Boolean,
+        anchorView: View = window.decorView
+    ) {
+        val controller = WindowCompat.getInsetsController(window, anchorView)
+        if (locked) {
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.isAppearanceLightStatusBars = false
+            controller.isAppearanceLightNavigationBars = false
+        } else {
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            controller.show(WindowInsetsCompat.Type.systemBars())
+            controller.isAppearanceLightStatusBars = !darkTheme
+            controller.isAppearanceLightNavigationBars = !darkTheme
+        }
+    }
+
     override fun onDestroy() {
+        val bgDurationMs = if (lastStoppedElapsedMs > 0L) {
+            SystemClock.elapsedRealtime() - lastStoppedElapsedMs
+        } else {
+            -1L
+        }
+        com.bysqh.guru.core.util.FileLogger.i(
+            "MainActivity",
+            "onDestroy: finishing=$isFinishing, changingConfigs=$isChangingConfigurations, " +
+                "mask=0x${Integer.toHexString(changingConfigurations)}, bgMs=$bgDurationMs, " +
+                "mem=${AIEditorApp.collectMemorySummary(this)}"
+        )
         browserManager.detachHiddenHost()
         PluginWebViewCache.clear()
         super.onDestroy()
@@ -557,7 +714,9 @@ private const val MAX_PANE_SPLIT = 0.7f
 fun AppNavigation(
     onboardingRepository: com.bysqh.guru.feature.onboarding.data.OnboardingRepository,
     starPromptCoordinator: StarPromptCoordinator,
-    agreementAccepted: Boolean
+    agreementAccepted: Boolean,
+    touchLockActive: Boolean = false,
+    onEnterTouchLock: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     // 抽屉几何用原始密度（见 LocalSystemDensity 说明），内容仍用当前缩放密度
@@ -1126,6 +1285,7 @@ fun AppNavigation(
                                     showMenuButton = !permanentDrawer,
                                     onNavigateToTerminal = { openWorkbench(WorkbenchPaneKind.TERMINAL) },
                                     onNavigateToGit = { openWorkbench(WorkbenchPaneKind.GIT) },
+                                    onEnterTouchLock = onEnterTouchLock,
                                     pluginEntries = headerPluginEntries,
                                     pluginLanguageTag = pluginLanguageTag,
                                     onPluginEntry = { entry -> runPluginEntry(entry, PluginEntryContext()) },
@@ -1542,7 +1702,8 @@ fun AppNavigation(
     // 检查更新弹窗（全局宿主：自动检测与关于页手动检查共用，覆盖所有页面）
     val updateCheckState by settingsViewModel.updateCheckState.collectAsStateWithLifecycle()
     val updateCheckVisible by settingsViewModel.updateCheckVisible.collectAsStateWithLifecycle()
-    val updateDialogShowing = agreementAccepted && updateCheckVisible && updateCheckState != UpdateCheckUiState.Idle
+    val updateDialogShowing =
+        agreementAccepted && !touchLockActive && updateCheckVisible && updateCheckState != UpdateCheckUiState.Idle
     if (updateDialogShowing) {
         val version = remember {
             runCatching {
@@ -1570,6 +1731,7 @@ fun AppNavigation(
         pluginActionPending = pendingPluginAction != null,
         activeSlotPageOpen = activeSlotPage != null,
         drawerOpen = (!permanentDrawer && drawerState.isOpen) || rightDrawerState.isOpen,
+        touchLockActive = touchLockActive,
         currentRoute = currentRoute
     )
     LaunchedEffect(uiGate) {
@@ -1589,7 +1751,7 @@ fun AppNavigation(
     }
 
     // 首次启动引导覆层（覆盖所有路由之上，全程常驻顶层，页面切换平滑过渡绝不闪烁）。
-    if (agreementAccepted && onboardingUiState.active) {
+    if (agreementAccepted && onboardingUiState.active && !touchLockActive) {
         OnboardingOverlay(
             stateHolder = onboardingStateHolder,
             coordinator = onboardingCoordinator,

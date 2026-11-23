@@ -26,6 +26,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -50,6 +51,9 @@ class StatefulAgentWorkflowTest {
     private val outputStore = mockk<com.bysqh.guru.feature.agent.domain.tool.ToolOutputStore>(relaxed = true)
     private val policy = mockk<com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine>(relaxed = true)
     private val sessions = mockk<com.bysqh.guru.feature.agent.domain.session.SessionUseCase>(relaxed = true)
+    private val planApprovalManager = mockk<com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalManager>(relaxed = true)
+    private val notificationCenter = mockk<com.bysqh.guru.feature.agent.domain.notification.AgentNotificationCenter>(relaxed = true)
+    private val eventInjector = mockk<com.bysqh.guru.feature.agent.domain.notification.AgentEventInjector>(relaxed = true)
     private val workflow = StatefulAgentWorkflow(
         toolRegistry = tools,
         aiProviderRepository = providers,
@@ -58,7 +62,7 @@ class StatefulAgentWorkflowTest {
         permissionManager = mockk(relaxed = true),
         policyEngine = policy,
         contextCompactor = compactor,
-        planApprovalManager = mockk(relaxed = true),
+        planApprovalManager = planApprovalManager,
         toolOutputStore = outputStore,
         modelMetadataService = metadata,
         compactionModelSettingsRepository = compactionSettings,
@@ -68,8 +72,8 @@ class StatefulAgentWorkflowTest {
         messagePersistenceUseCase = mockk(relaxed = true),
         checkpointManager = checkpoints,
         llmCallRecordDao = mockk(relaxed = true),
-        agentNotificationCenter = mockk(relaxed = true),
-        eventInjector = mockk(relaxed = true),
+        agentNotificationCenter = notificationCenter,
+        eventInjector = eventInjector,
         fileAccess = mockk(relaxed = true),
         pluginHookDispatcher = hooks,
         appContext = mockk(relaxed = true)
@@ -94,7 +98,7 @@ class StatefulAgentWorkflowTest {
         coEvery { compactionSettings.getCompactionProviderId() } returns ""
         coEvery { metadata.resolve(any(), any(), any()) } returns ModelMetadata(id = "model", contextTokens = 128_000)
         coEvery {
-            compactor.compactIfNeeded(any(), any(), any(), any(), any(), any(), any(), any(), any())
+            compactor.compactIfNeeded(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } answers { CompactionResult(firstArg(), compacted = false) }
     }
 
@@ -212,6 +216,25 @@ class StatefulAgentWorkflowTest {
         assertEquals("final thinking", response.reasoning)
         assertEquals(1, events.filterIsInstance<AgentEvent.Retrying>().size)
         assertEquals(1, events.filterIsInstance<AgentEvent.KeySwitched>().size)
+    }
+
+    @Test
+    fun cancellationDuringModelStreamPropagatesWithoutWorkflowFailureEvents() = runTest {
+        val streamStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+        every { provider.completeStream(any(), any(), any(), any()) } returns flow {
+            streamStarted.complete(Unit)
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        val events = mutableListOf<AgentEvent>()
+        val job = launch {
+            workflow.executeEvents("request", context, emptyList()).collect { events.add(it) }
+        }
+        streamStarted.await()
+        job.cancel()
+        job.join()
+
+        assertTrue(events.none { it is AgentEvent.Failed || it is AgentEvent.Completed })
     }
 
     @Test
@@ -361,5 +384,223 @@ class StatefulAgentWorkflowTest {
         assertEquals(response.messageId, events.filterIsInstance<AgentEvent.ReasoningDelta>().single().messageId)
         assertTrue(events.none { it is AgentEvent.AssistantDelta })
         assertEquals(1, events.filterIsInstance<AgentEvent.Failed>().size)
+    }
+
+    @Test
+    fun exitingPlanWithTurnContextSyncsPermissionModeToAutoForSubsequentBash() = runTest {
+        every { prompts.resolvePrompt(any()) } returns ""
+        every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
+        coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
+
+        val planTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        every { planTool.name } returns "planMode"
+        coEvery { planTool.executeWithContext(any(), any()) } returns
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("exited"))
+
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        every { bashTool.name } returns "Bash"
+        coEvery { bashTool.executeWithContext(any(), any()) } returns
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+
+        every { tools.getTool("planMode") } returns planTool
+        every { tools.getTool("Bash") } returns bashTool
+        coEvery {
+            planApprovalManager.awaitApproval(any(), any())
+        } returns com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
+
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
+        coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } answers {
+            val mode = arg<com.bysqh.guru.feature.agent.domain.model.AgentMode>(3)
+            if (mode == com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN) {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
+                    emptyList(),
+                    denyReason = "denied in plan"
+                )
+            } else {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+                    emptyList()
+                )
+            }
+        }
+
+        val exitArgs = mapOf(
+            "action" to kotlinx.serialization.json.JsonPrimitive("exit"),
+            "reason" to kotlinx.serialization.json.JsonPrimitive("ready")
+        )
+        val bashArgs = mapOf("command" to kotlinx.serialization.json.JsonPrimitive("ls"))
+        every { provider.completeStream(any(), any(), any(), any()) } returnsMany listOf(
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c1", "planMode", exitArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c2", "Bash", bashArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("done")))
+        )
+
+        val runContext = context.copy(
+            sessionId = "sess-1",
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+            modeBeforePlan = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
+            turn = WorkflowTurnContext(
+                runId = "run-1",
+                sessionRef = SessionRef.Room("sess-1"),
+                providerId = null,
+                model = null,
+                workflowState = null,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+                persistence = TurnPersistence.Noop
+            )
+        )
+
+        val events = collectEvents(runContext)
+        val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>()
+        assertEquals(listOf(com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
+        assertTrue(finished.none { it.isError })
+    }
+
+    @Test
+    fun pendingManualModeChangeToAutoSyncsTurnPermissionBeforeRequestPermission() = runTest {
+        every { prompts.resolvePrompt(any()) } returns ""
+        every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
+        every { eventInjector.inject(any(), any()) } answers { firstArg() }
+        coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
+
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        every { bashTool.name } returns "Bash"
+        coEvery { bashTool.executeWithContext(any(), any()) } returns
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+        every { tools.getTool("Bash") } returns bashTool
+
+        val pendingModeChange = com.bysqh.guru.feature.agent.domain.notification.PendingNotification(
+            kind = com.bysqh.guru.feature.agent.domain.notification.AgentNotificationKind.MODE_CHANGE,
+            sourceId = "user",
+            title = "AUTO",
+            outcome = com.bysqh.guru.feature.agent.domain.notification.NotificationOutcome.COMPLETED,
+            newMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
+            seq = 1L
+        )
+        every { notificationCenter.peek("sess-1") } returns listOf(pendingModeChange)
+
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
+        coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } returns
+            com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+                emptyList()
+            )
+
+        val bashArgs = mapOf("command" to kotlinx.serialization.json.JsonPrimitive("ls"))
+        every { provider.completeStream(any(), any(), any(), any()) } returnsMany listOf(
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c1", "Bash", bashArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("done")))
+        )
+
+        val runContext = context.copy(
+            sessionId = "sess-1",
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+            turn = WorkflowTurnContext(
+                runId = "run-1",
+                sessionRef = SessionRef.Room("sess-1"),
+                providerId = null,
+                model = null,
+                workflowState = null,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+                persistence = TurnPersistence.Noop
+            )
+        )
+
+        val events = collectEvents(runContext)
+        val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>().single()
+        assertEquals(listOf(com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
+        assertTrue(!finished.isError)
+        io.mockk.verify(exactly = 1) { notificationCenter.ack("sess-1", listOf(1L)) }
+    }
+
+    @Test
+    fun rejectedPlanExitRollsBackPermissionModeToPlanAndPreservesModeBeforePlan() = runTest {
+        every { prompts.resolvePrompt(any()) } returns ""
+        every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
+        coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
+
+        val planTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        every { planTool.name } returns "planMode"
+        coEvery { planTool.executeWithContext(any(), any()) } returns
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        every { bashTool.name } returns "Bash"
+        coEvery { bashTool.executeWithContext(any(), any()) } returns
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+
+        every { tools.getTool("planMode") } returns planTool
+        every { tools.getTool("Bash") } returns bashTool
+        coEvery {
+            planApprovalManager.awaitApproval(any(), any())
+        } returnsMany listOf(
+            com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.REFINE,
+            com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
+        )
+
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
+        coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } answers {
+            val mode = arg<com.bysqh.guru.feature.agent.domain.model.AgentMode>(3)
+            if (mode == com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN) {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
+                    emptyList(),
+                    denyReason = "denied in plan"
+                )
+            } else {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+                    emptyList()
+                )
+            }
+        }
+
+        val enterArgs = mapOf(
+            "action" to kotlinx.serialization.json.JsonPrimitive("enter"),
+            "reason" to kotlinx.serialization.json.JsonPrimitive("plan")
+        )
+        val exitArgs = mapOf(
+            "action" to kotlinx.serialization.json.JsonPrimitive("exit"),
+            "reason" to kotlinx.serialization.json.JsonPrimitive("ready")
+        )
+        val bashArgs = mapOf("command" to kotlinx.serialization.json.JsonPrimitive("ls"))
+        every { provider.completeStream(any(), any(), any(), any()) } returnsMany listOf(
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c1", "planMode", enterArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c2", "planMode", exitArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c3", "Bash", bashArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c4", "planMode", exitArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("", toolCalls = listOf(ToolCall("c5", "Bash", bashArgs))))),
+            flowOf(AIStreamChunk.Final(AIResponse("done")))
+        )
+
+        val runContext = context.copy(
+            sessionId = "sess-1",
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
+            turn = WorkflowTurnContext(
+                runId = "run-1",
+                sessionRef = SessionRef.Room("sess-1"),
+                providerId = null,
+                model = null,
+                workflowState = null,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
+                persistence = TurnPersistence.Noop
+            )
+        )
+
+        val events = collectEvents(runContext)
+        val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>()
+        assertEquals(
+            listOf(
+                com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+                com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO
+            ),
+            evaluatedModes
+        )
+        assertTrue(finished.first { it.id == "c3" }.isError)
+        assertTrue(!finished.first { it.id == "c5" }.isError)
     }
 }

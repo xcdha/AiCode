@@ -35,6 +35,8 @@ import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.AppSwitch
 import com.bysqh.guru.core.ui.AppTextField
+import com.bysqh.guru.feature.settings.data.repository.MAX_SFTP_CHANNEL_LIMIT
+import com.bysqh.guru.feature.settings.data.repository.MIN_SFTP_CHANNEL_LIMIT
 import com.bysqh.guru.feature.settings.data.repository.StartupSessionMode
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.Check
@@ -54,6 +56,8 @@ internal fun GeneralSettingsSection(
     onSetStreamIdleTimeoutSec: (Int) -> Unit,
     maxNetworkRetries: Int,
     onSetMaxNetworkRetries: (Int) -> Unit,
+    sftpChannelLimit: Int,
+    onSetSftpChannelLimit: (Int) -> Unit,
     enterToSend: Boolean,
     onToggleEnterToSend: (Boolean) -> Unit,
     autoExpandReasoning: Boolean,
@@ -73,6 +77,7 @@ internal fun GeneralSettingsSection(
     var editingFirstByteTimeout by remember { mutableStateOf(false) }
     var editingStreamIdleTimeout by remember { mutableStateOf(false) }
     var editingMaxNetworkRetries by remember { mutableStateOf(false) }
+    var editingSftpChannelLimit by remember { mutableStateOf(false) }
     var editingCompactionThreshold by remember { mutableStateOf(false) }
     var editingSendFileMaxSize by remember { mutableStateOf(false) }
     var editingGoalMaxTurns by remember { mutableStateOf(false) }
@@ -218,6 +223,23 @@ internal fun GeneralSettingsSection(
             )
         }
 
+        SettingsGroupHeader(text = stringResource(R.string.settings_general_remote))
+        SettingsGroup {
+            SettingsRow(
+                icon = null,
+                title = stringResource(R.string.settings_sftp_channel_limit),
+                subtitle = stringResource(R.string.settings_sftp_channel_limit_desc),
+                onClick = { editingSftpChannelLimit = true },
+                trailing = {
+                    Text(
+                        text = stringResource(R.string.settings_sftp_channel_limit_value, sftpChannelLimit),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.semanticColors.subtleText
+                    )
+                }
+            )
+        }
+
         SettingsGroupHeader(text = stringResource(R.string.settings_general_tools))
         SettingsGroup {
             SettingsRow(
@@ -314,6 +336,21 @@ internal fun GeneralSettingsSection(
                 editingMaxNetworkRetries = false
             },
             onDismiss = { editingMaxNetworkRetries = false }
+        )
+    }
+
+    if (editingSftpChannelLimit) {
+        NumberInputDialog(
+            title = stringResource(R.string.settings_sftp_channel_limit),
+            initialValue = sftpChannelLimit,
+            hint = stringResource(R.string.settings_sftp_channel_limit_input_hint),
+            minValue = MIN_SFTP_CHANNEL_LIMIT,
+            maxValue = MAX_SFTP_CHANNEL_LIMIT,
+            onConfirm = {
+                onSetSftpChannelLimit(it)
+                editingSftpChannelLimit = false
+            },
+            onDismiss = { editingSftpChannelLimit = false }
         )
     }
 

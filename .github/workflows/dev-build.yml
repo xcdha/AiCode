@@ -1,11 +1,11 @@
 name: Dev Build
 
-# push 到 dev 时自动构建 arm64 Release APK，产物上传到 Actions Artifacts。
+# push 到 dev、换基座分支或上游同步分支时自动构建 arm64 Release APK，产物上传到 Actions Artifacts。
 # 用途：日常验证不再需要本地 Gradle 构建（本地是 aarch64 容器，编译一次要十几分钟且占满 CPU）。
 # 正式发版走 android-release.yml（打 v* tag），这里只出可安装的验证包，不创建 Release。
 on:
   push:
-    branches: [ dev, feat/rebase-clean ]
+    branches: [ dev, feat/rebase-clean, 'sync/**' ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
