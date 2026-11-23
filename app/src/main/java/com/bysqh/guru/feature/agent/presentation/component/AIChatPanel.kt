@@ -714,6 +714,7 @@ fun AIChatPanel(
     viewModel: AIAgentViewModel,
     onNavigateToTerminal: () -> Unit = {},
     onNavigateToGit: () -> Unit = {},
+    onEnterTouchLock: () -> Unit = {},
     pluginEntries: List<PluginUiEntry> = emptyList(),
     pluginLanguageTag: String = "zh-CN",
     onPluginEntry: (PluginUiEntry) -> Unit = {},
@@ -950,6 +951,7 @@ fun AIChatPanel(
     val canUploadFiles = projectRoot.isNotBlank() && activeModelMetadata?.supportsTools == true
     val canUploadImages = projectRoot.isNotBlank()
     val reasoningEffort by viewModel.currentSessionReasoningEffort.collectAsStateWithLifecycle()
+    val fastMode by viewModel.currentSessionFastMode.collectAsStateWithLifecycle()
 
     val providerDashboards by (settingsViewModel?.providerDashboards?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(emptyMap()) })
     val currentDashboardState = activeProvider?.let { providerDashboards[it.id] } ?: ProviderDashboardState.Idle
@@ -1607,6 +1609,7 @@ fun AIChatPanel(
                 onNewChat = { viewModel.newSession() },
                 onNavigateToTerminal = onNavigateToTerminal,
                 onNavigateToGit = onNavigateToGit,
+                onEnterTouchLock = onEnterTouchLock,
                 currentMode = currentMode,
                 onToggleMode = { viewModel.setSessionMode(it) },
                 connectionState = connectionState?.takeIf { isRemote && isBuiltinRemoteSsh },
@@ -1864,6 +1867,8 @@ fun AIChatPanel(
                 onClearGoal = { viewModel.clearGoal() },
                 reasoningEffort = reasoningEffort,
                 onReasoningEffortChange = { viewModel.setSessionReasoningEffort(it) },
+                fastMode = fastMode,
+                onFastModeChange = { viewModel.setSessionFastMode(it) },
                 pendingAttachments = pendingAttachments,
                 onRemoveAttachment = ::removePendingAttachment,
                 canUploadFiles = canUploadFiles,

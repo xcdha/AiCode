@@ -297,6 +297,7 @@ fun SettingsScreen(
     val firstByteTimeoutSec by viewModel.firstByteTimeoutSec.collectAsStateWithLifecycle()
     val streamIdleTimeoutSec by viewModel.streamIdleTimeoutSec.collectAsStateWithLifecycle()
     val maxNetworkRetries by viewModel.maxNetworkRetries.collectAsStateWithLifecycle()
+    val sftpChannelLimit by viewModel.sftpChannelLimit.collectAsStateWithLifecycle()
     val enterToSend by viewModel.enterToSend.collectAsStateWithLifecycle()
     val autoExpandReasoning by viewModel.autoExpandReasoning.collectAsStateWithLifecycle()
     val compactionThresholdPercent by viewModel.compactionThresholdPercent.collectAsStateWithLifecycle()
@@ -509,11 +510,12 @@ fun SettingsScreen(
         PluginThemeTokens.variables(pluginColorScheme, pluginSemanticColors, pluginThemeFontScale)
     }
     val pluginThemeBackground = MaterialTheme.semanticColors.pageBackground.toArgb()
+    // 仅当本次会话实际打开过插件页（lastPageKey 非空）且缓存因内存回收被清空时才按需预热，
+    // 避免用户每次仅进设置改开关或看日志就白白拉起 Chromium WebView 进程。
     LaunchedEffect(pluginsLoaded, pluginPages) {
+        val lastKey = PluginWebViewCache.lastPageKey ?: return@LaunchedEffect
         if (!pluginsLoaded || pluginPages.isEmpty() || PluginWebViewCache.hasCachedWebView) return@LaunchedEffect
-        val target = PluginWebViewCache.lastPageKey
-            ?.let { key -> pluginPages.firstOrNull { it.cacheKey == key } }
-            ?: pluginPages.first()
+        val target = pluginPages.firstOrNull { it.cacheKey == lastKey } ?: return@LaunchedEffect
         delay(200)
         // 预热等待期间用户可能已打开插件页，此时不要再替换掉正在显示的实例。
         if (PluginWebViewCache.hasCachedWebView) return@LaunchedEffect
@@ -528,7 +530,8 @@ fun SettingsScreen(
                     PluginWebViewCache.markLoaded(target.cacheKey, PluginWebViewFactory.pageUrl(target), view)
                     view.evaluateJavascript(PluginThemeTokens.applyScript(pluginThemeVariables), null)
                 },
-                onMainFrameError = {}
+                onMainFrameError = {},
+                onRenderProcessGone = { dead -> PluginWebViewCache.evictView(dead) }
             )
             val bridge = pluginsViewModel.createWebBridge(
                 page = target,
@@ -548,6 +551,10 @@ fun SettingsScreen(
         }.onFailure { e ->
             FileLogger.w("SettingsScreen", "插件页预热失败", e)
         }
+    }
+    // 离开设置页时及时释放未挂载的插件页缓存，降低回到对话页后后台 Chromium 内存常驻。
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { PluginWebViewCache.trimIdle() }
     }
     var selectedSubAgent by remember { mutableStateOf<SubAgentUiEntry?>(null) }
     var subAgentToDelete by remember { mutableStateOf<SubAgentUiEntry?>(null) }
@@ -1367,6 +1374,8 @@ fun SettingsScreen(
                     onSetStreamIdleTimeoutSec = { viewModel.setStreamIdleTimeoutSec(it) },
                     maxNetworkRetries = maxNetworkRetries,
                     onSetMaxNetworkRetries = { viewModel.setMaxNetworkRetries(it) },
+                    sftpChannelLimit = sftpChannelLimit,
+                    onSetSftpChannelLimit = { viewModel.setSftpChannelLimit(it) },
                     enterToSend = enterToSend,
                     onToggleEnterToSend = { viewModel.setEnterToSend(it) },
                     autoExpandReasoning = autoExpandReasoning,

@@ -87,6 +87,7 @@ import com.bysqh.guru.core.theme.Radius
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.core.ui.rememberImeBottomInset
+import com.bysqh.guru.core.ui.ExpandableChevronIcon
 import com.bysqh.guru.feature.onboarding.domain.OnboardingStep
 import com.bysqh.guru.feature.onboarding.presentation.onboardingTarget
 import com.bysqh.guru.feature.agent.domain.command.SlashCommand
@@ -111,9 +112,9 @@ import com.bysqh.guru.feature.settings.domain.model.AIProviderConfig
 import com.bysqh.guru.feature.settings.domain.model.ModelMetadata
 import com.bysqh.guru.feature.settings.domain.model.modelMetadataKey
 import com.bysqh.guru.feature.settings.domain.model.ProviderDashboardState
+import com.bysqh.guru.feature.settings.domain.model.ProviderType
 import com.bysqh.guru.feature.workspace.presentation.WorkspaceViewModel
 import com.bysqh.guru.feature.workspace.presentation.component.WorkspaceIconButton
-import com.bysqh.guru.core.ui.ExpandableChevronIcon
 import compose.icons.FeatherIcons
 import compose.icons.feathericons.AlertCircle
 import compose.icons.feathericons.ArrowUp
@@ -168,6 +169,8 @@ internal fun ChatInputBar(
     onClearGoal: () -> Unit = {},
     reasoningEffort: ReasoningEffort,
     onReasoningEffortChange: (ReasoningEffort) -> Unit,
+    fastMode: Boolean,
+    onFastModeChange: (Boolean) -> Unit,
     pendingAttachments: List<PendingUploadAttachment>,
     onRemoveAttachment: (Int) -> Unit,
     canUploadFiles: Boolean,
@@ -625,13 +628,16 @@ internal fun ChatInputBar(
                         val capability = reasoningCapabilityOf(activeProvider, activeProvider?.effectiveModel.orEmpty(), modelMetadata)
                         val hasReasoningControl = !capability.isKnown ||
                             capability.levels.isNotEmpty() || capability.canDisable
-                        if (hasReasoningControl) {
+                        if (hasReasoningControl || activeProvider?.type == ProviderType.OPENAI) {
                             ReasoningEffortSelector(
                                 effort = reasoningEffort,
                                 capability = capability,
                                 protocol = activeProvider?.let { reasoningProtocolOf(it) } ?: ReasoningProtocol.OPENAI_CHAT,
                                 model = activeProvider?.effectiveModel.orEmpty(),
                                 onChange = onReasoningEffortChange,
+                                fastMode = fastMode,
+                                showFastMode = activeProvider?.type == ProviderType.OPENAI,
+                                onFastModeChange = onFastModeChange,
                                 enabled = !isBusy
                             )
                         }
