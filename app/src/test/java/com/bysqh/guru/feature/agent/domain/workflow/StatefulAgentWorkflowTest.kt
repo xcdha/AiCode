@@ -391,36 +391,36 @@ class StatefulAgentWorkflowTest {
         every { prompts.resolvePrompt(any()) } returns ""
         every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
         coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
-            com.aicode.feature.plugin.runtime.ToolBeforeHookResult()
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
 
-        val planTool = mockk<com.aicode.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        val planTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
         every { planTool.name } returns "planMode"
         coEvery { planTool.executeWithContext(any(), any()) } returns
-            com.aicode.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("exited"))
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("exited"))
 
-        val bashTool = mockk<com.aicode.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
         every { bashTool.name } returns "Bash"
         coEvery { bashTool.executeWithContext(any(), any()) } returns
-            com.aicode.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
 
         every { tools.getTool("planMode") } returns planTool
         every { tools.getTool("Bash") } returns bashTool
         coEvery {
             planApprovalManager.awaitApproval(any(), any())
-        } returns com.aicode.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
+        } returns com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
 
-        val evaluatedModes = mutableListOf<com.aicode.feature.agent.domain.model.AgentMode>()
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
         coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } answers {
-            val mode = arg<com.aicode.feature.agent.domain.model.AgentMode>(3)
-            if (mode == com.aicode.feature.agent.domain.model.AgentMode.PLAN) {
-                com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
-                    com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
+            val mode = arg<com.bysqh.guru.feature.agent.domain.model.AgentMode>(3)
+            if (mode == com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN) {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
                     emptyList(),
                     denyReason = "denied in plan"
                 )
             } else {
-                com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
-                    com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
                     emptyList()
                 )
             }
@@ -439,22 +439,22 @@ class StatefulAgentWorkflowTest {
 
         val runContext = context.copy(
             sessionId = "sess-1",
-            mode = com.aicode.feature.agent.domain.model.AgentMode.PLAN,
-            modeBeforePlan = com.aicode.feature.agent.domain.model.AgentMode.AUTO,
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+            modeBeforePlan = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
             turn = WorkflowTurnContext(
                 runId = "run-1",
                 sessionRef = SessionRef.Room("sess-1"),
                 providerId = null,
                 model = null,
                 workflowState = null,
-                permissionMode = com.aicode.feature.agent.domain.model.AgentMode.PLAN,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
                 persistence = TurnPersistence.Noop
             )
         )
 
         val events = collectEvents(runContext)
         val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>()
-        assertEquals(listOf(com.aicode.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
+        assertEquals(listOf(com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
         assertTrue(finished.none { it.isError })
     }
 
@@ -464,28 +464,28 @@ class StatefulAgentWorkflowTest {
         every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
         every { eventInjector.inject(any(), any()) } answers { firstArg() }
         coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
-            com.aicode.feature.plugin.runtime.ToolBeforeHookResult()
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
 
-        val bashTool = mockk<com.aicode.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
         every { bashTool.name } returns "Bash"
         coEvery { bashTool.executeWithContext(any(), any()) } returns
-            com.aicode.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
         every { tools.getTool("Bash") } returns bashTool
 
-        val pendingModeChange = com.aicode.feature.agent.domain.notification.PendingNotification(
-            kind = com.aicode.feature.agent.domain.notification.AgentNotificationKind.MODE_CHANGE,
+        val pendingModeChange = com.bysqh.guru.feature.agent.domain.notification.PendingNotification(
+            kind = com.bysqh.guru.feature.agent.domain.notification.AgentNotificationKind.MODE_CHANGE,
             sourceId = "user",
             title = "AUTO",
-            outcome = com.aicode.feature.agent.domain.notification.NotificationOutcome.COMPLETED,
-            newMode = com.aicode.feature.agent.domain.model.AgentMode.AUTO,
+            outcome = com.bysqh.guru.feature.agent.domain.notification.NotificationOutcome.COMPLETED,
+            newMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
             seq = 1L
         )
         every { notificationCenter.peek("sess-1") } returns listOf(pendingModeChange)
 
-        val evaluatedModes = mutableListOf<com.aicode.feature.agent.domain.model.AgentMode>()
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
         coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } returns
-            com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
-                com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+            com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
                 emptyList()
             )
 
@@ -497,21 +497,21 @@ class StatefulAgentWorkflowTest {
 
         val runContext = context.copy(
             sessionId = "sess-1",
-            mode = com.aicode.feature.agent.domain.model.AgentMode.PLAN,
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
             turn = WorkflowTurnContext(
                 runId = "run-1",
                 sessionRef = SessionRef.Room("sess-1"),
                 providerId = null,
                 model = null,
                 workflowState = null,
-                permissionMode = com.aicode.feature.agent.domain.model.AgentMode.PLAN,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
                 persistence = TurnPersistence.Noop
             )
         )
 
         val events = collectEvents(runContext)
         val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>().single()
-        assertEquals(listOf(com.aicode.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
+        assertEquals(listOf(com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO), evaluatedModes)
         assertTrue(!finished.isError)
         io.mockk.verify(exactly = 1) { notificationCenter.ack("sess-1", listOf(1L)) }
     }
@@ -521,39 +521,39 @@ class StatefulAgentWorkflowTest {
         every { prompts.resolvePrompt(any()) } returns ""
         every { outputStore.process(any(), any(), any()) } answers { thirdArg() }
         coEvery { hooks.beforeToolCall(any(), any(), any(), any(), any(), any(), any(), any()) } returns
-            com.aicode.feature.plugin.runtime.ToolBeforeHookResult()
+            com.bysqh.guru.feature.plugin.runtime.ToolBeforeHookResult()
 
-        val planTool = mockk<com.aicode.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        val planTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
         every { planTool.name } returns "planMode"
         coEvery { planTool.executeWithContext(any(), any()) } returns
-            com.aicode.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
 
-        val bashTool = mockk<com.aicode.feature.agent.domain.tool.AgentTool>(relaxed = true)
+        val bashTool = mockk<com.bysqh.guru.feature.agent.domain.tool.AgentTool>(relaxed = true)
         every { bashTool.name } returns "Bash"
         coEvery { bashTool.executeWithContext(any(), any()) } returns
-            com.aicode.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
+            com.bysqh.guru.feature.agent.domain.tool.ToolResult.Success(kotlinx.serialization.json.JsonPrimitive("ok"))
 
         every { tools.getTool("planMode") } returns planTool
         every { tools.getTool("Bash") } returns bashTool
         coEvery {
             planApprovalManager.awaitApproval(any(), any())
         } returnsMany listOf(
-            com.aicode.feature.agent.domain.tool.mode.PlanApprovalChoice.REFINE,
-            com.aicode.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
+            com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.REFINE,
+            com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalChoice.APPROVE
         )
 
-        val evaluatedModes = mutableListOf<com.aicode.feature.agent.domain.model.AgentMode>()
+        val evaluatedModes = mutableListOf<com.bysqh.guru.feature.agent.domain.model.AgentMode>()
         coEvery { policy.evaluate(bashTool, "Bash", any(), capture(evaluatedModes)) } answers {
-            val mode = arg<com.aicode.feature.agent.domain.model.AgentMode>(3)
-            if (mode == com.aicode.feature.agent.domain.model.AgentMode.PLAN) {
-                com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
-                    com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
+            val mode = arg<com.bysqh.guru.feature.agent.domain.model.AgentMode>(3)
+            if (mode == com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN) {
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.DENY,
                     emptyList(),
                     denyReason = "denied in plan"
                 )
             } else {
-                com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
-                    com.aicode.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
+                com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.EvalResult(
+                    com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine.Verdict.ALLOW,
                     emptyList()
                 )
             }
@@ -579,14 +579,14 @@ class StatefulAgentWorkflowTest {
 
         val runContext = context.copy(
             sessionId = "sess-1",
-            mode = com.aicode.feature.agent.domain.model.AgentMode.AUTO,
+            mode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
             turn = WorkflowTurnContext(
                 runId = "run-1",
                 sessionRef = SessionRef.Room("sess-1"),
                 providerId = null,
                 model = null,
                 workflowState = null,
-                permissionMode = com.aicode.feature.agent.domain.model.AgentMode.AUTO,
+                permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO,
                 persistence = TurnPersistence.Noop
             )
         )
@@ -595,8 +595,8 @@ class StatefulAgentWorkflowTest {
         val finished = events.filterIsInstance<AgentEvent.ToolCallFinished>()
         assertEquals(
             listOf(
-                com.aicode.feature.agent.domain.model.AgentMode.PLAN,
-                com.aicode.feature.agent.domain.model.AgentMode.AUTO
+                com.bysqh.guru.feature.agent.domain.model.AgentMode.PLAN,
+                com.bysqh.guru.feature.agent.domain.model.AgentMode.AUTO
             ),
             evaluatedModes
         )

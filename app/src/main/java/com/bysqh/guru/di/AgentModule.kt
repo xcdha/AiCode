@@ -273,7 +273,7 @@ object AgentModule {
     @Named("OpenAIResponsesWebSocket")
     fun provideOpenAIResponsesWebSocketClient(client: OkHttpClient): OkHttpClient =
         client.newBuilder()
-            .proxyAuthenticator(com.aicode.core.net.AppProxy.okHttpAuthenticator)
+            .proxyAuthenticator(com.bysqh.guru.core.net.AppProxy.okHttpAuthenticator)
             .build()
 
     @Provides
