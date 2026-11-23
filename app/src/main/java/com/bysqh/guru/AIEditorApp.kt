@@ -537,7 +537,6 @@ class AIEditorApp : Application(), Configuration.Provider {
             remoteSshConnection.connectionState.collect {
                 syncSshKeepalive()
             }
-            }
         }
         // 连接已配置的 MCP server，把其工具注册进 ToolRegistry（内部自有 scope，失败不影响启动）。
         mcpManager.start()
