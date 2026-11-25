@@ -1,0 +1,52 @@
+{
+  "type": "object",
+  "properties": {
+    "perPage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "每页数量，默认 30，最大 100。"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "页码，从 1 开始。"
+    },
+    "sort": {
+      "type": "string",
+      "enum": [
+        "updated",
+        "pushed",
+        "created",
+        "full_name"
+      ],
+      "description": "排序字段，默认 updated。"
+    },
+    "visibility": {
+      "type": "string",
+      "enum": [
+        "all",
+        "public",
+        "private"
+      ],
+      "description": "可见性过滤，默认 all。"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "owner",
+        "private",
+        "public",
+        "fork",
+        "source",
+        "all"
+      ],
+      "description": "额外筛选：owner=我拥有的，fork=派生仓库，source=非派生，默认 all。"
+    },
+    "affiliation": {
+      "type": "string",
+      "description": "归属范围，默认 owner,collaborator,organization_member。"
+    }
+  },
+  "additionalProperties": false
+}

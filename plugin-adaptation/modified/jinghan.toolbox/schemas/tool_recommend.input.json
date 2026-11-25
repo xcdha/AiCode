@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Plain task or signal, e.g. \"APK unpack Frida dex\"; empty returns the full tool matrix."
+    }
+  },
+  "required": []
+}

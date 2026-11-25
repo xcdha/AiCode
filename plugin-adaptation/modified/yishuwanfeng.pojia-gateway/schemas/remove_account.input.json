@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "description": "供应商 id"
+    },
+    "uid": {
+      "type": "string",
+      "description": "要删除的账号 uid"
+    }
+  },
+  "required": ["provider", "uid"]
+}

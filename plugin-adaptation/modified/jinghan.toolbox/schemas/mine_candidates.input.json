@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Local artifact path (HAR/OpenAPI/JS/HTML)."
+    },
+    "target": {
+      "type": "string",
+      "description": "Target label for the candidates, e.g. https://example.com."
+    },
+    "format": {
+      "type": "string",
+      "description": "har | openapi | text | apk (inferred from extension/content when omitted)."
+    }
+  },
+  "required": [
+    "path",
+    "target"
+  ]
+}

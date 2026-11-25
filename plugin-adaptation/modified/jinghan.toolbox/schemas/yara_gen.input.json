@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "file": {
+      "type": "string"
+    },
+    "out": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "file"
+  ]
+}

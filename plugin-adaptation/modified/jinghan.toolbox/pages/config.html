@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JH 工具箱</title>
+<link rel="stylesheet" href="/__aicode/theme.css">
+<link rel="stylesheet" href="/__aicode/ui.css">
+<style>
+  :root {
+    color-scheme: light dark;
+    --accent: #4c8dff;
+    --line: rgba(128,128,128,.20);
+    --line-soft: rgba(128,128,128,.13);
+    --muted: var(--aicode-on-surface-variant, #6b7280);
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 18px 16px 48px;
+    background: var(--aicode-page-bg, #fff);
+    color: var(--aicode-on-surface, #111);
+    font-family: var(--aicode-font-sans, system-ui, -apple-system, sans-serif);
+    font-size: calc(14px * var(--aicode-font-scale, 1));
+    line-height: 1.55;
+  }
+
+  /* ── 头部 ── */
+  header { margin-bottom: 18px; }
+  h1 { font-size: 1.22rem; margin: 0 0 3px; font-weight: 650; letter-spacing: -.01em; }
+  .meta { color: var(--muted); font-size: .78rem; }
+  .meta b { font-weight: 600; }
+
+  /* ── 卡片 ── */
+  section {
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 4px 14px; margin-bottom: 12px; overflow: hidden;
+  }
+  section > h2 {
+    font-size: .76rem; font-weight: 600; letter-spacing: .06em;
+    color: var(--muted); margin: 12px 0 6px;
+  }
+
+  /* ── 键值行 ── */
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; padding-bottom: 12px; }
+  .kv dt { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+  .kv dd { margin: 0; font-size: .8rem; text-align: right; word-break: break-all; font-variant-numeric: tabular-nums; }
+  .kv dd.mono { font-family: ui-monospace, Menlo, monospace; font-size: .74rem; }
+
+  /* ── 设置行 ── */
+  .setting {
+    display: flex; align-items: center; gap: 14px;
+    min-height: 52px; padding: 8px 0;
+    border-top: 1px solid var(--line-soft);
+    cursor: pointer;
+  }
+  section > .setting:first-of-type { border-top: 0; }
+  .setting .txt { flex: 1; min-width: 0; }
+  .setting .txt > span { display: block; font-size: .88rem; }
+  .setting .txt > small { display: block; color: var(--muted); font-size: .72rem; margin-top: 2px; word-break: break-all; }
+  .setting.static { cursor: default; }
+
+  /* ── 胶囊滑块 ── */
+  .switch { position: relative; flex: 0 0 auto; width: 46px; height: 27px; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0; border-radius: 99px;
+    background: rgba(128,128,128,.32);
+    transition: background .22s ease;
+    pointer-events: none;
+  }
+  .switch .thumb {
+    position: absolute; top: 3px; left: 3px; width: 21px; height: 21px;
+    border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.28);
+    transition: transform .22s cubic-bezier(.3,.8,.4,1);
+  }
+  .switch input:checked ~ .track { background: var(--accent); }
+  .switch input:checked ~ .track .thumb { transform: translateX(19px); }
+  .switch input:disabled ~ .track { opacity: .45; }
+
+  /* ── 注入编辑区 ── */
+  .inject-body { padding: 0 0 12px; }
+  textarea {
+    width: 100%; box-sizing: border-box; font: inherit; font-size: .82rem;
+    padding: 10px 12px; border-radius: 10px; resize: vertical; min-height: 96px;
+    border: 1px solid var(--line); background: transparent; color: inherit;
+    line-height: 1.55;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); }
+  .btns { display: flex; gap: 8px; margin-top: 9px; }
+  .pill {
+    font: inherit; font-size: .8rem; padding: 8px 16px; border-radius: 99px;
+    border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer;
+    transition: background .15s;
+  }
+  .pill:active { background: rgba(128,128,128,.12); }
+  .pill.primary { border-color: transparent; background: var(--accent); color: #fff; }
+  .hint { color: var(--muted); font-size: .72rem; margin: 9px 0 0; }
+  .hint.ok { color: #2e7d32; }
+  .hint.bad { color: #c62828; }
+
+  /* ── 搜索 ── */
+  input[type=search] {
+    width: 100%; font: inherit; font-size: .84rem; padding: 9px 12px;
+    border-radius: 10px; border: 1px solid var(--line);
+    background: transparent; color: inherit; box-sizing: border-box;
+    margin: 2px 0 10px;
+  }
+  input[type=search]:focus { outline: none; border-color: var(--accent); }
+
+  /* ── 工具分组 ── */
+  .grp { border: 1px solid var(--line-soft); border-radius: 11px; margin-bottom: 7px; overflow: hidden; }
+  .grp > summary {
+    list-style: none; cursor: pointer; padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: .84rem; font-weight: 600; background: rgba(128,128,128,.05);
+  }
+  .grp > summary::-webkit-details-marker { display: none; }
+  .grp > summary::before {
+    content: ''; width: 0; height: 0; flex: 0 0 auto;
+    border-left: 5px solid currentColor; border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+    opacity: .55; transition: transform .15s;
+  }
+  .grp[open] > summary::before { transform: rotate(90deg); }
+  .cnt {
+    margin-left: auto; font-size: .7rem; font-weight: 500;
+    padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); opacity: .75;
+  }
+  .grp-body { padding: 2px 12px 8px; }
+  .tool { padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+  .tool:last-child { border-bottom: 0; }
+  .tool code { font-family: ui-monospace, Menlo, monospace; font-size: .78rem; }
+  .tool p { margin: 2px 0 0; font-size: .74rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>JH 工具箱</h1>
+  <div class="meta" id="sub">正在读取状态…</div>
+</header>
+
+<section id="statusCard" style="display:none">
+  <h2>运行状态</h2>
+  <dl class="kv">
+    <dt>Node</dt><dd id="node">—</dd>
+    <dt>工具 / 子代理</dt><dd id="toolCount">—</dd>
+    <dt>工作区</dt><dd class="mono" id="workspace">—</dd>
+    <dt>数据目录</dt><dd class="mono" id="dataDir">—</dd>
+    <dt>加载失败</dt><dd id="failures">—</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>设置</h2>
+
+  <label class="setting" for="modelInstall">
+    <div class="txt">
+      <span>外部工具下载</span>
+      <small>toolbox install / update</small>
+    </div>
+    <span class="switch">
+      <input type="checkbox" id="modelInstall">
+      <span class="track"><span class="thumb"></span></span>
+    </span>
+  </label>
+
+  <label class="setting" for="injectOn">
+    <div class="txt">
+      <span>提示注入</span>
+      <small id="injectPathHint">prompts.custom/05-jh-inject.md</small>
+    </div>
+    <span class="switch">
+      <input type="checkbox" id="injectOn">
+      <span class="track"><span class="thumb"></span></span>
+    </span>
+  </label>
+
+  <div class="inject-body" id="injectBox" style="display:none">
+    <textarea id="injectText" placeholder="每轮系统提示会带上这段文字…"></textarea>
+    <div class="btns">
+      <button class="pill primary" id="injectSave">保存</button>
+      <button class="pill" id="injectDefault">恢复默认</button>
+    </div>
+    <p class="hint" id="injectLast"></p>
+  </div>
+
+  <div class="setting static">
+    <div class="txt">
+      <span>自检</span>
+      <small>跑一次 hash_artifact 验证链路</small>
+    </div>
+    <button class="pill" id="selftest">运行</button>
+  </div>
+  <p class="hint" id="selftestOut" style="display:none"></p>
+</section>
+
+<section>
+  <h2>工具 <span id="toolTotal" style="font-weight:400;letter-spacing:0"></span></h2>
+  <input type="search" id="filter" placeholder="按名字或说明过滤…">
+  <div id="groups"></div>
+</section>
+
+<script src="/__aicode/aicode.js"></script>
+<script>
+(function () {
+  var state = { tools: [], categories: [] };
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
+  };
+
+  function toolHtml(t) {
+    return '<div class="tool"><code>' + esc(t.id) + '</code>'
+      + '<p>' + esc(t.label || t.description) + '</p></div>';
+  }
+
+  function renderTools() {
+    var q = $('filter').value.trim().toLowerCase();
+    var visible = state.tools.filter(function (t) {
+      return q === ''
+        || t.id.toLowerCase().indexOf(q) >= 0
+        || (t.label || '').indexOf(q) >= 0
+        || (t.description || '').toLowerCase().indexOf(q) >= 0;
+    });
+
+    var byCat = {};
+    visible.forEach(function (t) {
+      var c = t.category || '其他';
+      (byCat[c] = byCat[c] || []).push(t);
+    });
+
+    var order = (state.categories || []).slice();
+    Object.keys(byCat).forEach(function (c) { if (order.indexOf(c) < 0) order.push(c); });
+
+    var html = '';
+    order.forEach(function (cat) {
+      var list = byCat[cat];
+      if (!list || !list.length) return;
+      html += '<details class="grp"' + (q !== '' ? ' open' : '') + '>'
+        + '<summary>' + esc(cat) + '<span class="cnt">' + list.length + '</span></summary>'
+        + '<div class="grp-body">' + list.map(toolHtml).join('') + '</div>'
+        + '</details>';
+    });
+
+    $('groups').innerHTML = html || '<p class="hint">没有匹配的工具</p>';
+    $('toolTotal').textContent = q === ''
+      ? '（' + state.tools.length + '）'
+      : '（' + visible.length + ' / ' + state.tools.length + '）';
+  }
+
+  function paintInjection(inj, fileFallback) {
+    $('injectOn').checked = !!inj.enabled;
+    $('injectBox').style.display = inj.enabled ? '' : 'none';
+    $('injectPathHint').textContent = inj.path || fileFallback || 'prompts.custom/05-jh-inject.md';
+    if (inj.enabled) {
+      $('injectLast').textContent = '已写入，新会话生效';
+      $('injectLast').className = 'hint ok';
+    } else {
+      $('injectLast').textContent = '未写入，关闭时不会出现在系统提示里';
+      $('injectLast').className = 'hint';
+    }
+  }
+
+  async function load() {
+    try {
+      var s = await aicode.invoke('ui.status', {});
+      state.tools = s.tools || [];
+      state.categories = s.categories || [];
+      var agents = (s.agents || []).length;
+
+      $('sub').textContent = s.plugin + ' · 运行中';
+      $('node').textContent = s.node;
+      $('toolCount').textContent = s.toolCount + ' 个 · ' + agents + ' 个子代理';
+      $('workspace').textContent = s.workspace;
+      $('dataDir').textContent = s.dataDir;
+      $('failures').textContent = (s.failures && s.failures.length) ? s.failures.length + ' 个域' : '无';
+      $('failures').style.color = (s.failures && s.failures.length) ? '#c62828' : '';
+      $('statusCard').style.display = '';
+
+      var cfg = s.settings || {};
+      $('modelInstall').checked = !!(cfg.toolbox && cfg.toolbox.modelInstall);
+
+      window.__defaultInject = s.defaultInjectionText || '';
+      $('injectText').value = (s.injection && s.injection.text) || '';
+      paintInjection(s.injection || {}, s.injectionFile);
+
+      renderTools();
+    } catch (e) {
+      $('sub').textContent = '读取失败：' + (e && e.message ? e.message : e);
+      $('sub').style.color = '#c62828';
+    }
+  }
+
+  $('filter').addEventListener('input', renderTools);
+
+  $('modelInstall').addEventListener('change', async function (ev) {
+    var on = ev.target.checked;
+    try {
+      await aicode.invoke('ui.settings.set', { patch: { toolbox: { modelInstall: on } } });
+      if (aicode.toast) aicode.toast(on ? '已开启外部工具下载' : '已关闭');
+    } catch (e) {
+      if (aicode.toast) aicode.toast('保存失败：' + (e && e.message ? e.message : e));
+      ev.target.checked = !on;
+    }
+  });
+
+  $('injectOn').addEventListener('change', async function (ev) {
+    var on = ev.target.checked;
+    try {
+      var r = on
+        ? await aicode.invoke('ui.injection.enable', { text: $('injectText').value })
+        : await aicode.invoke('ui.injection.disable', {});
+      paintInjection(r);
+      if (on && !$('injectText').value) $('injectText').value = r.text || '';
+      if (aicode.toast) aicode.toast(on ? '片段已生成，新会话生效' : '片段已删除');
+    } catch (e) {
+      if (aicode.toast) aicode.toast('操作失败：' + (e && e.message ? e.message : e));
+      ev.target.checked = !on;
+    }
+  });
+
+  $('injectSave').addEventListener('click', async function () {
+    try {
+      var r = await aicode.invoke('ui.injection.save', { text: $('injectText').value });
+      paintInjection(r);
+      if (aicode.toast) aicode.toast('已保存，新会话生效');
+    } catch (e) {
+      if (aicode.toast) aicode.toast('保存失败：' + (e && e.message ? e.message : e));
+    }
+  });
+
+  $('injectDefault').addEventListener('click', function () {
+    $('injectText').value = window.__defaultInject || '';
+    if (aicode.toast) aicode.toast('已填入默认文本，记得点保存');
+  });
+
+  $('selftest').addEventListener('click', async function () {
+    var out = $('selftestOut');
+    out.style.display = '';
+    out.className = 'hint';
+    out.textContent = '运行中…';
+    try {
+      var r = await aicode.invoke('ui.selftest', {});
+      out.textContent = r.output || '(空)';
+      out.className = 'hint ' + (r.ok ? 'ok' : 'bad');
+    } catch (e) {
+      out.textContent = String(e && e.message ? e.message : e);
+      out.className = 'hint bad';
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

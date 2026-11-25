@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Optional case folder name to resume (or \"open\"/\"latest\" to rebind the most recent open case)."
+    },
+    "root": {
+      "type": "string",
+      "description": "Optional workspace root directory."
+    }
+  },
+  "required": []
+}

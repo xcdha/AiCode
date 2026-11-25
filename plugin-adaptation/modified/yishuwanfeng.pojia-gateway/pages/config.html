@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>网关管家</title>
+<link rel="stylesheet" href="/__aicode/theme.css">
+<link rel="stylesheet" href="/__aicode/ui.css">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--aicode-page-bg, #f2f1f6);
+    color: var(--aicode-on-surface, #1b1b1f);
+    font-family: var(--aicode-font-sans, system-ui, -apple-system, sans-serif);
+    font-size: calc(15px * var(--aicode-font-scale, 1));
+    padding: 16px 14px 44px;
+  }
+  h1 { font-size: 1.35em; margin: 0 0 3px; font-weight: 700; }
+  .sub { color: var(--aicode-on-surface-variant, #666); font-size: .8em; margin-bottom: 14px; }
+
+  .card {
+    background: #fff; border-radius: 16px; padding: 14px 16px;
+    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .grow { flex: 1; min-width: 0; }
+  .title { font-weight: 600; }
+  .meta { color: var(--aicode-on-surface-variant, #666); font-size: .78em; margin-top: 3px; line-height: 1.5; }
+
+  button {
+    font-family: inherit; font-size: .82em; border: none; border-radius: 10px;
+    padding: 8px 14px; background: #3b6cf6; color: #fff; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  button:disabled { opacity: .45; }
+  button.ghost { background: #eef1f8; color: #3b6cf6; }
+  button.danger { background: #fdecec; color: #d2453d; }
+  button.sm { font-size: .74em; padding: 6px 11px; }
+  button.wide { width: 100%; padding: 12px; font-size: .9em; }
+
+  .status-line {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .8em; color: var(--aicode-on-surface-variant, #666); margin-bottom: 12px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #c4c4cc; flex: none; }
+  .dot.on { background: #2fbf6b; box-shadow: 0 0 0 3px rgba(47,191,107,.15); }
+
+  .prov-avatar { width: 38px; height: 38px; border-radius: 50%; flex: none; display: block; }
+  .prov-card .head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .chev { color: #b5b5c0; font-size: 1.15em; flex: none; transition: transform .18s; }
+  .prov-card.open .chev { transform: rotate(90deg); }
+
+  .acct { display: flex; align-items: center; gap: 9px; padding: 10px 0; border-top: 1px solid #f2f2f6; }
+  .acct-avatar {
+    width: 30px; height: 30px; border-radius: 9px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8em; font-weight: 700; color: #fff;
+  }
+  .acct-name { font-size: .88em; font-weight: 500; }
+  .acct-meta { font-size: .72em; color: var(--aicode-on-surface-variant, #888); margin-top: 2px; }
+
+  .pill { font-size: .68em; padding: 2px 7px; border-radius: 6px; background: #eef1f8; color: #4a5a7d; }
+  .pill.ok { background: #e8f8ee; color: #1f8a4c; }
+  .pill.warn { background: #fff4e5; color: #a86a12; }
+
+  .task { display: flex; align-items: center; gap: 8px; padding: 8px 0 8px 12px; border-top: 1px solid #f6f6fa; font-size: .82em; }
+  .task-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .empty { text-align: center; color: var(--aicode-on-surface-variant, #999); font-size: .82em; padding: 20px 0; }
+  .divider { height: 1px; background: #f2f2f6; margin: 10px 0; }
+  .bulk-bar { display: flex; gap: 8px; margin-top: 10px; }
+  .bulk-bar button { flex: 1; }
+
+  /* 添加账号视图 */
+  .prov-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .prov-item {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 10px 4px; border-radius: 12px; border: 2px solid transparent;
+    background: #f7f7fb; cursor: pointer;
+  }
+  .prov-item.on { border-color: #3b6cf6; background: #eef1ff; }
+  .prov-item img { width: 30px; height: 30px; display: block; }
+  .prov-item span { font-size: .66em; color: #555; text-align: center; line-height: 1.2; }
+
+  .hint-box {
+    background: #fff8e6; border-radius: 10px; padding: 11px 13px;
+    font-size: .78em; color: #8a6100; line-height: 1.6; margin-top: 12px;
+  }
+  label { display: block; font-size: .8em; color: #666; margin: 14px 0 6px; }
+  textarea {
+    width: 100%; font-family: ui-monospace, monospace; font-size: .78em;
+    padding: 11px 12px; border: 1px solid #dcdce4; border-radius: 10px;
+    background: #fafafd; color: inherit; min-height: 110px; resize: vertical;
+  }
+
+  .back-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }  .back-btn {
+    width: 34px; height: 34px; border-radius: 50%; background: #fff;
+    color: #333; font-size: 1.05em; display: flex; align-items: center;
+    justify-content: center; padding: 0; box-shadow: 0 1px 3px rgba(0,0,0,.08); flex: none;
+  }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+    background: rgba(30,30,36,.93); color: #fff; font-size: .8em;
+    padding: 10px 17px; border-radius: 20px; opacity: 0; transition: opacity .22s;
+    pointer-events: none; max-width: 88vw; text-align: center; z-index: 99;
+  }
+  .toast.show { opacity: 1; }
+
+  .spin {
+    display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor;
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin .7s linear infinite; vertical-align: -1px; margin-right: 4px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hidden { display: none !important; }
+
+  .import-bar { display: flex; gap: 8px; }
+  .import-bar button { flex: 1; padding: 10px 8px; }
+  input[type="text"] {
+    width: 100%; font-family: ui-monospace, monospace; font-size: .8em;
+    padding: 10px 12px; border: 1px solid #dcdce4; border-radius: 10px;
+    background: #fafafd; color: inherit;
+  }
+  code {
+    background: #f2f2f6; padding: 1px 5px; border-radius: 4px;
+    font-size: .95em; font-family: ui-monospace, monospace;
+  }
+
+  /* 工作区文件浏览器 */
+  .ws-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+  .ws-bar input { flex: 1; }
+  .ws-bar button { flex: none; }
+  .ws-list {
+    max-height: 240px; overflow-y: auto;
+    border: 1px solid #eeeef4; border-radius: 10px; background: #fafafd;
+  }
+  .ws-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; font-size: .82em; cursor: pointer;
+    border-bottom: 1px solid #f4f4f8;
+  }
+  .ws-item:last-child { border-bottom: none; }
+  .ws-item.on { background: #eef1ff; }
+  .ws-item .ico { color: #8a8a99; font-size: .95em; flex: none; width: 14px; }
+  .ws-item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ws-item .sz { color: #aaa; font-size: .85em; flex: none; }
+  .ws-empty { padding: 16px; text-align: center; color: #999; font-size: .8em; }
+</style>
+</head>
+<body>
+
+<!-- ═══ 视图 A：主控制台 ═══ -->
+<div id="viewMain">
+  <h1>网关管家</h1>
+  <div class="sub">插件版 · 多供应商 AI 网关</div>
+
+  <div class="status-line">
+    <span class="dot" id="dot"></span>
+    <span id="statusText">正在读取…</span>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="grow">
+        <div class="title">网关服务</div>
+        <div class="meta" id="addrText">—</div>
+      </div>
+      <button id="btnToggle">启动</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <div class="grow">
+        <div class="title">全部供应商</div>
+        <div class="meta" id="bulkMeta">读取中…</div>
+      </div>
+      <button id="btnBulk">一键完成</button>
+    </div>
+    <div class="bulk-bar">
+      <button class="ghost sm" id="btnAllCheckin">全部签到</button>
+      <button class="ghost sm" id="btnAllCredit">全部查积分</button>
+      <button class="ghost sm" id="btnGoAdd">＋ 添加账号</button>
+    </div>
+  </div>
+
+  <div id="provList"><div class="empty">加载中…</div></div>
+</div>
+
+<!-- ═══ 视图 B：添加账号 ═══ -->
+<div id="viewAdd" class="hidden">
+  <div class="back-row">
+    <button class="back-btn" id="btnBack">←</button>
+    <div>
+      <div class="title" style="font-size:1.12em">添加账号</div>
+      <div class="meta">选择一个供应商</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="prov-grid" id="gridProv"></div>
+  </div>
+
+  <div id="addDetail" class="hidden">
+    <div class="card">
+      <div class="row" style="margin-bottom:4px">
+        <img id="addAvatar" class="prov-avatar" src="" alt="">
+        <div class="grow">
+          <div class="title" id="addName">—</div>
+          <div class="meta" id="addMeta">—</div>
+        </div>
+      </div>
+
+      <div id="webBox" class="hidden" style="margin-top:14px">
+        <button class="wide" id="btnWebLogin">浏览器登录</button>
+      </div>
+
+      <div id="pasteHint" class="hint-box hidden"></div>
+
+      <label style="margin-top:16px">粘贴凭证</label>
+      <textarea id="txtCred" placeholder="粘贴凭证…"></textarea>
+      <div class="meta" style="margin-top:6px;line-height:1.6">
+        <b>支持多个账号</b>：直接粘贴 App 导出的完整 JSON（含多个账号也能识别），
+        或每行一个 token / cookie。
+      </div>
+      <button class="wide" id="btnPaste" style="margin-top:10px">解析并添加</button>
+
+      <div class="divider" style="margin:16px 0 12px"></div>
+
+      <label>或从工作区文件导入</label>
+      <button class="wide ghost" id="btnPickWorkspace">浏览工作区文件</button>
+      <div id="wsBrowser" class="hidden">
+        <div class="ws-bar">
+          <input type="text" id="wsPath" placeholder="~/workspace" value="~/workspace">
+          <button class="ghost sm" id="btnWsGo">打开</button>
+        </div>
+        <div id="wsList" class="ws-list"></div>
+        <button class="wide ghost" id="btnWsConfirm" style="margin-top:8px">读取选中文件</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/__aicode/aicode.js"></script>
+<script>
+const state = {
+  running: false,
+  port: 7864,
+  providers: [],
+  expanded: new Set(),
+  tasks: {},
+  busy: false,
+  addProvider: null,
+};
+
+const AUTH_LABEL = {
+  WEBVIEW_CALLBACK: '网页登录',
+  DEVICE_CODE: '设备授权',
+  SMS_CODE: '短信登录',
+  OAUTH_LOOPBACK: 'OAuth',
+  NONE: '无需登录',
+};
+
+const PLACEHOLDER = {
+  raccoon: '粘贴 App 导出的账号 JSON，或 access_token',
+  meoo: '粘贴 meoo 的 cookie 串（含 oneday_sid 等）',
+  codebuddy: '粘贴 accessToken（JWT，以 eyJ 开头），或 App 导出的 JSON',
+  zhipu: '粘贴 App 导出的账号 JSON，或 refresh_token / cookie',
+  agentmore: '粘贴智谱清言的 cookie 串',
+  trae: '粘贴 access_token，或 App 导出的 JSON',
+  qoder: '粘贴 App 导出的账号 JSON（含 accessToken）',
+  astudio: '粘贴讯飞星辰的 cookie（含 ssoSessionId 与 account_id）',
+  deepseek: '粘贴 userToken',
+  wenxin: '粘贴百度 cookie 串（必须含 BDUSS=）',
+  dangbei: '粘贴 token',
+  tabbit: '粘贴 App 导出的账号 JSON，或 cookie',
+  loomy: '粘贴 App 导出的账号 JSON，或 cookie',
+  catpaw: '粘贴 X-Passport-Token 与 uid（格式：token,uid）',
+};
+
+// ── 通用 ──────────────────────────────────────────────────────
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+async function invoke(h, a) {
+  try {
+    return await aicode.invoke(h, a || {});
+  } catch (e) {
+    // 把错误显式抛给调用方，不再静默吞掉
+    throw new Error((e && e.message) || String(e));
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+const AVATAR_COLORS = ['#5B8DEF', '#FF6B6B', '#14B8A6', '#9B59B6', '#F5A623', '#0B6BCB', '#6E56CF', '#00A0E9'];
+function avatarColor(seed) {
+  let h = 0;
+  const s = String(seed);
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+// ── 视图切换 ──────────────────────────────────────────────────
+
+function showAddView(presetId) {
+  document.getElementById('viewMain').classList.add('hidden');
+  document.getElementById('viewAdd').classList.remove('hidden');
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+
+  renderAddGrid();
+  if (presetId) selectAddProvider(presetId);
+  else {
+    document.getElementById('addDetail').classList.add('hidden');
+    state.addProvider = null;
+  }
+}
+
+function showMainView() {
+  document.getElementById('viewAdd').classList.add('hidden');
+  document.getElementById('viewMain').classList.remove('hidden');
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+}
+
+// ── 视图 A：渲染 ──────────────────────────────────────────────
+
+function renderStatus(s) {
+  state.running = !!s.running;
+  state.port = s.port || 7864;
+  document.getElementById('dot').className = 'dot' + (s.running ? ' on' : '');
+  document.getElementById('statusText').textContent = s.running
+    ? `运行中 · 端口 ${state.port}`
+    : '未启动';
+  document.getElementById('addrText').textContent = `http://127.0.0.1:${state.port}/v1`;
+  document.getElementById('btnToggle').textContent = s.running ? '停止' : '启动';
+}
+
+function renderBulkMeta() {
+  const withAccounts = state.providers.filter((p) => p.accounts > 0);
+  const total = withAccounts.reduce((n, p) => n + p.accounts, 0);
+  document.getElementById('bulkMeta').textContent = withAccounts.length === 0
+    ? '还没有账号，先点下方「添加账号」'
+    : `${withAccounts.length} 个供应商 · ${total} 个账号`;
+}
+
+function renderProviders() {
+  const box = document.getElementById('provList');
+  if (state.providers.length === 0) {
+    box.innerHTML = '<div class="card"><div class="empty">还没有供应商</div></div>';
+    return;
+  }
+
+  box.innerHTML = state.providers.map((p) => {
+    const open = state.expanded.has(p.id);
+    const caps = p.capabilities || [];
+    return `
+    <div class="card prov-card ${open ? 'open' : ''}" data-prov="${escapeHtml(p.id)}">
+      <div class="head">
+        <img class="prov-avatar" src="${p.icon}" alt="">
+        <div class="grow">
+          <div class="title">${escapeHtml(p.name)}</div>
+          <div class="meta">${p.accounts} 个账号${
+            caps.includes('checkin') ? ' · 可签到' : ''
+          }${caps.includes('tasks') ? ' · 有任务' : ''}</div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+      ${open ? renderDetail(p) : ''}
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('.prov-card').forEach((card) => {
+    const id = card.dataset.prov;
+    card.querySelector('.head').onclick = () => {
+      if (state.expanded.has(id)) state.expanded.delete(id);
+      else {
+        state.expanded.add(id);
+        loadTasks(id);
+      }
+      renderProviders();
+    };
+  });
+
+  box.querySelectorAll('[data-act]').forEach((btn) => {
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      handleAction(btn.dataset.act, btn.dataset.prov, btn.dataset.uid, btn);
+    };
+  });
+}
+
+function renderDetail(p) {
+  const caps = p.capabilities || [];
+  const accounts = p.accountsData || [];
+
+  const acctRows = accounts.length === 0
+    ? '<div class="empty" style="padding:12px 0">还没有账号</div>'
+    : accounts.map((a) => {
+        const initial = (a.nickname || a.uid || '?').trim().charAt(0).toUpperCase();
+        const bits = [];
+        if (a.creditText) bits.push(`${a.creditText} 积分`);
+        if (a.checkedInToday) bits.push('今日已签到');
+        return `
+        <div class="acct">
+          <div class="acct-avatar" style="background:${avatarColor(a.uid)}">${escapeHtml(initial)}</div>
+          <div class="grow">
+            <div class="acct-name">${escapeHtml(a.nickname || String(a.uid).slice(0, 12))}</div>
+            <div class="acct-meta">${escapeHtml(bits.join(' · '))}</div>
+          </div>
+          ${a.checkedInToday ? '<span class="pill ok">已签</span>' : ''}
+          <button class="danger sm" data-act="del" data-prov="${escapeHtml(p.id)}" data-uid="${escapeHtml(a.uid)}">删</button>
+        </div>`;
+      }).join('');
+
+  return `
+    <div class="divider"></div>
+    ${acctRows}
+    <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      ${caps.includes('checkin') ? `<button class="sm" data-act="checkin" data-prov="${escapeHtml(p.id)}">一键签到</button>` : ''}
+      ${caps.includes('creditRefresh') ? `<button class="ghost sm" data-act="credit" data-prov="${escapeHtml(p.id)}">查积分</button>` : ''}
+      <button class="ghost sm" data-act="add" data-prov="${escapeHtml(p.id)}">＋ 账号</button>
+    </div>
+    ${caps.includes('tasks') ? renderTaskBox(p) : ''}
+  `;
+}
+
+function renderTaskBox(p) {
+  const entry = state.tasks[p.id];
+  if (!entry) {
+    return '<div class="divider"></div><div class="empty" style="padding:10px 0"><span class="spin"></span>读取任务…</div>';
+  }
+  if (entry.error) {
+    return `<div class="divider"></div><div class="meta" style="padding:8px 0">任务读取失败：${escapeHtml(entry.error)}</div>`;
+  }
+  const tasks = entry.tasks || [];
+  if (tasks.length === 0) {
+    return '<div class="divider"></div><div class="meta" style="padding:8px 0">没有任务</div>';
+  }
+
+  const rows = tasks.map((t) => {
+    let stateText, cls = 'pill';
+    if (t.claimed) stateText = '已领取';
+    else if (t.target > 0 && t.current >= t.target) { stateText = '可领取'; cls = 'pill ok'; }
+    else if (t.locked) stateText = '未解锁';
+    else if (t.target > 0) { stateText = `${t.current}/${t.target}`; cls = 'pill warn'; }
+    else stateText = t.status || '未完成';
+
+    const reward = t.rewardCredit > 0 ? `+${t.rewardCredit}` : '';
+    return `
+      <div class="task">
+        <span class="task-name">${escapeHtml(t.title || t.code)}</span>
+        ${reward ? `<span class="pill">${reward}</span>` : ''}
+        <span class="${cls}">${escapeHtml(stateText)}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="divider"></div>
+    <div class="row" style="margin-bottom:4px">
+      <div class="grow meta">任务中心（${tasks.length} 条）</div>
+      <button class="ghost sm" data-act="runtasks" data-prov="${escapeHtml(p.id)}">领取奖励</button>
+    </div>
+    ${rows}`;
+}
+
+// ── 视图 B：添加账号 ──────────────────────────────────────────
+
+function renderAddGrid() {
+  const grid = document.getElementById('gridProv');
+  grid.innerHTML = state.providers.map((p) => `
+    <div class="prov-item" data-id="${escapeHtml(p.id)}">
+      <img src="${p.icon}" alt="">
+      <span>${escapeHtml(p.name)}</span>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.prov-item').forEach((el) => {
+    el.onclick = () => selectAddProvider(el.dataset.id);
+  });
+}
+
+function selectAddProvider(id) {
+  const p = state.providers.find((x) => x.id === id);
+  if (!p) return;
+  state.addProvider = p;
+
+  document.querySelectorAll('#gridProv .prov-item').forEach((el) => {
+    el.classList.toggle('on', el.dataset.id === id);
+  });
+
+  document.getElementById('addDetail').classList.remove('hidden');
+  document.getElementById('addAvatar').src = p.icon;
+  document.getElementById('addName').textContent = p.name;
+  document.getElementById('addMeta').textContent = AUTH_LABEL[p.authKind] || p.authKind || '';
+
+  const canWeb = p.canWebLogin === true;
+  document.getElementById('webBox').classList.toggle('hidden', !canWeb);
+
+  const hintEl = document.getElementById('pasteHint');
+  if (canWeb) {
+    hintEl.classList.add('hidden');
+  } else {
+    hintEl.classList.remove('hidden');
+    if (p.authKind === 'DEVICE_CODE') {
+      hintEl.innerHTML = '<b>设备授权型</b>：插件无法轮询授权状态。请先在官方 App 完成登录，' +
+        '再把导出的账号信息粘贴到下方。';
+    } else if (p.authKind === 'SMS_CODE') {
+      hintEl.innerHTML = '<b>短信验证码型</b>：插件里没有短信输入界面。请先在官方 App 或网页登录，' +
+        '再把 cookie / token 粘贴到下方。';
+    } else {
+      hintEl.textContent = '该供应商需手动粘贴凭证。';
+    }
+  }
+
+  const ta = document.getElementById('txtCred');
+  ta.value = '';
+  ta.placeholder = PLACEHOLDER[p.id] || '粘贴凭证：App 导出的 JSON、裸 token（每行一个）或 cookie 串';
+}
+
+// ── 数据加载 ──────────────────────────────────────────────────
+
+async function refresh() {
+  try {
+    const s = await invoke('ui.state');
+    renderStatus(s);
+
+    const p = await invoke('ui.providers');
+    const list = p.providers || [];
+
+    // 展开的供应商单独拉账号明细
+    for (const prov of list) {
+      if (state.expanded.has(prov.id)) {
+        try {
+          const a = await invoke('ui.accounts', { provider: prov.id });
+          prov.accountsData = a.accounts || [];
+        } catch (e) {
+          prov.accountsData = [];
+        }
+      }
+    }
+
+    state.providers = list;
+    renderBulkMeta();
+    renderProviders();
+  } catch (e) {
+    toast('读取失败：' + e.message);
+  }
+}
+
+async function loadTasks(providerId) {
+  const prov = state.providers.find((p) => p.id === providerId);
+  if (!prov || !(prov.capabilities || []).includes('tasks')) return;
+
+  delete state.tasks[providerId];
+  try {
+    const r = await invoke('tools.tasks', { provider: providerId });
+    state.tasks[providerId] = r.unsupported
+      ? { tasks: [], error: r.message }
+      : { tasks: r.tasks || [], error: r.error || '' };
+  } catch (e) {
+    state.tasks[providerId] = { tasks: [], error: e.message };
+  }
+  renderProviders();
+}
+
+// ── 动作 ──────────────────────────────────────────────────────
+
+async function handleAction(act, providerId, uid, btn) {
+  const label = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>';
+  }
+
+  try {
+    if (act === 'del') {
+      await invoke('tools.remove_account', { provider: providerId, uid });
+      toast('已删除');
+      await refresh();
+    } else if (act === 'checkin') {
+      const r = await invoke('tools.checkin', { provider: providerId });
+      if (r.unsupported) toast('该供应商不支持签到');
+      else {
+        const ok = (r.results || []).filter((x) => x.ok).length;
+        toast(`签到：成功 ${ok}/${(r.results || []).length}`);
+      }
+      await refresh();
+    } else if (act === 'credit') {
+      const r = await invoke('tools.refresh_credit', { provider: providerId });
+      const ok = (r.results || []).filter((x) => x.ok).length;
+      toast(`积分已刷新（${ok} 个成功）`);
+      await refresh();
+    } else if (act === 'add') {
+      showAddView(providerId);
+    } else if (act === 'runtasks') {
+      const r = await invoke('tools.run_tasks', { provider: providerId });
+      if (r.unsupported) toast('该供应商没有可执行任务');
+      else {
+        const ok = (r.results || []).filter((x) => x.ok).length;
+        toast(`领奖完成（${ok} 个成功）`);
+      }
+      await loadTasks(providerId);
+    }
+  } catch (e) {
+    toast('失败：' + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+}
+
+// ── 事件绑定 ──────────────────────────────────────────────────
+
+document.getElementById('btnGoAdd').onclick = () => showAddView('');
+document.getElementById('btnBack').onclick = () => {
+  showMainView();
+  refresh();
+};
+
+document.getElementById('btnToggle').onclick = async () => {
+  const btn = document.getElementById('btnToggle');
+  btn.disabled = true;
+  try {
+    if (state.running) {
+      await invoke('tools.stop');
+      toast('已停止');
+    } else {
+      const r = await invoke('tools.start', { port: state.port });
+      toast('已启动：' + r.baseUrl);
+    }
+    await refresh();
+  } catch (e) {
+    toast('操作失败：' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+document.getElementById('btnWebLogin').onclick = async () => {
+  const p = state.addProvider;
+  if (!p) return;
+  const btn = document.getElementById('btnWebLogin');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>登录中…';
+
+  try {
+    let url = p.loginUrl || '';
+    if (!url) {
+      const r = await invoke('ui.login_url', { provider: p.id });
+      url = r.url;
+    }
+
+    if (!url) throw new Error('该供应商没有网页登录地址');
+    await aicode.ui.openUrl(url);
+    toast('已在系统浏览器打开登录页。登录后复制凭证，再返回本页手动导入。');
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    if (/CANCEL/i.test(msg)) toast('已取消');
+    else toast('登录失败：' + msg);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+};
+
+document.getElementById('btnPaste').onclick = async () => {
+  const p = state.addProvider;
+  if (!p) return toast('先选供应商');
+  const cred = document.getElementById('txtCred').value.trim();
+  if (!cred) return toast('先粘贴凭证');
+  await doImport(p, cred, document.getElementById('btnPaste'));
+};
+
+// ── 工作区文件浏览器 ──────────────────────────────────────────
+//
+// 插件页在宿主的 WebView 里，`<input type="file">` 不会调起系统选择器
+// （实测点击无反应，宿主没实现 onShowFileChooser）。
+// 改用页面桥的 fs.list / fs.read 直接浏览工作区。
+
+let wsCurrentDir = '';
+let wsSelected = '';
+
+document.getElementById('btnPickWorkspace').onclick = () => {
+  if (!state.addProvider) return toast('先选供应商');
+  const box = document.getElementById('wsBrowser');
+  const willShow = box.classList.contains('hidden');
+  box.classList.toggle('hidden');
+  if (willShow) {
+    // 每次打开都从工作区根开始，避免停在已删除的目录
+    document.getElementById('wsPath').value = '~/workspace';
+    wsSelected = '';
+    loadDir('~/workspace');
+  }
+};
+
+document.getElementById('btnWsGo').onclick = () => {
+  const p = document.getElementById('wsPath').value.trim();
+  if (!p) return;
+  wsSelected = '';
+  loadDir(p);
+};
+
+async function loadDir(dir) {
+  const listEl = document.getElementById('wsList');
+  listEl.innerHTML = '<div class="ws-empty"><span class="spin"></span>读取中…</div>';
+
+  try {
+    const r = await aicode.fs.list(dir);
+    // 桥返回的目录列表：{entries: [...]} 或 [{name,type,size}]
+    const entries = Array.isArray(r) ? r : (r && r.entries) || [];
+    wsCurrentDir = (r && r.path) || dir;
+    document.getElementById('wsPath').value = wsCurrentDir;
+
+    if (entries.length === 0) {
+      listEl.innerHTML = '<div class="ws-empty">这个目录是空的</div>';
+      return;
+    }
+
+    // 目录在前，文件在后
+    const items = entries.slice().sort((a, b) => {
+      const ad = a.isDir || a.type === 'dir' || a.type === 'directory';
+      const bd = b.isDir || b.type === 'dir' || b.type === 'directory';
+      if (ad !== bd) return ad ? -1 : 1;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+
+    listEl.innerHTML = items.map((e) => {
+      const name = String(e.name || '');
+      const isDir = e.isDir || e.type === 'dir' || e.type === 'directory';
+      // 只给可选文件打选中态，目录不可选
+      const sel = !isDir && wsSelected.endsWith('/' + name);
+      const size = !isDir && e.size ? formatSize(e.size) : '';
+      return `
+        <div class="ws-item ${sel ? 'on' : ''}" data-name="${escapeHtml(name)}" data-dir="${isDir ? '1' : '0'}">
+          <span class="ico">${isDir ? '▸' : '·'}</span>
+          <span class="nm">${escapeHtml(name)}</span>
+          <span class="sz">${size}</span>
+        </div>`;
+    }).join('');
+
+    // 点目录进入，点文件选中
+    listEl.querySelectorAll('.ws-item').forEach((el) => {
+      el.onclick = () => {
+        const name = el.dataset.name;
+        const isDir = el.dataset.dir === '1';
+        if (isDir) {
+          const base = wsCurrentDir.replace(/\/+$/, '');
+          loadDir(base + '/' + name);
+        } else {
+          wsSelected = wsCurrentDir.replace(/\/+$/, '') + '/' + name;
+          listEl.querySelectorAll('.ws-item').forEach((x) => {
+            x.classList.toggle('on', x.dataset.name === name && x.dataset.dir === '0');
+          });
+        }
+      };
+    });
+  } catch (e) {
+    listEl.innerHTML = `<div class="ws-empty">读取失败：${escapeHtml((e && e.message) || e)}</div>`;
+  }
+}
+
+function formatSize(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v <= 0) return '';
+  if (v < 1024) return v + 'B';
+  if (v < 1024 * 1024) return (v / 1024).toFixed(1) + 'K';
+  return (v / 1024 / 1024).toFixed(1) + 'M';
+}
+
+document.getElementById('btnWsConfirm').onclick = async () => {
+  const p = state.addProvider;
+  if (!p) return toast('先选供应商');
+  if (!wsSelected) return toast('先点选一个文件');
+
+  const btn = document.getElementById('btnWsConfirm');
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>读取中…';
+
+  try {
+    const file = await aicode.fs.read(wsSelected);
+    const text = (file && file.content) || '';
+    if (!text.trim()) return toast('文件是空的');
+    document.getElementById('wsBrowser').classList.add('hidden');
+    await doImport(p, text, btn);
+  } catch (e) {
+    toast('读取失败：' + ((e && e.message) || e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+};
+
+/** 共用的导入流程：校验 → 解析 → 添加 → 返回主页并展开。 */
+async function doImport(p, text, btn) {
+  const label = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>解析中…';
+  }
+
+  try {
+    const r = await invoke('tools.add_account', { provider: p.id, credentials: text });
+    if (!r.added) {
+      toast('没解析出账号，检查格式');
+    } else {
+      toast(`已添加 ${r.added} 个账号`);
+      state.expanded.add(p.id);
+      showMainView();
+      await refresh();
+    }
+  } catch (e) {
+    toast('失败：' + e.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+}
+
+document.getElementById('btnBulk').onclick = async () => {
+  if (state.busy) return toast('正在执行中');
+  const btn = document.getElementById('btnBulk');
+  btn.disabled = true;
+  state.busy = true;
+
+  const targets = state.providers.filter((p) => p.accounts > 0);
+  if (targets.length === 0) {
+    toast('没有账号');
+    btn.disabled = false;
+    state.busy = false;
+    return;
+  }
+
+  let okCount = 0, failCount = 0;
+  for (let i = 0; i < targets.length; i++) {
+    const p = targets[i];
+    btn.innerHTML = `<span class="spin"></span>${i + 1}/${targets.length}`;
+
+    const caps = p.capabilities || [];
+    // 先签到再任务：部分上游的任务以「今日已签到」为前提
+    if (caps.includes('checkin')) {
+      try {
+        const r = await invoke('tools.checkin', { provider: p.id });
+        if (!r.unsupported) {
+          for (const x of r.results || []) { if (x.ok) okCount++; else failCount++; }
+        }
+      } catch (e) { failCount++; }
+    }
+    if (caps.includes('tasks')) {
+      try {
+        const r = await invoke('tools.run_tasks', { provider: p.id });
+        if (!r.unsupported) {
+          for (const x of r.results || []) { if (x.ok) okCount++; else failCount++; }
+        }
+      } catch (e) { failCount++; }
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '一键完成';
+  state.busy = false;
+  toast(`完成：成功 ${okCount} 项，失败 ${failCount} 项`);
+  await refresh();
+};
+
+document.getElementById('btnAllCheckin').onclick = async () => {
+  const targets = state.providers.filter(
+    (p) => p.accounts > 0 && (p.capabilities || []).includes('checkin'),
+  );
+  if (targets.length === 0) return toast('没有支持签到的账号');
+  let ok = 0, total = 0;
+  for (const p of targets) {
+    try {
+      const r = await invoke('tools.checkin', { provider: p.id });
+      if (!r.unsupported) {
+        ok += (r.results || []).filter((x) => x.ok).length;
+        total += (r.results || []).length;
+      }
+    } catch (e) { /* 单家失败不影响其余 */ }
+  }
+  toast(`签到完成：${ok}/${total}`);
+  await refresh();
+};
+
+document.getElementById('btnAllCredit').onclick = async () => {
+  const targets = state.providers.filter(
+    (p) => p.accounts > 0 && (p.capabilities || []).includes('creditRefresh'),
+  );
+  if (targets.length === 0) return toast('没有可查积分的账号');
+  for (const p of targets) {
+    try { await invoke('tools.refresh_credit', { provider: p.id }); } catch (e) { /* 忽略 */ }
+  }
+  toast('积分已刷新');
+  await refresh();
+};
+
+refresh();
+</script>
+</body>
+</html>

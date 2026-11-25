@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Hypothesis id, e.g. \"H-001\"."
+    },
+    "status": {
+      "type": "string",
+      "description": "confirmed | refuted | blocked."
+    },
+    "observation": {
+      "type": "string",
+      "description": "What you actually observed."
+    },
+    "evidence_ids": {
+      "type": "array",
+      "description": "Evidence supporting the verdict.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "observation"
+  ]
+}

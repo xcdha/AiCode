@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "ticketId": {
+      "type": "string",
+      "description": "Ticket id, e.g. T-001. Omit to list recent tickets."
+    }
+  },
+  "required": []
+}

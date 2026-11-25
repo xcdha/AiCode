@@ -1,0 +1,34 @@
+{
+  "type": "object",
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "What this investigation must deliver."
+    },
+    "samples": {
+      "type": "array",
+      "description": "Absolute paths of sample files to ingest.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "root": {
+      "type": "string",
+      "description": "Workspace root; defaults to session cwd, HELMD_CASES_DIR, or process cwd."
+    },
+    "force": {
+      "type": "boolean",
+      "description": "Force open a new case even if an uncompleted open case exists on disk."
+    },
+    "scope": {
+      "type": "array",
+      "description": "Recon scope (hostnames/CIDRs). Recon tools refuse targets outside it; private/loopback still needs lab=true.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "goal"
+  ]
+}

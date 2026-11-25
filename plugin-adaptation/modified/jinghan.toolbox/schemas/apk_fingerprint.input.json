@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "apk": {
+      "type": "string",
+      "description": "Path to the APK/XAPK file."
+    }
+  },
+  "required": [
+    "apk"
+  ]
+}

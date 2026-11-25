@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "ticketId": {
+      "type": "string",
+      "description": "Ticket id from team_create, e.g. T-001."
+    },
+    "role": {
+      "type": "string",
+      "description": "One of: orchestrator, triage, static, dynamic, decoy-audit, critic, reporter."
+    },
+    "task": {
+      "type": "string",
+      "description": "Optional focused task for this worker; defaults to the ticket goal."
+    }
+  },
+  "required": [
+    "ticketId",
+    "role"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "fresh": {
+      "type": "boolean",
+      "description": "true 时跳过 60 秒缓存，强制重新拉取。"
+    }
+  },
+  "additionalProperties": false
+}

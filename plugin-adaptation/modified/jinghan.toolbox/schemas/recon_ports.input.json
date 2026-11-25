@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "target": {
+      "type": "string",
+      "description": "In-scope hostname or IP."
+    },
+    "ports": {
+      "type": "array",
+      "description": "Ports (default 22,80,443,445,3389,8080).",
+      "items": {
+        "type": "number"
+      }
+    },
+    "lab": {
+      "type": "boolean",
+      "description": "Allow private/loopback targets (authorized lab only)."
+    }
+  },
+  "required": [
+    "target"
+  ]
+}

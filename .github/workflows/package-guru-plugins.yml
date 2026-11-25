@@ -1,0 +1,41 @@
+name: Package Guru-compatible plugins
+
+on:
+  push:
+    branches:
+      - 'plugin-adapt-package/**'
+    paths:
+      - 'plugin-adaptation/**'
+      - 'scripts/package-guru-plugins.py'
+      - '.github/workflows/package-guru-plugins.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-guru-plugins-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Package and verify plugin archives
+        run: python scripts/package-guru-plugins.py dist/guru-plugins
+
+      - name: Upload ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: guru-compatible-plugins-${{ github.sha }}
+          path: dist/guru-plugins/*.zip
+          if-no-files-found: error
+          retention-days: 14

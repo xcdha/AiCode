@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "repo": {
+      "type": "string",
+      "description": "仓库全名 owner/repo，例如 octocat/Hello-World。省略则用配置页里的默认仓库。"
+    },
+    "perPage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "默认 50。"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "页码，默认 1。"
+    }
+  },
+  "additionalProperties": false
+}

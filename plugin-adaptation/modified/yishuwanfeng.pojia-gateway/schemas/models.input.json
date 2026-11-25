@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "description": "供应商 id，留空则拉取全部"
+    }
+  },
+  "required": []
+}

@@ -1,0 +1,592 @@
+{
+  "manifestVersion": 1,
+  "id": "jinghan.toolbox",
+  "name": {
+    "default": "JH Toolbox",
+    "zh-CN": "JH 工具箱"
+  },
+  "version": "1.1.9",
+  "publisher": "jinghan",
+  "repository": "https://github.com/ADWMC/helm-d",
+  "description": {
+    "default": "JH security toolbox: 40 tools, 365 reference docs, 86 scripts, 7 team subagents. Gate, license, star and telemetry layers removed.",
+    "zh-CN": "JH 安全工具箱：40 个工具 / 365 篇参考文档 / 86 个脚本 / 7 个团队子代理。已剔除卡密门控、点星、更新检查与提示注入层。"
+  },
+  "license": "AGPL-3.0-or-later",
+  "icon": "shield",
+  "engines": {
+    "pluginApi": "^1.0.0"
+  },
+  "runtime": {
+    "type": "javascript",
+    "entry": "dist/main.js",
+    "resident": true
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "bot_analyze",
+        "title": {
+          "default": "bot analyze",
+          "zh-CN": "Bot 服务端分析"
+        },
+        "description": {
+          "default": "Analyze a Puppeteer bot server.js: extract parameters, classify mode, build attack timeline.",
+          "zh-CN": "Analyze a Puppeteer bot server.js: extract parameters, classify mode, build attack timeline."
+        },
+        "inputSchema": "schemas/bot_analyze.input.json",
+        "handler": "tools.bot_analyze"
+      },
+      {
+        "id": "apk_fingerprint",
+        "title": {
+          "default": "apk fingerprint",
+          "zh-CN": "APK 指纹识别"
+        },
+        "description": {
+          "default": "Fingerprint an APK: framework, HTTP stack, obfuscation. See references/android/fingerprint.md.",
+          "zh-CN": "Fingerprint an APK: framework, HTTP stack, obfuscation. See references/android/fingerprint.md."
+        },
+        "inputSchema": "schemas/apk_fingerprint.input.json",
+        "handler": "tools.apk_fingerprint"
+      },
+      {
+        "id": "detect_packer",
+        "title": {
+          "default": "detect packer",
+          "zh-CN": "壳检测"
+        },
+        "description": {
+          "default": "Detect PE/ELF packers: UPX, VMProtect, Themida, OLLVM.",
+          "zh-CN": "Detect PE/ELF packers: UPX, VMProtect, Themida, OLLVM."
+        },
+        "inputSchema": "schemas/detect_packer.input.json",
+        "handler": "tools.detect_packer"
+      },
+      {
+        "id": "scan_strings",
+        "title": {
+          "default": "scan strings",
+          "zh-CN": "字符串提取"
+        },
+        "description": {
+          "default": "Extract printable ASCII/UTF-16LE strings from a binary; optional minimum length.",
+          "zh-CN": "Extract printable ASCII/UTF-16LE strings from a binary; optional minimum length."
+        },
+        "inputSchema": "schemas/scan_strings.input.json",
+        "handler": "tools.scan_strings"
+      },
+      {
+        "id": "xor_bruteforce",
+        "title": {
+          "default": "xor bruteforce",
+          "zh-CN": "XOR 爆破"
+        },
+        "description": {
+          "default": "XOR key bruteforce ranked by English-likeness. Omit keylen for single-byte, pass keylen for repeating-key.",
+          "zh-CN": "XOR key bruteforce ranked by English-likeness. Omit keylen for single-byte, pass keylen for repeating-key."
+        },
+        "inputSchema": "schemas/xor_bruteforce.input.json",
+        "handler": "tools.xor_bruteforce"
+      },
+      {
+        "id": "encoding_detect",
+        "title": {
+          "default": "encoding detect",
+          "zh-CN": "编码识别"
+        },
+        "description": {
+          "default": "Detect and decode Base64/Hex/ROT13/XOR in a string.",
+          "zh-CN": "Detect and decode Base64/Hex/ROT13/XOR in a string."
+        },
+        "inputSchema": "schemas/encoding_detect.input.json",
+        "handler": "tools.encoding_detect"
+      },
+      {
+        "id": "pcap_parse",
+        "title": {
+          "default": "pcap parse",
+          "zh-CN": "PCAP 解析"
+        },
+        "description": {
+          "default": "Parse a PCAP and list TCP/UDP streams.",
+          "zh-CN": "Parse a PCAP and list TCP/UDP streams."
+        },
+        "inputSchema": "schemas/pcap_parse.input.json",
+        "handler": "tools.pcap_parse"
+      },
+      {
+        "id": "state_machine",
+        "title": {
+          "default": "state machine",
+          "zh-CN": "协议状态机"
+        },
+        "description": {
+          "default": "Infer a protocol state machine (DOT) from a message log.",
+          "zh-CN": "Infer a protocol state machine (DOT) from a message log."
+        },
+        "inputSchema": "schemas/state_machine.input.json",
+        "handler": "tools.state_machine"
+      },
+      {
+        "id": "parse_har",
+        "title": {
+          "default": "parse har",
+          "zh-CN": "HAR 解析"
+        },
+        "description": {
+          "default": "Parse HAR request/response fields for protocol reversing.",
+          "zh-CN": "Parse HAR request/response fields for protocol reversing."
+        },
+        "inputSchema": "schemas/parse_har.input.json",
+        "handler": "tools.parse_har"
+      },
+      {
+        "id": "ioc_extract",
+        "title": {
+          "default": "ioc extract",
+          "zh-CN": "IOC 提取"
+        },
+        "description": {
+          "default": "Extract IOCs (IPv4/IPv6/URL/domain/email/hash) from a file.",
+          "zh-CN": "Extract IOCs (IPv4/IPv6/URL/domain/email/hash) from a file."
+        },
+        "inputSchema": "schemas/ioc_extract.input.json",
+        "handler": "tools.ioc_extract"
+      },
+      {
+        "id": "yara_gen",
+        "title": {
+          "default": "yara gen",
+          "zh-CN": "YARA 生成"
+        },
+        "description": {
+          "default": "Generate a YARA rule from binary strings and imports.",
+          "zh-CN": "Generate a YARA rule from binary strings and imports."
+        },
+        "inputSchema": "schemas/yara_gen.input.json",
+        "handler": "tools.yara_gen"
+      },
+      {
+        "id": "llm_sim",
+        "title": {
+          "default": "llm sim",
+          "zh-CN": "LLM 注入模拟"
+        },
+        "description": {
+          "default": "Run a local OpenAI-compatible LLM app to test prompt-injection payloads.",
+          "zh-CN": "Run a local OpenAI-compatible LLM app to test prompt-injection payloads."
+        },
+        "inputSchema": "schemas/llm_sim.input.json",
+        "handler": "tools.llm_sim"
+      },
+      {
+        "id": "triage_artifact",
+        "title": {
+          "default": "triage artifact",
+          "zh-CN": "样本初筛"
+        },
+        "description": {
+          "default": "Offline triage facts for a sample: magic, entropy, strings.",
+          "zh-CN": "Offline triage facts for a sample: magic, entropy, strings."
+        },
+        "inputSchema": "schemas/triage_artifact.input.json",
+        "handler": "tools.triage_artifact"
+      },
+      {
+        "id": "hash_artifact",
+        "title": {
+          "default": "hash artifact",
+          "zh-CN": "文件哈希"
+        },
+        "description": {
+          "default": "Print SHA-256 and size of a file.",
+          "zh-CN": "Print SHA-256 and size of a file."
+        },
+        "inputSchema": "schemas/hash_artifact.input.json",
+        "handler": "tools.hash_artifact"
+      },
+      {
+        "id": "tool_recommend",
+        "title": {
+          "default": "tool recommend",
+          "zh-CN": "工具推荐"
+        },
+        "description": {
+          "default": "Recommend tools and evidence format from a task or signal; empty query returns the full tool matrix.",
+          "zh-CN": "Recommend tools and evidence format from a task or signal; empty query returns the full tool matrix."
+        },
+        "inputSchema": "schemas/tool_recommend.input.json",
+        "handler": "tools.tool_recommend"
+      },
+      {
+        "id": "toolbox",
+        "title": {
+          "default": "toolbox",
+          "zh-CN": "外部工具目录"
+        },
+        "description": {
+          "default": "External tool catalog. action=catalog|status|mcp|probe|install|update|mirror; probe checks whether a command resolves, install pulls one catalog release asset.",
+          "zh-CN": "External tool catalog. action=catalog|status|mcp|probe|install|update|mirror; probe checks whether a command resolves, install pulls one catalog release asset."
+        },
+        "inputSchema": "schemas/toolbox.input.json",
+        "handler": "tools.toolbox"
+      },
+      {
+        "id": "recon_passive",
+        "title": {
+          "default": "recon passive",
+          "zh-CN": "被动侦察"
+        },
+        "description": {
+          "default": "Passive recon over DNS-over-HTTPS (A/AAAA) for one in-scope domain. Read-only.",
+          "zh-CN": "Passive recon over DNS-over-HTTPS (A/AAAA) for one in-scope domain. Read-only."
+        },
+        "inputSchema": "schemas/recon_passive.input.json",
+        "handler": "tools.recon_passive"
+      },
+      {
+        "id": "recon_ports",
+        "title": {
+          "default": "recon ports",
+          "zh-CN": "端口探测"
+        },
+        "description": {
+          "default": "TCP connect scan of a small explicit port list on one in-scope host, 1 rps.",
+          "zh-CN": "TCP connect scan of a small explicit port list on one in-scope host, 1 rps."
+        },
+        "inputSchema": "schemas/recon_ports.input.json",
+        "handler": "tools.recon_ports"
+      },
+      {
+        "id": "recon_http",
+        "title": {
+          "default": "recon http",
+          "zh-CN": "HTTP 基线"
+        },
+        "description": {
+          "default": "One in-scope HTTP GET baseline plus a small tech fingerprint. Read-only.",
+          "zh-CN": "One in-scope HTTP GET baseline plus a small tech fingerprint. Read-only."
+        },
+        "inputSchema": "schemas/recon_http.input.json",
+        "handler": "tools.recon_http"
+      },
+      {
+        "id": "recon_crawl",
+        "title": {
+          "default": "recon crawl",
+          "zh-CN": "同源爬取"
+        },
+        "description": {
+          "default": "Same-host link crawl from one in-scope URL: depth<=2, pages<=10, no form submission.",
+          "zh-CN": "Same-host link crawl from one in-scope URL: depth<=2, pages<=10, no form submission."
+        },
+        "inputSchema": "schemas/recon_crawl.input.json",
+        "handler": "tools.recon_crawl"
+      },
+      {
+        "id": "recon_import",
+        "title": {
+          "default": "recon import",
+          "zh-CN": "侦察结果导入"
+        },
+        "description": {
+          "default": "Import nmap XML or httpx/nuclei JSONL into the asset ledger. Offline.",
+          "zh-CN": "Import nmap XML or httpx/nuclei JSONL into the asset ledger. Offline."
+        },
+        "inputSchema": "schemas/recon_import.input.json",
+        "handler": "tools.recon_import"
+      },
+      {
+        "id": "run_poc",
+        "title": {
+          "default": "run poc",
+          "zh-CN": "PoC 验证"
+        },
+        "description": {
+          "default": "Run one deterministic PoC recipe against an in-scope URL with an independent negative control; verdict verified/refuted/inconclusive.",
+          "zh-CN": "Run one deterministic PoC recipe against an in-scope URL with an independent negative control; verdict verified/refuted/inconclusive."
+        },
+        "inputSchema": "schemas/run_poc.input.json",
+        "handler": "tools.run_poc"
+      },
+      {
+        "id": "oob_start",
+        "title": {
+          "default": "oob start",
+          "zh-CN": "OOB 监听启动"
+        },
+        "description": {
+          "default": "Start a loopback OOB listener and return a one-time URL with expiry.",
+          "zh-CN": "Start a loopback OOB listener and return a one-time URL with expiry."
+        },
+        "inputSchema": "schemas/oob_start.input.json",
+        "handler": "tools.oob_start"
+      },
+      {
+        "id": "oob_poll",
+        "title": {
+          "default": "oob poll",
+          "zh-CN": "OOB 回调查询"
+        },
+        "description": {
+          "default": "Poll an OOB session for callback hits.",
+          "zh-CN": "Poll an OOB session for callback hits."
+        },
+        "inputSchema": "schemas/oob_poll.input.json",
+        "handler": "tools.oob_poll"
+      },
+      {
+        "id": "oob_stop",
+        "title": {
+          "default": "oob stop",
+          "zh-CN": "OOB 监听停止"
+        },
+        "description": {
+          "default": "Stop an OOB session and free its port.",
+          "zh-CN": "Stop an OOB session and free its port."
+        },
+        "inputSchema": "schemas/oob_stop.input.json",
+        "handler": "tools.oob_stop"
+      },
+      {
+        "id": "mine_candidates",
+        "title": {
+          "default": "mine candidates",
+          "zh-CN": "端点候选挖掘"
+        },
+        "description": {
+          "default": "Extract endpoint/parameter candidates from a local HAR, OpenAPI, JS/HTML, APK manifest or strings.",
+          "zh-CN": "Extract endpoint/parameter candidates from a local HAR, OpenAPI, JS/HTML, APK manifest or strings."
+        },
+        "inputSchema": "schemas/mine_candidates.input.json",
+        "handler": "tools.mine_candidates"
+      },
+      {
+        "id": "begin_case",
+        "title": {
+          "default": "begin case",
+          "zh-CN": "开始案件"
+        },
+        "description": {
+          "default": "Create a case workspace (sample/, evidence/, CASE.md), hash samples as first evidence, bind it to this session.",
+          "zh-CN": "Create a case workspace (sample/, evidence/, CASE.md), hash samples as first evidence, bind it to this session."
+        },
+        "inputSchema": "schemas/begin_case.input.json",
+        "handler": "tools.begin_case"
+      },
+      {
+        "id": "case_status",
+        "title": {
+          "default": "case status",
+          "zh-CN": "案件状态"
+        },
+        "description": {
+          "default": "Re-read active case state from disk; resume an existing case by name.",
+          "zh-CN": "Re-read active case state from disk; resume an existing case by name."
+        },
+        "inputSchema": "schemas/case_status.input.json",
+        "handler": "tools.case_status"
+      },
+      {
+        "id": "record_finding",
+        "title": {
+          "default": "record finding",
+          "zh-CN": "登记发现"
+        },
+        "description": {
+          "default": "Register a finding with severity, evidence ids and repro. critical/high need >=2 evidence ids.",
+          "zh-CN": "Register a finding with severity, evidence ids and repro. critical/high need >=2 evidence ids."
+        },
+        "inputSchema": "schemas/record_finding.input.json",
+        "handler": "tools.record_finding"
+      },
+      {
+        "id": "update_finding",
+        "title": {
+          "default": "update finding",
+          "zh-CN": "更新发现"
+        },
+        "description": {
+          "default": "Move a finding through triage (candidate/verified/rejected/duplicate/wontfix) or correct its severity.",
+          "zh-CN": "Move a finding through triage (candidate/verified/rejected/duplicate/wontfix) or correct its severity."
+        },
+        "inputSchema": "schemas/update_finding.input.json",
+        "handler": "tools.update_finding"
+      },
+      {
+        "id": "record_hypothesis",
+        "title": {
+          "default": "record hypothesis",
+          "zh-CN": "登记假设"
+        },
+        "description": {
+          "default": "State a testable hypothesis: expected observation and the command that tests it.",
+          "zh-CN": "State a testable hypothesis: expected observation and the command that tests it."
+        },
+        "inputSchema": "schemas/record_hypothesis.input.json",
+        "handler": "tools.record_hypothesis"
+      },
+      {
+        "id": "update_hypothesis",
+        "title": {
+          "default": "update hypothesis",
+          "zh-CN": "更新假设"
+        },
+        "description": {
+          "default": "Resolve a hypothesis: confirmed / refuted / blocked, with observation and evidence.",
+          "zh-CN": "Resolve a hypothesis: confirmed / refuted / blocked, with observation and evidence."
+        },
+        "inputSchema": "schemas/update_hypothesis.input.json",
+        "handler": "tools.update_hypothesis"
+      },
+      {
+        "id": "end_case",
+        "title": {
+          "default": "end case",
+          "zh-CN": "结案"
+        },
+        "description": {
+          "default": "Close the active case and unbind the session.",
+          "zh-CN": "Close the active case and unbind the session."
+        },
+        "inputSchema": "schemas/end_case.input.json",
+        "handler": "tools.end_case"
+      },
+      {
+        "id": "save_evidence",
+        "title": {
+          "default": "save evidence",
+          "zh-CN": "保存证据"
+        },
+        "description": {
+          "default": "Store arbitrary text or a file into the case evidence chain as E-nnn.",
+          "zh-CN": "Store arbitrary text or a file into the case evidence chain as E-nnn."
+        },
+        "inputSchema": "schemas/save_evidence.input.json",
+        "handler": "tools.save_evidence"
+      },
+      {
+        "id": "team_create",
+        "title": {
+          "default": "team create",
+          "zh-CN": "创建团队工单"
+        },
+        "description": {
+          "default": "Create a team ticket for local multi-agent analysis; team_dispatch needs a ticketId.",
+          "zh-CN": "Create a team ticket for local multi-agent analysis; team_dispatch needs a ticketId."
+        },
+        "inputSchema": "schemas/team_create.input.json",
+        "handler": "tools.team_create"
+      },
+      {
+        "id": "team_status",
+        "title": {
+          "default": "team status",
+          "zh-CN": "团队工单状态"
+        },
+        "description": {
+          "default": "Read ticket state: role assignments, latest report per role, pinned revisions.",
+          "zh-CN": "Read ticket state: role assignments, latest report per role, pinned revisions."
+        },
+        "inputSchema": "schemas/team_status.input.json",
+        "handler": "tools.team_status"
+      },
+      {
+        "id": "team_report",
+        "title": {
+          "default": "team report",
+          "zh-CN": "团队汇报"
+        },
+        "description": {
+          "default": "File a report on a ticket for one role: progress/ready/blocked/failed/dropped.",
+          "zh-CN": "File a report on a ticket for one role: progress/ready/blocked/failed/dropped."
+        },
+        "inputSchema": "schemas/team_report.input.json",
+        "handler": "tools.team_report"
+      },
+      {
+        "id": "team_steer",
+        "title": {
+          "default": "team steer",
+          "zh-CN": "团队转向"
+        },
+        "description": {
+          "default": "Send an instruction to a running role worker at its next step boundary.",
+          "zh-CN": "Send an instruction to a running role worker at its next step boundary."
+        },
+        "inputSchema": "schemas/team_steer.input.json",
+        "handler": "tools.team_steer"
+      },
+      {
+        "id": "team_dispatch",
+        "title": {
+          "default": "team dispatch",
+          "zh-CN": "派发团队角色"
+        },
+        "description": {
+          "default": "Start one role worker for a ticket; the worker is a child agent and its final output is recorded as a report.",
+          "zh-CN": "Start one role worker for a ticket; the worker is a child agent and its final output is recorded as a report."
+        },
+        "inputSchema": "schemas/team_dispatch.input.json",
+        "handler": "tools.team_dispatch"
+      },
+      {
+        "id": "jh_reference",
+        "title": {
+          "default": "jh reference",
+          "zh-CN": "安全参考文档"
+        },
+        "description": {
+          "default": "Read one doc from the offline knowledge base (365 docs). domain: web/native/protocol/malware/ai-security/evidence/android/toolbox/playbooks; start with index.md.",
+          "zh-CN": "Read one doc from the offline knowledge base (365 docs). domain: web/native/protocol/malware/ai-security/evidence/android/toolbox/playbooks; start with index.md."
+        },
+        "inputSchema": "schemas/jh_reference.input.json",
+        "handler": "tools.jh_reference"
+      }
+    ],
+    "agents": [
+      {
+        "id": "jh-triage",
+        "file": "agents/jh-triage.md"
+      },
+      {
+        "id": "jh-static",
+        "file": "agents/jh-static.md"
+      },
+      {
+        "id": "jh-dynamic",
+        "file": "agents/jh-dynamic.md"
+      },
+      {
+        "id": "jh-decoy-audit",
+        "file": "agents/jh-decoy-audit.md"
+      },
+      {
+        "id": "jh-critic",
+        "file": "agents/jh-critic.md"
+      },
+      {
+        "id": "jh-reporter",
+        "file": "agents/jh-reporter.md"
+      },
+      {
+        "id": "jh-orchestrator",
+        "file": "agents/jh-orchestrator.md"
+      }
+    ],
+    "uiEntries": [
+      {
+        "id": "panel",
+        "title": {
+          "default": "JH Toolbox",
+          "zh-CN": "JH 工具箱"
+        },
+        "slot": "settings.ai",
+        "page": "pages/config.html",
+        "icon": "shield"
+      }
+    ],
+    "configPage": "pages/config.html"
+  }
+}

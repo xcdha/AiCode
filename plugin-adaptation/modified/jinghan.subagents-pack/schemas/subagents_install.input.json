@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "overwrite": {
+      "type": "string",
+      "enum": ["always", "changed", "never"],
+      "description": "已存在同名定义时的策略：always 总是覆盖 / changed 仅内容不同且由本插件管理时覆盖（默认）/ never 一律跳过"
+    },
+    "force": {
+      "type": "boolean",
+      "description": "强制覆盖同名用户自建定义，忽略 overwrite 保护。默认 false"
+    }
+  },
+  "required": []
+}

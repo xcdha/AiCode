@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "finding_id": {
+      "type": "string",
+      "description": "F-xxx id from the finding register."
+    },
+    "status": {
+      "type": "string",
+      "description": "New status: candidate | verified | rejected | duplicate | wontfix."
+    },
+    "severity": {
+      "type": "string",
+      "description": "Corrected severity: critical | high | medium | low | info."
+    },
+    "note": {
+      "type": "string",
+      "description": "Why the triage changed (written to the case timeline)."
+    }
+  },
+  "required": [
+    "finding_id"
+  ]
+}

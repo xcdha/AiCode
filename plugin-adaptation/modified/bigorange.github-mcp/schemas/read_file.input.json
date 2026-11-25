@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "repo": {
+      "type": "string",
+      "description": "仓库全名 owner/repo，例如 octocat/Hello-World。省略则用配置页里的默认仓库。"
+    },
+    "path": {
+      "type": "string",
+      "description": "文件路径，例如 src/index.js。"
+    },
+    "ref": {
+      "type": "string",
+      "description": "分支名或 commit SHA，省略用默认分支。"
+    },
+    "maxChars": {
+      "type": "integer",
+      "minimum": 1000,
+      "description": "最多返回多少字符，默认 40000。"
+    }
+  },
+  "required": [
+    "path"
+  ],
+  "additionalProperties": false
+}

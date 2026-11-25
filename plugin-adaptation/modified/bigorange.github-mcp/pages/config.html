@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GitHub MCP</title>
+<script src="/__aicode/aicode.js"></script>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f2f2f7; --card: #fff; --text: #1c1c1e; --sub: #6c6c70;
+    --line: #d8d8de; --accent: #0a84ff; --ok: #30a14e; --bad: #e5484d; --warn: #e08c00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --sub: #98989d; --line: #38383a; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 14px 14px 44px; background: var(--bg); color: var(--text);
+    font: 14px/1.55 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  h1 { font-size: 19px; margin: 0 0 2px; }
+  h2 { font-size: 14px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .sub { color: var(--sub); font-size: 12.5px; }
+  .card { background: var(--card); border-radius: 14px; padding: 14px; margin-top: 12px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 auto; }
+  label { display: block; font-size: 12.5px; font-weight: 600; margin: 10px 0 5px; color: var(--sub); }
+  label:first-child { margin-top: 0; }
+  input, select {
+    width: 100%; padding: 9px 11px; font-size: 14px; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text);
+  }
+  input[type=checkbox] { width: auto; }
+  button {
+    padding: 9px 14px; font-size: 13.5px; font-family: inherit; font-weight: 600;
+    border: none; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button.danger { background: transparent; color: var(--bad); border: 1px solid var(--bad); }
+  button.sm { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
+  button:disabled { opacity: .45; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .pill.ok { background: rgba(48,161,78,.15); color: var(--ok); }
+  .pill.bad { background: rgba(229,72,77,.15); color: var(--bad); }
+  .pill.warn { background: rgba(224,140,0,.15); color: var(--warn); }
+  .pill.off { background: rgba(120,120,128,.18); color: var(--sub); }
+  .kv { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; padding: 4px 0; }
+  .kv span:first-child { color: var(--sub); }
+  .kv span:last-child { text-align: right; word-break: break-all; }
+  .hint { color: var(--sub); font-size: 11.5px; margin-top: 6px; line-height: 1.6; }
+  .repo { border: 1px solid var(--line); border-radius: 11px; padding: 10px; margin-bottom: 8px; }
+  .repo:last-child { margin-bottom: 0; }
+  .repo-name { font-weight: 600; font-size: 13px; word-break: break-all; }
+  .repo-meta { color: var(--sub); font-size: 11.5px; margin-top: 3px; }
+  .empty { color: var(--sub); font-size: 12.5px; text-align: center; padding: 12px 0; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: rgba(120,120,128,.16); padding: 1px 5px; border-radius: 5px; }
+  .codebox { font-family: ui-monospace, Menlo, monospace; font-size: 20px; font-weight: 700; letter-spacing: 3px; text-align: center; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; margin: 8px 0; }
+  ul.tips { margin: 6px 0 0; padding-left: 17px; color: var(--sub); font-size: 12px; }
+  ul.tips li { margin: 3px 0; }
+  #toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+    background: rgba(0,0,0,.82); color: #fff; padding: 9px 16px; border-radius: 99px;
+    font-size: 13px; opacity: 0; transition: all .2s; pointer-events: none; max-width: 86vw;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<h1>GitHub MCP</h1>
+<div class="sub">登录后可拉取仓库、分支、提交、Issue/PR，并把同一套能力以本地 MCP 服务对外提供。</div>
+
+<div class="card" id="accountCard">
+  <h2>账号 <span id="accPill" class="pill off">未登录</span></h2>
+  <div id="accBody"><div class="empty">正在读取…</div></div>
+</div>
+
+<div class="card" id="loginCard">
+  <h2>登录授权</h2>
+  <div class="sub" style="margin-bottom:10px">在系统浏览器打开 GitHub Token 页面，生成后手动粘贴或从剪贴板导入。</div>
+  <div class="row">
+    <button id="btnWebLogin">打开 GitHub Token 页面</button>
+  </div>
+  <div class="row" style="margin-top:9px">
+    <button id="btnPasteLogin" class="ghost">从剪贴板导入 Token</button>
+    <button id="btnOpenTokenPage" class="ghost">浏览器生成 Token</button>
+  </div>
+  <div class="hint">登录使用你自己的 GitHub Personal Access Token；确认后只保存到插件私有数据目录。</div>
+
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-size:13px;font-weight:600">手动粘贴 Token</summary>
+    <div style="margin-top:9px">
+      <input id="tokenInput" type="password" placeholder="ghp_… / github_pat_…" autocomplete="off" spellcheck="false">
+      <div class="row" style="margin-top:9px">
+        <button id="btnTokenLogin" class="sm">用 Token 登录</button>
+      </div>
+    </div>
+  </details>
+
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;font-weight:600">高级：设备码登录（需自建 OAuth App）</summary>
+    <div class="hint" id="deviceHint" style="margin-top:8px">在下方设置里填一个 GitHub OAuth App 的 Client ID，并勾选该 App 的 Enable Device Flow 才能用。</div>
+    <div id="deviceBox" hidden>
+      <div class="codebox" id="deviceCode">----</div>
+      <div class="row">
+        <button id="btnOpenVerify" class="ghost">打开授权页</button>
+        <button id="btnCancelDevice" class="danger sm" style="flex:0 0 auto">取消</button>
+      </div>
+      <div class="hint" id="deviceStatus"></div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="btnDeviceLogin" class="ghost sm">生成设备码</button>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <h2>仓库预览</h2>
+  <div class="row" style="margin-bottom:8px">
+    <button id="btnPreview" class="ghost sm">拉取最近仓库</button>
+    <button id="btnCopyTools" class="ghost sm">复制工具清单</button>
+  </div>
+  <div id="repoList"><div class="empty">登录后点上方按钮，或直接让 AI 说「看看我的仓库」。</div></div>
+</div>
+
+<div class="card">
+  <h2>本地 MCP 服务 <span id="mcpPill" class="pill off">未启动</span></h2>
+  <div class="kv"><span>MCP 地址</span><span id="mcpUrl">—</span></div>
+  <div class="kv"><span>监听</span><span id="mcpListen">—</span></div>
+  <div class="kv"><span>已处理请求</span><span id="mcpReqs">—</span></div>
+  <div class="row" style="margin-top:11px">
+    <button id="btnMcpToggle">启动</button>
+    <button id="btnMcpCopy" class="ghost">复制地址</button>
+  </div>
+  <div class="hint">这是一台标准 MCP 服务器（Streamable HTTP，JSON-RPC 2.0）。任何支持 HTTP 传输的 MCP 客户端都能通过上面的地址接入；在 Guru 里它由插件自动注册为 <code>plugin__…__github</code>。</div>
+</div>
+
+<div class="card">
+  <h2>设置</h2>
+  <label for="portInput">MCP 端口</label>
+  <input id="portInput" type="number" min="1024" max="65535" placeholder="9999">
+  <label for="defaultRepoInput">默认仓库（可选）</label>
+  <input id="defaultRepoInput" placeholder="owner/repo，工具省略 repo 参数时用它">
+  <label for="clientIdInput">OAuth Client ID（设备码登录用）</label>
+  <input id="clientIdInput" placeholder="Iv1.xxxxxxxxxxxx">
+  <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+    <input id="autoStartInput" type="checkbox">
+    <span style="font-weight:400;color:var(--text)">随插件自动启动 MCP 服务</span>
+  </label>
+  <div class="row" style="margin-top:12px">
+    <button id="btnSaveConfig">保存设置</button>
+    <button id="btnLogout" class="danger" style="flex:0 0 auto">退出登录</button>
+  </div>
+  <div class="hint" id="saveHint"></div>
+</div>
+
+<div class="card">
+  <h2>可用工具</h2>
+  <ul class="tips">
+    <li><code>dashboard</code>：账号概览 + 最近仓库 + 指派给我的 issue + 待我评审的 PR</li>
+    <li><code>list_repos</code> / <code>repo_info</code> / <code>repo_overview</code>：仓库列表、详情、聚合动态</li>
+    <li><code>list_branches</code> / <code>list_commits</code> / <code>list_dir</code> / <code>read_file</code>：代码结构与内容</li>
+    <li><code>list_issues</code> / <code>list_pulls</code> / <code>create_issue</code>：Issue 与 PR</li>
+    <li><code>search</code>：仓库 / 代码 / issue 搜索</li>
+  </ul>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { loggedIn: false, mcpRunning: false, pollTimer: null };
+
+function toast(text) {
+  const el = $('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 1900);
+}
+
+function esc(value) {
+  return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function setPill(el, text, cls) {
+  el.textContent = text;
+  el.className = 'pill ' + cls;
+}
+
+async function call(handler, args) {
+  if (typeof aicode === 'undefined') throw new Error('页面桥未加载，请确认用 App 打开本页');
+  return aicode.invoke(handler, args || {});
+}
+
+// ── 渲染 ──────────────────────────────────────────────────
+
+function renderAccount(data) {
+  state.loggedIn = !!data.loggedIn;
+  const pill = $('accPill');
+  const body = $('accBody');
+  if (!data.loggedIn) {
+    setPill(pill, '未登录', 'off');
+    body.innerHTML = '<div class="empty">还没有登录。用下面的 Token 或设备码登录后，AI 就能自动读取你的仓库。</div>';
+    $('loginCard').hidden = false;
+    return;
+  }
+  setPill(pill, '已登录', 'ok');
+  const acc = data.account || {};
+  const scopes = (acc.scopes || []).join(', ') || '未上报';
+  const core = data.rate && data.rate.resources && data.rate.resources.core;
+  body.innerHTML = [
+    '<div class="kv"><span>账号</span><span>' + esc(acc.login || '—') + (acc.name ? '（' + esc(acc.name) + '）' : '') + '</span></div>',
+    '<div class="kv"><span>登录方式</span><span>' + (acc.method === 'device' ? '设备码 OAuth' : 'Personal Access Token') + '</span></div>',
+    '<div class="kv"><span>Token</span><span>' + esc(acc.tokenMasked || '') + '</span></div>',
+    '<div class="kv"><span>权限 Scope</span><span>' + esc(scopes) + '</span></div>',
+    core ? '<div class="kv"><span>API 配额</span><span>' + (core.limit - core.remaining) + ' / ' + core.limit + ' 已用</span></div>' : '',
+    data.rateError ? '<div class="hint" style="color:var(--bad)">读取配额失败：' + esc(data.rateError) + '</div>' : '',
+  ].join('');
+}
+
+function renderMcp(mcp) {
+  state.mcpRunning = !!(mcp && mcp.running);
+  setPill($('mcpPill'), state.mcpRunning ? '运行中' : '未启动', state.mcpRunning ? 'ok' : 'off');
+  $('mcpUrl').textContent = (mcp && mcp.url) || '—';
+  $('mcpListen').textContent = mcp && mcp.port ? ('127.0.0.1:' + mcp.port) : '—';
+  $('mcpReqs').textContent = mcp ? String(mcp.requests || 0) : '—';
+  $('btnMcpToggle').textContent = state.mcpRunning ? '停止' : '启动';
+  $('btnMcpToggle').className = state.mcpRunning ? 'danger' : '';
+  if (mcp && mcp.lastError) {
+    $('saveHint').textContent = 'MCP 错误：' + mcp.lastError;
+  }
+}
+
+function renderConfig(config) {
+  if (!config) return;
+  $('portInput').value = config.port || '';
+  $('defaultRepoInput').value = config.defaultRepo || '';
+  $('clientIdInput').value = config.oauthClientId || '';
+  $('autoStartInput').checked = config.autoStart !== false;
+  $('deviceHint').hidden = !!config.oauthClientId;
+}
+
+function renderDevice(device) {
+  const box = $('deviceBox');
+  if (!device || device.status === 'idle' || !device.userCode) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  $('deviceCode').textContent = device.userCode;
+  const statusText = {
+    pending: '等待你在浏览器里完成授权…（剩余 ' + (device.expiresIn || 0) + ' 秒）',
+    success: '授权成功，已登录 ' + (device.login || ''),
+    expired: device.error || '设备码已过期',
+    denied: device.error || '已取消授权',
+    error: device.error || '登录失败',
+    canceled: '已取消',
+  }[device.status] || device.status;
+  $('deviceStatus').textContent = statusText;
+  if (device.status === 'success') {
+    stopDevicePoll();
+    refresh();
+  }
+  if (device.status !== 'pending') stopDevicePoll();
+}
+
+function stopDevicePoll() {
+  if (state.pollTimer) {
+    clearInterval(state.pollTimer);
+    state.pollTimer = null;
+  }
+}
+
+function startDevicePoll() {
+  stopDevicePoll();
+  state.pollTimer = setInterval(async () => {
+    try {
+      const res = await call('ui.login.device.status');
+      renderDevice(res);
+      if (res.status === 'success') {
+        toast('登录成功：' + (res.login || ''));
+      }
+    } catch (e) {
+      stopDevicePoll();
+    }
+  }, 2500);
+}
+
+async function refresh() {
+  try {
+    const data = await call('ui.status');
+    renderAccount(data);
+    renderMcp(data.mcp);
+    renderConfig(data.config);
+    if (data.deviceLogin) {
+      renderDevice(data.deviceLogin);
+      if (data.deviceLogin.status === 'pending' && !state.pollTimer) startDevicePoll();
+    }
+  } catch (e) {
+    toast('读取状态失败：' + (e.message || e));
+  }
+}
+
+// ── 交互 ──────────────────────────────────────────────────
+
+$('btnTokenLogin').onclick = async () => {
+  const token = $('tokenInput').value.trim();
+  if (!token) return toast('请先粘贴 Token');
+  const btn = $('btnTokenLogin');
+  btn.disabled = true;
+  btn.textContent = '校验中…';
+  try {
+    const res = await call('ui.login.token', { token });
+    $('tokenInput').value = '';
+    const extra = res.privateRepos ? '，可访问 ' + res.privateRepos + ' 个私有仓库' : '';
+    toast('登录成功：' + res.login + extra);
+    await refresh();
+    await previewRepos();
+  } catch (e) {
+    toast('登录失败：' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '用 Token 登录';
+  }
+};
+
+const TOKEN_PAGE =
+  'https://github.com/settings/tokens/new?scopes=repo,read:org,read:user,notifications&description=Guru%20GitHub%20MCP';
+
+async function openUrl(url) {
+  try {
+    await aicode.ui.openUrl(url);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+$('btnWebLogin').onclick = async () => {
+  const ok = await openUrl(TOKEN_PAGE);
+  toast(ok ? '已打开 GitHub Token 页面，生成后回来粘贴或导入。' : '请在浏览器打开 ' + TOKEN_PAGE);
+};
+
+$('btnOpenTokenPage').onclick = async () => {
+  const ok = await openUrl(TOKEN_PAGE);
+  toast(ok ? '已打开 Token 页面，生成后回来点「从剪贴板导入 Token」' : '请手动打开 ' + TOKEN_PAGE);
+};
+
+$('btnPasteLogin').onclick = async () => {
+  const btn = $('btnPasteLogin');
+  btn.disabled = true;
+  try {
+    const clip = await aicode.clipboard.read();
+    const text = String((clip && (clip.text || clip.content)) || '').trim();
+    const match = text.match(/(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})/);
+    if (!match) {
+      toast('剪贴板里没找到 Token，请先复制 ghp_… 那一串');
+      return;
+    }
+    const res = await call('ui.login.token', { token: match[1] });
+    const extra = res.privateRepos ? '，可访问 ' + res.privateRepos + ' 个私有仓库' : '';
+    toast('登录成功：' + res.login + extra);
+    await refresh();
+    await previewRepos();
+  } catch (e) {
+    toast('剪贴板登录失败：' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$('btnDeviceLogin').onclick = async () => {
+  const btn = $('btnDeviceLogin');
+  btn.disabled = true;
+  btn.textContent = '生成中…';
+  try {
+    const res = await call('ui.login.device.start');
+    renderDevice({ status: 'pending', userCode: res.userCode, verificationUri: res.verificationUri, expiresIn: res.expiresIn });
+    startDevicePoll();
+    toast('设备码已生成，请在浏览器输入代码');
+  } catch (e) {
+    toast('设备码登录不可用：' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '生成设备码';
+  }
+};
+
+$('btnOpenVerify').onclick = async () => {
+  const url = 'https://github.com/login/device';
+  try {
+    await aicode.ui.openUrl(url);
+  } catch (e) {
+    toast('请手动打开 ' + url);
+  }
+};
+
+$('btnCancelDevice').onclick = async () => {
+  try { await call('ui.login.device.cancel'); } catch (e) {}
+  stopDevicePoll();
+  $('deviceBox').hidden = true;
+  toast('已取消');
+};
+
+async function previewRepos() {
+  const list = $('repoList');
+  list.innerHTML = '<div class="empty">读取中…</div>';
+  try {
+    const res = await call('ui.repos.preview', { perPage: 12 });
+    if (!res.ok) {
+      list.innerHTML = '<div class="empty">' + (res.error === 'NOT_LOGGED_IN' ? '还没登录。' : esc(res.error)) + '</div>';
+      return;
+    }
+    if (!res.repos.length) {
+      list.innerHTML = '<div class="empty">没有取到仓库。</div>';
+      return;
+    }
+    list.innerHTML = res.repos.map((r) => (
+      '<div class="repo">' +
+        '<div class="repo-name">' + esc(r.fullName) + (r.private ? ' <span class="pill off">私有</span>' : '') + '</div>' +
+        '<div class="repo-meta">' + esc(r.description || '无描述') + '</div>' +
+        '<div class="repo-meta">' + esc(r.language || '未知语言') + ' · ★' + r.stars + ' · ' + esc(String(r.pushedAt || '').slice(0, 10)) + '</div>' +
+      '</div>'
+    )).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="empty">' + esc(e.message || e) + '</div>';
+  }
+}
+
+$('btnPreview').onclick = previewRepos;
+
+$('btnCopyTools').onclick = async () => {
+  const text = [
+    'dashboard', 'list_repos', 'repo_info', 'repo_overview', 'list_branches', 'list_commits',
+    'list_dir', 'read_file', 'list_issues', 'list_pulls', 'search', 'create_issue',
+  ].join(', ');
+  try {
+    await aicode.clipboard.write(text);
+    toast('工具清单已复制');
+  } catch (e) {
+    toast('复制失败');
+  }
+};
+
+$('btnMcpToggle').onclick = async () => {
+  const btn = $('btnMcpToggle');
+  btn.disabled = true;
+  try {
+    const res = state.mcpRunning ? await call('ui.mcp.stop') : await call('ui.mcp.start');
+    renderMcp(res.mcp);
+    toast(res.ok === false ? ('操作失败：' + res.error) : (state.mcpRunning ? 'MCP 已启动' : 'MCP 已停止'));
+  } catch (e) {
+    toast('操作失败：' + (e.message || e));
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+$('btnMcpCopy').onclick = async () => {
+  try {
+    const status = await call('ui.mcp.status');
+    const url = (status.mcp && status.mcp.url) || $('mcpUrl').textContent;
+    await aicode.clipboard.write(url);
+    toast('已复制：' + url);
+  } catch (e) {
+    toast('复制失败');
+  }
+};
+
+$('btnSaveConfig').onclick = async () => {
+  const payload = {
+    port: Number($('portInput').value) || 9999,
+    defaultRepo: $('defaultRepoInput').value.trim(),
+    oauthClientId: $('clientIdInput').value.trim(),
+    autoStart: $('autoStartInput').checked,
+  };
+  try {
+    const res = await call('ui.config.save', payload);
+    renderConfig(res.config);
+    $('saveHint').textContent = res.needRestart ? '端口已改，点「重启」或停止后再启动才生效。' : '已保存。';
+    toast('设置已保存');
+  } catch (e) {
+    toast('保存失败：' + (e.message || e));
+  }
+};
+
+$('btnLogout').onclick = async () => {
+  if (!confirm('确定退出登录？本地 Token 会被删除。')) return;
+  try {
+    await call('ui.logout');
+    stopDevicePoll();
+    $('repoList').innerHTML = '<div class="empty">已退出登录。</div>';
+    toast('已退出登录');
+    await refresh();
+  } catch (e) {
+    toast('退出失败：' + (e.message || e));
+  }
+};
+
+refresh();
+</script>
+</body>
+</html>

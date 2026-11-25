@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Finding title, e.g. \"License check is a plaintext base64 compare\"."
+    },
+    "detail": {
+      "type": "string",
+      "description": "What was found, how it was observed, and the impact."
+    },
+    "evidence_ids": {
+      "type": "array",
+      "description": "e.g. [\"E-002\",\"E-005\"].",
+      "items": {
+        "type": "string"
+      }
+    },
+    "repro_cmd": {
+      "type": "string",
+      "description": "Reusable command/tool call that reproduces the conclusion."
+    },
+    "severity": {
+      "type": "string",
+      "description": "One of: critical | high | medium | low | info. critical/high require >= 2 evidence ids."
+    },
+    "vuln_class": {
+      "type": "string",
+      "description": "Vulnerability class, e.g. auth-bypass / xss / license-bypass; used for dedup."
+    },
+    "target": {
+      "type": "string",
+      "description": "Affected target/endpoint/file; used for dedup."
+    },
+    "confidence": {
+      "type": "string",
+      "description": "One of: verified | probable | unverified (default probable). unverified caps severity at medium."
+    },
+    "cvss": {
+      "type": "number",
+      "description": "CVSS v3 score 0-10; when supplied it overrides severity by the standard bands."
+    },
+    "cvss_vector": {
+      "type": "string",
+      "description": "CVSS v3.1 base vector, e.g. CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H. Overrides cvss."
+    },
+    "status": {
+      "type": "string",
+      "description": "Initial triage state: candidate | verified | rejected | duplicate | wontfix (default verified after the gates)."
+    },
+    "negative_evidence_ids": {
+      "type": "array",
+      "description": "Independent negative-control evidence ids; must not overlap evidence_ids.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "negative_control": {
+      "type": "string",
+      "description": "What the negative control was and why it must not reproduce the finding."
+    },
+    "poc_id": {
+      "type": "string",
+      "description": "PoC recipe/run id from run_poc (e.g. \"sqli-boolean\"); links the finding to the positive/negative evidence."
+    }
+  },
+  "required": [
+    "title",
+    "detail",
+    "evidence_ids",
+    "repro_cmd",
+    "severity"
+  ]
+}

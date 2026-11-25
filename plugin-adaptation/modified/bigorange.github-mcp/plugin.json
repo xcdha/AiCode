@@ -1,0 +1,251 @@
+{
+  "manifestVersion": 1,
+  "id": "bigorange.github-mcp",
+  "name": {
+    "zh-CN": "GitHub MCP",
+    "default": "GitHub MCP"
+  },
+  "version": "1.5.3",
+  "publisher": "bigorange",
+  "repository": "https://github.com/bigorange/nox-github-mcp",
+  "description": {
+    "zh-CN": "登录 GitHub 后自动获取你的仓库项目：账号工作台、仓库列表与详情、语言构成、分支、提交、Issue/PR、代码浏览与搜索，全部工具同时以本地 MCP 服务对外提供，可接入任意 MCP 客户端。",
+    "default": "GitHub workspace tools after login: dashboard, repositories, branches, commits, issues, pulls, file browsing, search — exposed both as plugin tools and a local MCP server."
+  },
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "engines": {
+    "pluginApi": "^1.0.0"
+  },
+  "runtime": {
+    "type": "javascript",
+    "entry": "dist/main.js",
+    "resident": true
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "status",
+        "title": {
+          "zh-CN": "账号状态",
+          "default": "Account status"
+        },
+        "description": {
+          "zh-CN": "查看 GitHub 登录状态、账号信息、API 配额与本地 MCP 服务地址。未登录时这一步告诉你该怎么登。",
+          "default": "Account status"
+        },
+        "inputSchema": "schemas/status.input.json",
+        "handler": "tools.status"
+      },
+      {
+        "id": "login",
+        "title": {
+          "zh-CN": "登录 GitHub",
+          "default": "Log in to GitHub"
+        },
+        "description": {
+          "zh-CN": "用 Personal Access Token 登录并保存到本地；登录后即可拉取该 Token 授权范围内的公开与私有仓库。",
+          "default": "Log in to GitHub"
+        },
+        "inputSchema": "schemas/login.input.json",
+        "handler": "tools.login"
+      },
+      {
+        "id": "logout",
+        "title": {
+          "zh-CN": "退出登录",
+          "default": "Log out"
+        },
+        "description": {
+          "zh-CN": "删除本地保存的 GitHub Token。",
+          "default": "Log out"
+        },
+        "inputSchema": "schemas/logout.input.json",
+        "handler": "tools.logout"
+      },
+      {
+        "id": "dashboard",
+        "title": {
+          "zh-CN": "我的工作台",
+          "default": "My dashboard"
+        },
+        "description": {
+          "zh-CN": "一次拿到账号概览、最近推送的仓库、指派给我的未关闭 issue、等待我评审的 PR。适合「登录后先看看我有哪些项目」。",
+          "default": "My dashboard"
+        },
+        "inputSchema": "schemas/dashboard.input.json",
+        "handler": "tools.dashboard"
+      },
+      {
+        "id": "list-repos",
+        "title": {
+          "zh-CN": "列出仓库",
+          "default": "List repositories"
+        },
+        "description": {
+          "zh-CN": "分页列出当前账号可见的仓库（公开 + 私有 + 协作 + 组织），可按 owner/private/public/fork/source 过滤。",
+          "default": "List repositories"
+        },
+        "inputSchema": "schemas/list_repos.input.json",
+        "handler": "tools.list_repos"
+      },
+      {
+        "id": "repo-info",
+        "title": {
+          "zh-CN": "仓库详情",
+          "default": "Repository info"
+        },
+        "description": {
+          "zh-CN": "获取单个仓库的元数据：星标、分支、语言构成占比、许可证、大小、默认分支等。未登录也能查公共仓库。",
+          "default": "Repository info"
+        },
+        "inputSchema": "schemas/repo_info.input.json",
+        "handler": "tools.repo_info"
+      },
+      {
+        "id": "repo-overview",
+        "title": {
+          "zh-CN": "仓库总览",
+          "default": "Repository overview"
+        },
+        "description": {
+          "zh-CN": "一次性聚合仓库核心动态：元数据 + 语言构成 + 分支 + 最近提交 + 未关闭 issue + 待合并 PR（缓存 5 分钟）。",
+          "default": "Repository overview"
+        },
+        "inputSchema": "schemas/repo_overview.input.json",
+        "handler": "tools.repo_overview"
+      },
+      {
+        "id": "list-issues",
+        "title": {
+          "zh-CN": "Issue 列表",
+          "default": "List issues"
+        },
+        "description": {
+          "zh-CN": "列出仓库的 issue（自动排除 PR），可按 open/closed/all 过滤。",
+          "default": "List issues"
+        },
+        "inputSchema": "schemas/list_issues.input.json",
+        "handler": "tools.list_issues"
+      },
+      {
+        "id": "list-pulls",
+        "title": {
+          "zh-CN": "PR 列表",
+          "default": "List pull requests"
+        },
+        "description": {
+          "zh-CN": "列出仓库的 Pull Request，含 draft 状态与来源/目标分支。",
+          "default": "List pull requests"
+        },
+        "inputSchema": "schemas/list_pulls.input.json",
+        "handler": "tools.list_pulls"
+      },
+      {
+        "id": "list-commits",
+        "title": {
+          "zh-CN": "提交历史",
+          "default": "List commits"
+        },
+        "description": {
+          "zh-CN": "列出仓库某分支的提交历史。",
+          "default": "List commits"
+        },
+        "inputSchema": "schemas/list_commits.input.json",
+        "handler": "tools.list_commits"
+      },
+      {
+        "id": "list-branches",
+        "title": {
+          "zh-CN": "分支列表",
+          "default": "List branches"
+        },
+        "description": {
+          "zh-CN": "列出仓库分支及其 HEAD SHA、是否受保护。",
+          "default": "List branches"
+        },
+        "inputSchema": "schemas/list_branches.input.json",
+        "handler": "tools.list_branches"
+      },
+      {
+        "id": "list-dir",
+        "title": {
+          "zh-CN": "浏览目录",
+          "default": "Browse directory"
+        },
+        "description": {
+          "zh-CN": "查看仓库某个目录下的文件与子目录，可指定分支或 commit ref。",
+          "default": "Browse directory"
+        },
+        "inputSchema": "schemas/list_dir.input.json",
+        "handler": "tools.list_dir"
+      },
+      {
+        "id": "read-file",
+        "title": {
+          "zh-CN": "读取文件",
+          "default": "Read file"
+        },
+        "description": {
+          "zh-CN": "读取仓库内单个文本文件内容（自动 base64 解码，超长截断）。",
+          "default": "Read file"
+        },
+        "inputSchema": "schemas/read_file.input.json",
+        "handler": "tools.read_file"
+      },
+      {
+        "id": "search",
+        "title": {
+          "zh-CN": "搜索",
+          "default": "Search"
+        },
+        "description": {
+          "zh-CN": "搜索仓库（repos）、代码（code）或 issue/PR（issues），支持 GitHub 限定语法。",
+          "default": "Search"
+        },
+        "inputSchema": "schemas/search.input.json",
+        "handler": "tools.search"
+      },
+      {
+        "id": "create-issue",
+        "title": {
+          "zh-CN": "创建 Issue",
+          "default": "Create issue"
+        },
+        "description": {
+          "zh-CN": "在指定仓库创建 issue，可带正文、标签与指派人。",
+          "default": "Create issue"
+        },
+        "inputSchema": "schemas/create_issue.input.json",
+        "handler": "tools.create_issue"
+      },
+      {
+        "id": "host-mcp-status",
+        "title": {
+          "zh-CN": "宿主 MCP 状态",
+          "default": "Host MCP status"
+        },
+        "description": {
+          "zh-CN": "查看宿主 MCP 层识别到的服务器列表，确认 github 这一项是否已连接、连到哪个地址。排查「列表里看不到」时用。",
+          "default": "Show MCP servers recognized by the host."
+        },
+        "inputSchema": "schemas/host-mcp-status.input.json",
+        "handler": "tools.host_mcp_status"
+      },
+      {
+        "id": "probe-open-url",
+        "title": {
+          "zh-CN": "探测打开链接",
+          "default": "Probe openUrl"
+        },
+        "description": {
+          "zh-CN": "查看 Guru 支持的打开链接方法。",
+          "default": "Report the supported Guru openUrl method."
+        },
+        "inputSchema": "schemas/probe_open_url.input.json",
+        "handler": "tools.probe_open_url"
+      }
+    ],
+    "configPage": "pages/config.html"
+  }
+}

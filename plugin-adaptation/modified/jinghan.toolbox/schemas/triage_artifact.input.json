@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "artifact": {
+      "type": "string"
+    },
+    "out": {
+      "type": "string",
+      "description": "Output directory. Defaults to the plugin data dir under triage/."
+    }
+  },
+  "required": [
+    "artifact"
+  ]
+}

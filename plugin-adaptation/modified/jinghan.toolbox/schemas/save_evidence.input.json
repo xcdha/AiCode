@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Short source label, e.g. \"themida-dump\"."
+    },
+    "content": {
+      "type": "string",
+      "description": "Text to store."
+    },
+    "file": {
+      "type": "string",
+      "description": "Path of a file to store instead of inline content."
+    }
+  },
+  "required": [
+    "label"
+  ]
+}

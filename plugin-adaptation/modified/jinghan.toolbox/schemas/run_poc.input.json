@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "properties": {
+    "recipe": {
+      "type": "string",
+      "description": "http-diff | sqli-boolean | path-traversal | idor | xss-canary | jwt-none | state-change"
+    },
+    "url": {
+      "type": "string",
+      "description": "Target URL. Private/loopback addresses need lab=true."
+    },
+    "positive_suffix": {
+      "type": "string",
+      "description": "Query/path suffix for the positive request, e.g. ?id=1%27%20OR%201=1--"
+    },
+    "negative_suffix": {
+      "type": "string",
+      "description": "Independent benign suffix for the control request."
+    },
+    "positive_headers": {
+      "type": "string",
+      "description": "JSON object of positive request headers."
+    },
+    "negative_headers": {
+      "type": "string",
+      "description": "JSON object of negative request headers."
+    },
+    "positive_body": {
+      "type": "string",
+      "description": "Positive request body."
+    },
+    "negative_body": {
+      "type": "string",
+      "description": "Negative request body."
+    },
+    "success_regex": {
+      "type": "string",
+      "description": "Override the recipe marker regex."
+    },
+    "lab": {
+      "type": "boolean",
+      "description": "Allow private/loopback targets (authorized lab only)."
+    }
+  },
+  "required": [
+    "recipe",
+    "url"
+  ]
+}

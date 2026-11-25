@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "system_prompt": {
+      "type": "string"
+    },
+    "input": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "system_prompt",
+    "input"
+  ]
+}

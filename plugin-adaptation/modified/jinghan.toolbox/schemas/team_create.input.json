@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "What this team must deliver."
+    },
+    "roles": {
+      "type": "array",
+      "description": "Subset of: orchestrator, triage, static, dynamic, decoy-audit, critic, reporter. Defaults to the configured default roles.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "roleDeps": {
+      "type": "string",
+      "description": "Role dependencies, format \"role:dep1,dep2;role2:dep\" — e.g. \"critic:static,dynamic\". A role starts only after its prerequisites are done."
+    },
+    "caseDir": {
+      "type": "string",
+      "description": "Ticket workspace directory; defaults to the active case or session cwd."
+    },
+    "budgetMinutes": {
+      "type": "number",
+      "description": "Per-worker wall-time budget in minutes (1-60); workers report blocked when exhausted."
+    },
+    "maxToolCalls": {
+      "type": "number",
+      "description": "Advisory tool-call budget for workers; recorded on the ticket."
+    }
+  },
+  "required": [
+    "goal"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "repo": {
+      "type": "string",
+      "description": "仓库全名 owner/repo，例如 octocat/Hello-World。省略则用配置页里的默认仓库。"
+    },
+    "title": {
+      "type": "string",
+      "description": "issue 标题。"
+    },
+    "body": {
+      "type": "string",
+      "description": "issue 正文，支持 Markdown。"
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "标签名列表。"
+    },
+    "assignees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "指派人登录名列表。"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "additionalProperties": false
+}

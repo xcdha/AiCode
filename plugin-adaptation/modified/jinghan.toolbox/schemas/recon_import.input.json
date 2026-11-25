@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Local output file path."
+    },
+    "format": {
+      "type": "string",
+      "description": "nmap-xml | httpx-jsonl | nuclei-jsonl (inferred from content when omitted)."
+    }
+  },
+  "required": [
+    "path"
+  ]
+}

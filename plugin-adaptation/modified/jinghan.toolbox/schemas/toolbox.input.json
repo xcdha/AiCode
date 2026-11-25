@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "catalog | status | mcp | probe | install | update | mirror"
+    },
+    "id": {
+      "type": "string",
+      "description": "Catalog id for install/update/mirror (e.g. jadx)."
+    },
+    "asset_name": {
+      "type": "string",
+      "description": "Release asset name when the release has multiple candidates."
+    },
+    "path": {
+      "type": "string",
+      "description": "Local archive path for action=mirror."
+    },
+    "sha256": {
+      "type": "string",
+      "description": "Required sha256 for action=mirror."
+    },
+    "query": {
+      "type": "string",
+      "description": "catalog: filter by id/name/category/purpose."
+    }
+  },
+  "required": [
+    "action"
+  ]
+}

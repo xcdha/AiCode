@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "In-scope http(s) URL."
+    },
+    "lab": {
+      "type": "boolean",
+      "description": "Allow private/loopback targets (authorized lab only)."
+    }
+  },
+  "required": [
+    "url"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "In-scope starting URL."
+    },
+    "depth": {
+      "type": "number",
+      "description": "Link depth (default 1, max 2)."
+    },
+    "maxPages": {
+      "type": "number",
+      "description": "Page cap (default 5, max 10)."
+    },
+    "lab": {
+      "type": "boolean",
+      "description": "Allow private/loopback targets (authorized lab only)."
+    }
+  },
+  "required": [
+    "url"
+  ]
+}

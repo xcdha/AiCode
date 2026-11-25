@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "statement": {
+      "type": "string",
+      "description": "What you think is true."
+    },
+    "expected": {
+      "type": "string",
+      "description": "What you expect to observe if true."
+    },
+    "test_cmd": {
+      "type": "string",
+      "description": "Shell command or tool call to verify."
+    },
+    "negative_cmd": {
+      "type": "string",
+      "description": "Independent negative-control command (must not reproduce the expected observation)."
+    },
+    "evidence_ids": {
+      "type": "array",
+      "description": "Supporting evidence already collected.",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "statement",
+    "expected",
+    "test_cmd"
+  ]
+}

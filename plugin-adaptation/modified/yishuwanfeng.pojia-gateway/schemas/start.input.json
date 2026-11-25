@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "port": {
+      "type": "number",
+      "description": "监听端口，默认 7864"
+    }
+  },
+  "required": []
+}

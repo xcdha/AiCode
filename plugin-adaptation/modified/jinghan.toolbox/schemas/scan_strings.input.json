@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string"
+    },
+    "min": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "path"
+  ]
+}

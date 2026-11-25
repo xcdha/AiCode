@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "string",
+      "description": "File path or hex string."
+    },
+    "keylen": {
+      "type": "number",
+      "description": "Repeating-key length; omit for single-byte mode."
+    },
+    "top_n": {
+      "type": "number",
+      "description": "Candidate count (default 10)."
+    }
+  },
+  "required": [
+    "data"
+  ]
+}

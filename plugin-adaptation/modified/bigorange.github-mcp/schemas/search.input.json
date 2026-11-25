@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "搜索词，支持 GitHub 限定语法，如 repo:owner/name 或 language:python。"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "repos",
+        "code",
+        "issues"
+      ],
+      "description": "搜索类型，默认 repos。"
+    },
+    "perPage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "默认 20。"
+    },
+    "page": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "页码，默认 1。"
+    },
+    "sort": {
+      "type": "string",
+      "description": "排序字段，如 stars、updated；留空用 GitHub 默认相关度。"
+    }
+  },
+  "required": [
+    "query"
+  ],
+  "additionalProperties": false
+}

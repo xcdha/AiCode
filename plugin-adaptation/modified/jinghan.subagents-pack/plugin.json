@@ -1,0 +1,75 @@
+{
+  "manifestVersion": 1,
+  "id": "jinghan.subagents-pack",
+  "name": {
+    "default": "子代理团队",
+    "zh-CN": "子代理团队"
+  },
+  "version": "1.1.2",
+  "publisher": "jinghan",
+  "repository": "https://github.com/jinghan/subagents-pack-muse",
+  "description": {
+    "default": "Installs a curated team of 8 sub-agents into ~/.guru/agents on enable. Add/remove each one or all from a simple panel. By 惊寒.",
+    "zh-CN": "装插件即自动把 8 个子代理写进 ~/.guru/agents；面板里可单独或批量安装/卸载，卸载插件即删除子代理。作者：惊寒。"
+  },
+  "license": "MIT",
+  "icon": "users",
+  "engines": {
+    "pluginApi": "^1.0.0"
+  },
+  "runtime": {
+    "type": "javascript",
+    "entry": "dist/main.js",
+    "resident": true
+  },
+  "contributes": {
+    "hooks": [
+      { "id": "boot", "event": "app.started", "handler": "hooks.boot" },
+      { "id": "enabled", "event": "plugin.enabled", "handler": "hooks.pluginEnabled" },
+      { "id": "disabled", "event": "plugin.disabled", "handler": "hooks.pluginDisabled" },
+      { "id": "uninstalled", "event": "plugin.uninstalled", "handler": "hooks.pluginUninstalled" }
+    ],
+    "tools": [
+      {
+        "id": "subagents_status",
+        "title": { "default": "Subagents status", "zh-CN": "子代理状态" },
+        "description": {
+          "default": "Report each bundled sub-agent and whether it is installed in ~/.guru/agents.",
+          "zh-CN": "查看 8 个子代理是否已装进 ~/.guru/agents。"
+        },
+        "inputSchema": "schemas/subagents_status.input.json",
+        "handler": "tools.subagents_status"
+      },
+      {
+        "id": "subagents_install",
+        "title": { "default": "Install subagents", "zh-CN": "安装子代理" },
+        "description": {
+          "default": "Install all bundled sub-agents. overwrite: always|changed|never; force overrides the guard for user files.",
+          "zh-CN": "安装全部子代理。overwrite 取 always/changed/never；force 强制覆盖同名用户文件。"
+        },
+        "inputSchema": "schemas/subagents_install.input.json",
+        "handler": "tools.subagents_install"
+      },
+      {
+        "id": "subagents_remove",
+        "title": { "default": "Remove subagents", "zh-CN": "卸载子代理" },
+        "description": {
+          "default": "Remove all sub-agent definition files this plugin installed, leaving user-created files untouched.",
+          "zh-CN": "卸载本插件装过的全部子代理定义，不碰用户自己创建的文件。"
+        },
+        "inputSchema": "schemas/subagents_remove.input.json",
+        "handler": "tools.subagents_remove"
+      }
+    ],
+    "uiEntries": [
+      {
+        "id": "panel",
+        "title": { "default": "Subagents", "zh-CN": "子代理团队" },
+        "slot": "settings.ai",
+        "page": "pages/config.html",
+        "icon": "users"
+      }
+    ],
+    "configPage": "pages/config.html"
+  }
+}

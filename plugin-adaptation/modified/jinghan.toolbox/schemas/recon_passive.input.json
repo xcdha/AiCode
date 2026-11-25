@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "In-scope domain, e.g. example.com."
+    },
+    "lab": {
+      "type": "boolean",
+      "description": "Allow private/loopback targets (authorized lab only)."
+    }
+  },
+  "required": [
+    "domain"
+  ]
+}

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>子代理团队</title>
+<link rel="stylesheet" href="/__aicode/theme.css">
+<link rel="stylesheet" href="/__aicode/ui.css">
+<script src="/__aicode/vue.global.prod.js"></script>
+<script src="/__aicode/aicode-ui-vue.js"></script>
+<script src="/__aicode/aicode.js"></script>
+<style>
+  :root {
+    --line: rgba(255,255,255,.22);
+    --dim: rgba(255,255,255,.66);
+    --accent: #7ab8ff;
+    --warn: #ff8a80;
+    --ok: #7ddba0;
+    --fg: #fff;
+    --bg: #12161f;
+    --surface: rgba(255,255,255,.05);
+    color-scheme: dark;
+  }
+  html, body { background: var(--bg); color: var(--fg); }
+  body { margin:0; padding:14px; font-family:-apple-system,"Noto Sans CJK SC",system-ui,sans-serif; font-size:14px; line-height:1.5; -webkit-text-fill-color:var(--fg); }
+  .card { border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:var(--surface); }
+  h3 { margin:0 0 12px; font-size:15px; }
+  .row { display:flex; gap:10px; }
+  button {
+    flex:1; padding:10px; border-radius:9px; border:1px solid var(--line);
+    background:rgba(255,255,255,.08); color:var(--fg); -webkit-text-fill-color:var(--fg);
+    font-family:inherit; font-size:13px; font-weight:600;
+  }
+  button:active { background:rgba(255,255,255,.2); }
+  button.install { border-color:var(--accent); color:var(--accent); -webkit-text-fill-color:var(--accent); }
+  button.uninstall { border-color:var(--warn); color:var(--warn); -webkit-text-fill-color:var(--warn); }
+  button:disabled { opacity:.45; }
+  .agent { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .agent:last-child { border-bottom:none; }
+  .agent .info { flex:1; min-width:0; }
+  .agent .name { font-weight:600; }
+  .agent .name .badge { display:inline-block; margin-right:8px; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600; vertical-align:middle; border:1px solid var(--ok); color:var(--ok); -webkit-text-fill-color:var(--ok); }
+  .agent .desc { margin-top:3px; font-size:12px; line-height:1.4; color:var(--dim); -webkit-text-fill-color:var(--dim); }
+  .agent .btns { display:flex; gap:6px; flex:0 0 auto; }
+  .agent .btns button { flex:none; padding:6px 12px; font-size:12px; }
+  .msg { margin-top:10px; font-size:12px; color:var(--dim); -webkit-text-fill-color:var(--dim); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="card">
+    <h3>子代理团队</h3>
+    <div class="row">
+      <button class="install" :disabled="busy" @click="installAll">安装全部</button>
+      <button class="uninstall" :disabled="busy" @click="removeAll">卸载全部</button>
+    </div>
+    <div class="msg" v-if="msg">{{ msg }}</div>
+  </div>
+
+  <div class="card">
+    <div class="agent" v-for="a in list" :key="a.file">
+      <div class="info">
+        <div class="name"><span v-if="a.installed" class="badge">已安装</span>{{ a.name }}</div>
+        <div class="desc">{{ a.description }}</div>
+      </div>
+      <div class="btns">
+        <button class="install" :disabled="busy" @click="installOne(a)">安装</button>
+        <button class="uninstall" :disabled="busy" @click="removeOne(a)">卸载</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var { createApp } = Vue;
+  function bridge() { return (typeof window !== 'undefined' && window.aicode) ? window.aicode : null; }
+  function invoke(h, a) {
+    var b = bridge();
+    if (!b) return Promise.reject(new Error('页面桥未加载'));
+    return b.invoke(h, a || {});
+  }
+  function errText(e) { return (e && e.code ? '[' + e.code + '] ' : '') + ((e && e.message) || String(e)); }
+
+  createApp({
+    data: function () {
+      return { busy: false, msg: '', list: [] };
+    },
+    mounted: function () { this.load(); },
+    methods: {
+      load: function () {
+        var self = this;
+        return invoke('ui.status').then(function (r) {
+          self.list = (r && r.installed) ? r.installed : [];
+        }).catch(function (e) { self.msg = '读取失败：' + errText(e); });
+      },
+      installAll: function () {
+        var self = this; this.busy = true; this.msg = '安装中…';
+        invoke('ui.install', {}).then(function (r) {
+          self.msg = '已安装 ' + (r.summary ? r.summary.created + r.summary.updated : 0) + ' 个';
+          return self.load();
+        }).catch(function (e) { self.msg = '失败：' + errText(e); })
+          .then(function () { self.busy = false; });
+      },
+      removeAll: function () {
+        var self = this; this.busy = true; this.msg = '卸载中…';
+        invoke('ui.remove').then(function (r) {
+          self.msg = '已卸载 ' + ((r.removed || []).length) + ' 个';
+          return self.load();
+        }).catch(function (e) { self.msg = '失败：' + errText(e); })
+          .then(function () { self.busy = false; });
+      },
+      installOne: function (a) {
+        var self = this; this.busy = true;
+        invoke('ui.installOne', { file: a.file }).then(function () {
+          self.msg = '已安装 ' + a.name;
+          return self.load();
+        }).catch(function (e) { self.msg = '失败：' + errText(e); })
+          .then(function () { self.busy = false; });
+      },
+      removeOne: function (a) {
+        var self = this; this.busy = true;
+        invoke('ui.removeOne', { file: a.file }).then(function () {
+          self.msg = '已卸载 ' + a.name;
+          return self.load();
+        }).catch(function (e) { self.msg = '失败：' + errText(e); })
+          .then(function () { self.busy = false; });
+      }
+    }
+  }).use(AicodeUI).mount('#app');
+})();
+</script>
+</body>
+</html>

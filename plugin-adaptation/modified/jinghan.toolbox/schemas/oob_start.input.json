@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "ttl_sec": {
+      "type": "number",
+      "description": "Listener lifetime seconds (default 300, max 900)."
+    }
+  },
+  "required": []
+}

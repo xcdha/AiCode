@@ -1,0 +1,164 @@
+{
+  "manifestVersion": 1,
+  "id": "yishuwanfeng.pojia-gateway",
+  "name": {
+    "default": "Pojia Gateway",
+    "zh-CN": "网关管家"
+  },
+  "version": "1.0.1",
+  "publisher": "yishuwanfeng",
+  "repository": "https://github.com/xzyy03/pojia2api-android",
+  "description": {
+    "default": "Self-contained AI provider gateway: manages accounts for 14 providers, exposes OpenAI-compatible /v1 endpoints.",
+    "zh-CN": "独立运行的 AI 供应商聚合网关：插件内管理多家账号，对外提供 OpenAI 兼容 /v1 接口。"
+  },
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "engines": {
+    "pluginApi": "^1.0.0"
+  },
+  "runtime": {
+    "type": "javascript",
+    "entry": "dist/main.js",
+    "resident": true
+  },
+  "contributes": {
+    "providers": [
+      {
+        "id": "pojia-local",
+        "name": {
+          "default": "Pojia Gateway (Plugin)",
+          "zh-CN": "网关管家（插件内置）"
+        },
+        "description": {
+          "default": "Gateway served by this plugin on 127.0.0.1. Configure and start it from the plugin page.",
+          "zh-CN": "由本插件自身提供的网关，监听本机回环地址。在插件页面配置并启动。"
+        },
+        "format": "openai",
+        "baseUrl": "http://127.0.0.1:7864/v1"
+      }
+    ],
+    "tools": [
+      {
+        "id": "status",
+        "title": { "default": "Gateway status", "zh-CN": "网关状态" },
+        "description": {
+          "default": "Report gateway state, listen port and provider account counts.",
+          "zh-CN": "查看网关运行状态、监听端口与各供应商账号数。"
+        },
+        "inputSchema": "schemas/empty.input.json",
+        "handler": "tools.status"
+      },
+      {
+        "id": "start",
+        "title": { "default": "Start gateway", "zh-CN": "启动网关" },
+        "description": {
+          "default": "Start the local HTTP gateway.",
+          "zh-CN": "启动本地 HTTP 网关。"
+        },
+        "inputSchema": "schemas/start.input.json",
+        "handler": "tools.start"
+      },
+      {
+        "id": "stop",
+        "title": { "default": "Stop gateway", "zh-CN": "停止网关" },
+        "description": {
+          "default": "Stop the local HTTP gateway.",
+          "zh-CN": "停止本地 HTTP 网关。"
+        },
+        "inputSchema": "schemas/empty.input.json",
+        "handler": "tools.stop"
+      },
+      {
+        "id": "models",
+        "title": { "default": "List models", "zh-CN": "模型清单" },
+        "description": {
+          "default": "Fetch every provider's model catalog through the account pool.",
+          "zh-CN": "通过账号池拉取各供应商的模型目录。"
+        },
+        "inputSchema": "schemas/models.input.json",
+        "handler": "tools.models"
+      },
+      {
+        "id": "accounts",
+        "title": { "default": "List accounts", "zh-CN": "账号列表" },
+        "description": {
+          "default": "List configured accounts per provider with credit and checkin state.",
+          "zh-CN": "列出各供应商的账号及其积分、签到状态。"
+        },
+        "inputSchema": "schemas/empty.input.json",
+        "handler": "tools.accounts"
+      },
+      {
+        "id": "add_account",
+        "title": { "default": "Add account", "zh-CN": "添加账号" },
+        "description": {
+          "default": "Add accounts by pasting credentials: App-exported JSON, bare token, or cookie string.",
+          "zh-CN": "粘贴凭证添加账号：支持 App 导出的 JSON、裸 token、cookie 串。"
+        },
+        "inputSchema": "schemas/add_account.input.json",
+        "handler": "tools.add_account"
+      },
+      {
+        "id": "remove_account",
+        "title": { "default": "Remove account", "zh-CN": "删除账号" },
+        "description": {
+          "default": "Remove an account by provider and uid.",
+          "zh-CN": "按供应商与 uid 删除账号。"
+        },
+        "inputSchema": "schemas/remove_account.input.json",
+        "handler": "tools.remove_account"
+      },
+      {
+        "id": "refresh_credit",
+        "title": { "default": "Refresh credit", "zh-CN": "刷新积分" },
+        "description": {
+          "default": "Query each account's credit/points balance.",
+          "zh-CN": "查询各账号的积分/额度余额。"
+        },
+        "inputSchema": "schemas/provider.input.json",
+        "handler": "tools.refresh_credit"
+      },
+      {
+        "id": "checkin",
+        "title": { "default": "Daily checkin", "zh-CN": "每日签到" },
+        "description": {
+          "default": "Run daily checkin for every account of a provider.",
+          "zh-CN": "对指定供应商的全部账号执行每日签到。"
+        },
+        "inputSchema": "schemas/provider.input.json",
+        "handler": "tools.checkin"
+      },
+      {
+        "id": "tasks",
+        "title": { "default": "List tasks", "zh-CN": "任务列表" },
+        "description": {
+          "default": "List the growth/task center entries of a provider.",
+          "zh-CN": "拉取指定供应商的任务中心列表。"
+        },
+        "inputSchema": "schemas/provider.input.json",
+        "handler": "tools.tasks"
+      },
+      {
+        "id": "run_tasks",
+        "title": { "default": "Run tasks", "zh-CN": "执行任务" },
+        "description": {
+          "default": "Claim rewards for completed tasks of a provider.",
+          "zh-CN": "领取指定供应商已完成任务的奖励。"
+        },
+        "inputSchema": "schemas/provider.input.json",
+        "handler": "tools.run_tasks"
+      }
+    ],
+    "uiEntries": [
+      {
+        "id": "console",
+        "title": { "default": "Gateway console", "zh-CN": "网关控制台" },
+        "slot": "settings.ai",
+        "page": "pages/config.html",
+        "icon": "grid"
+      }
+    ],
+    "configPage": "pages/config.html"
+  }
+}

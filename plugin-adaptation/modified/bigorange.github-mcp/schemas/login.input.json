@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "description": "GitHub Personal Access Token（classic 需勾选 repo；fine-grained 需给目标仓库 Contents/Issues 读权限）。"
+    }
+  },
+  "required": [
+    "token"
+  ],
+  "additionalProperties": false
+}

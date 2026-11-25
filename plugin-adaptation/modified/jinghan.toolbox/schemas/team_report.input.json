@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "ticketId": {
+      "type": "string",
+      "description": "Ticket id."
+    },
+    "role": {
+      "type": "string",
+      "description": "One of: orchestrator, triage, static, dynamic, decoy-audit, critic, reporter; must be part of the ticket."
+    },
+    "state": {
+      "type": "string",
+      "description": "progress | ready | blocked | failed | dropped"
+    },
+    "summary": {
+      "type": "string",
+      "description": "What was done / found / blocked. Cite evidence ids inline."
+    },
+    "evidenceIds": {
+      "type": "array",
+      "description": "Evidence ids backing the report, e.g. [\"E-001\"].",
+      "items": {
+        "type": "string"
+      }
+    },
+    "repro": {
+      "type": "string",
+      "description": "Reproduction command when the report claims a finding."
+    }
+  },
+  "required": [
+    "ticketId",
+    "role",
+    "state",
+    "summary"
+  ]
+}

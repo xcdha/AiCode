@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "provider": {
+      "type": "string",
+      "description": "供应商 id，如 raccoon / meoo / codebuddy"
+    }
+  },
+  "required": ["provider"]
+}

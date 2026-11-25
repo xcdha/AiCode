@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "Reference partition, one of: ai-security / android / evidence / malware / native / playbooks / protocol / toolbox / web"
+    },
+    "path": {
+      "type": "string",
+      "description": "Path inside the domain dir, e.g. index.md, or 'web/index.md'"
+    }
+  },
+  "required": [
+    "path"
+  ]
+}

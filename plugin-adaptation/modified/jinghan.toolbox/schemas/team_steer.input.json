@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "ticketId": {
+      "type": "string",
+      "description": "Ticket id."
+    },
+    "role": {
+      "type": "string",
+      "description": "Running role: orchestrator, triage, static, dynamic, decoy-audit, critic, reporter."
+    },
+    "message": {
+      "type": "string",
+      "description": "Instruction for the worker, e.g. \"只做静态分析，然后 blocked 汇报\"."
+    }
+  },
+  "required": [
+    "ticketId",
+    "role",
+    "message"
+  ]
+}

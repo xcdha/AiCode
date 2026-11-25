@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "repo": {
+      "type": "string",
+      "description": "仓库全名 owner/repo，例如 octocat/Hello-World。省略则用配置页里的默认仓库。"
+    },
+    "path": {
+      "type": "string",
+      "description": "目录路径，根目录留空或写 /。"
+    },
+    "ref": {
+      "type": "string",
+      "description": "分支名或 commit SHA，省略用默认分支。"
+    }
+  },
+  "additionalProperties": false
+}
