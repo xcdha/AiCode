@@ -143,6 +143,7 @@ import com.bysqh.guru.feature.settings.domain.model.modelMetadataKey
 import com.bysqh.guru.feature.settings.domain.model.sanitized
 import com.bysqh.guru.feature.settings.presentation.FetchState
 import com.bysqh.guru.feature.settings.presentation.SettingsViewModel
+import com.bysqh.guru.feature.settings.domain.model.DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -212,6 +213,9 @@ fun ProviderEditorScreen(
     var keyCooldownMinutes by remember { mutableIntStateOf(initialProvider?.keyCooldownMinutes ?: 5) }
     var keySwitchStatusCodes by remember {
         mutableStateOf(initialProvider?.keySwitchStatusCodes?.joinToString(",") ?: "")
+    }
+    var maxConcurrentRequests by remember {
+        mutableStateOf((initialProvider?.maxConcurrentRequests ?: DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS).toString())
     }
     var baseUrl by remember { mutableStateOf(initialProvider?.baseUrl ?: presetPrefill?.baseUrl ?: "") }
     var useFullUrl by remember { mutableStateOf(initialProvider?.useFullUrl ?: false) }
@@ -322,6 +326,9 @@ fun ProviderEditorScreen(
         keyRotationStrategy = keyRotationStrategy,
         keyCooldownMinutes = keyCooldownMinutes,
         keySwitchStatusCodes = keySwitchStatusCodes.split(",").mapNotNull { it.trim().toIntOrNull() },
+        maxConcurrentRequests = maxConcurrentRequests.toIntOrNull()
+            ?.coerceAtLeast(0)
+            ?: if (maxConcurrentRequests.isBlank()) DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS else Int.MAX_VALUE,
         baseUrl = baseUrl.ifBlank { defaultProviderBaseUrl(type) },
         useFullUrl = useFullUrl,
         isEnabled = isEnabled,
@@ -572,6 +579,22 @@ fun ProviderEditorScreen(
                             title = stringResource(R.string.common_enabled),
                             checked = isEnabled,
                             onCheckedChange = { isEnabled = it }
+                        )
+                        SettingsDivider()
+                        ProviderTextFieldRow(
+                            label = stringResource(R.string.provider_max_concurrent_requests),
+                            value = maxConcurrentRequests,
+                            onValueChange = { value ->
+                                if (value.all { it in '0'..'9' }) maxConcurrentRequests = value
+                            },
+                            placeholder = DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS.toString(),
+                            keyboardType = KeyboardType.Number
+                        )
+                        Text(
+                            text = stringResource(R.string.provider_max_concurrent_requests_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.xs)
                         )
                         SettingsDivider()
                         ProviderSwitchRow(

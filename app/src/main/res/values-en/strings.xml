@@ -176,6 +176,30 @@
     <string name="settings_token_stats_model">By model</string>
     <string name="settings_token_stats_success_rate">Success rate %1$s</string>
     <string name="settings_token_stats_recent_calls">Call records</string>
+    <string name="settings_token_stats_overview_tab">Overview</string>
+    <string name="settings_token_stats_calls_tab">Request log</string>
+    <string name="settings_token_stats_analysis_tab">Analysis</string>
+    <string name="settings_token_stats_output_rate">Avg. output rate</string>
+    <string name="settings_token_stats_avg_ttfb">Avg. TTFB</string>
+    <string name="settings_token_stats_call_kind">Type</string>
+    <string name="settings_token_stats_call_kind_all">All types</string>
+    <string name="settings_token_stats_call_status">Status</string>
+    <string name="settings_token_stats_call_status_all">All statuses</string>
+    <string name="settings_token_stats_kind_chat">Chat</string>
+    <string name="settings_token_stats_kind_compaction">Compaction</string>
+    <string name="settings_token_stats_kind_title">Title generation</string>
+    <string name="settings_token_stats_kind_vision">Vision</string>
+    <string name="settings_token_stats_status_success">Success</string>
+    <string name="settings_token_stats_status_error">Error</string>
+    <string name="settings_token_stats_status_cancelled">Cancelled</string>
+    <string name="settings_token_stats_recent_activity">Recent usage</string>
+    <string name="settings_token_stats_activity_breakdown">Input %1$s · Output %2$s</string>
+    <string name="settings_token_stats_health_counts">Success %1$d · errors %2$d · cancelled %3$d</string>
+    <string name="settings_token_stats_activity_empty">Less</string>
+    <string name="settings_token_stats_activity_busy">More</string>
+    <string name="settings_token_stats_health_timeline">Request health timeline</string>
+    <string name="settings_token_stats_health_unhealthy">Unhealthy</string>
+    <string name="settings_token_stats_health_healthy">Healthy</string>
     <string name="settings_token_stats_unknown">Unknown</string>
     <string name="settings_token_stats_no_data">No data</string>
     <string name="settings_token_stats_calls_suffix">calls</string>
@@ -196,6 +220,7 @@
     <string name="settings_token_stats_col_cost">Cost</string>
     <string name="settings_token_stats_page">Page %1$d of %2$d</string>
     <string name="settings_token_stats_retries">%1$d retries</string>
+    <string name="settings_token_stats_stop_reason">Stop reason</string>
     <string name="settings_token_stats_reset">Reset</string>
     <string name="settings_token_stats_reset_title">Reset token stats</string>
     <string name="settings_token_stats_reset_confirm">All call records will be permanently deleted. Reset?</string>
@@ -443,7 +468,7 @@
     <string name="common_disabled">Disabled</string>
     <string name="credential_token">Access Token / PAT</string>
     <string name="credential_auto_inject_title">Auto-inject credentials</string>
-    <string name="credential_auto_inject_hint">Sync git credentials saved in the app to this remote server, effective only for repositories under the current workspace root. Does not affect your manual git usage on the server.</string>
+    <string name="credential_auto_inject_hint">Sync git credentials saved in the app to this remote server, effective only for repositories under the current workspace root. Repositories outside the workspace are not affected.</string>
     <string name="credential_auto_inject_prompt_title">Auto-inject git credentials?</string>
     <string name="credential_auto_inject_prompt_body">Allow Guru to sync git credentials saved in the app to this remote server? It only applies to repositories under the current workspace root and will not modify the server\'s global git config.</string>
     <string name="credential_auto_inject_enable">Enable</string>
@@ -949,9 +974,11 @@
     <string name="chat_copied">Copied</string>
     <string name="chat_copy">Copy</string>
     <string name="chat_task_duration">Total time %1$s</string>
+    <string name="chat_output_rate">%1$d t/s</string>
     <string name="chat_cache_hit_rate">Cache hit rate %1$s</string>
     <string name="chat_status_generating">Generating</string>
     <string name="chat_status_thinking">Thinking</string>
+    <string name="chat_status_request_queued">Queued; approximately %1$d request(s) ahead</string>
     <string name="chat_status_calling_tool">Calling tool</string>
     <string name="chat_status_running_command">Running command</string>
     <string name="chat_status_editing_file">Editing file</string>
@@ -1106,6 +1133,7 @@
     <string name="credential_toast_save_failed">Save failed: %1$s</string>
     <string name="credential_toast_deleted">Credential deleted</string>
     <string name="credential_toast_identity_saved">Identity and repository URL saved</string>
+    <string name="credential_toast_auto_inject_failed">Remote credential injection failed. Check the SSH connection and try again.</string>
 
     <!-- Credential List -->
     <string name="credential_empty_hint">No credentials yet, tap + to add</string>
@@ -1634,6 +1662,8 @@
     <string name="provider_config">Config</string>
     <string name="provider_full_url">Full URL</string>
     <string name="provider_full_url_desc">Base URL is the full request address, no default path appended</string>
+    <string name="provider_max_concurrent_requests">Maximum concurrent requests</string>
+    <string name="provider_max_concurrent_requests_desc">Set to 0 for no limit; any positive integer limits concurrent AI requests and queues excess requests</string>
     <string name="provider_headers_title">Custom Headers</string>
     <string name="provider_headers_desc">Completely override the same-name default header for this vendor</string>
     <string name="provider_headers_name">Header Name</string>
@@ -1858,6 +1888,7 @@
     <string name="terminal_prepare_error_unknown">Unknown error</string>
     <string name="terminal_start_failed">Cannot start terminal:\n%1$s</string>
     <string name="terminal_backend_unsupported">Terminal is not supported by execution backend "%1$s"</string>
+    <string name="terminal_connecting_remote">Connecting to remote terminal…</string>
     <string name="terminal_retry">Retry</string>
     <string name="terminal_no_open_tabs">No open terminal tabs</string>
     <string name="terminal_close_tab">Close Tab</string>
@@ -2219,10 +2250,13 @@
     <string name="plugins_store_incompatible">Incompatible</string>
     <string name="plugins_store_requires_min_version">Requires Guru >= %1$s</string>
     <string name="plugins_store_retry">Retry</string>
+    <string name="plugins_store_download_preparing">Finding and preparing the plugin package…</string>
+    <string name="plugins_store_download_progress">Downloading: %1$d%%</string>
+    <string name="plugins_store_download_cancel">Cancel download</string>
     <string name="plugins_store_error_network">Cannot reach the index repository. Check the network or URL.</string>
     <string name="plugins_store_error_invalid">The index is invalid and was rejected.</string>
     <string name="plugins_store_error_no_release">No installable release found.</string>
-    <string name="plugins_store_error_download">Failed to download the plugin package. Try again later.</string>
+    <string name="plugins_store_error_download">Could not download the plugin package. Check your connection and try again.</string>
     <string name="plugins_store_error_preview">The plugin package cannot be read. Installation was cancelled.</string>
     <string name="plugins_store_refresh_done">Index refreshed</string>
     <string name="plugins_store_refresh_done_failed">Index refreshed, %1$d failed</string>
@@ -2246,6 +2280,17 @@
     <string name="plugins_install_repository_label">Plugin source repository</string>
     <string name="plugins_install_repository_hint">Type the full source repository shown above</string>
     <string name="plugins_install_repository_mismatch">The addresses do not match</string>
+    <string name="plugins_repository_short_hint">owner/repository</string>
+    <string name="plugins_unofficial_install_title">Install %1$s</string>
+    <string name="plugins_unofficial_install_step">Step %1$d of 3</string>
+    <string name="plugins_unofficial_risk_notice">If you skip the information below, unexpected and potentially harmful behavior may occur.</string>
+    <string name="plugins_unofficial_risk_execution">This plugin runs third-party code in your device environment. AiCode cannot isolate or audit its behavior. Continue only if you fully trust its author and source.</string>
+    <string name="plugins_unofficial_risk_source">This plugin was not published or reviewed by the official team. The official team makes no guarantees about its stability, security, compliance, or future versions.</string>
+    <string name="plugins_unofficial_risk_files">The plugin\'s declared runtimes, tools, and pages may access the host capabilities granted to them and process files, network requests, or session data.</string>
+    <string name="plugins_unofficial_risk_footer">This plugin is not published by the official team. Continue only if you fully trust its author and source.</string>
+    <string name="plugins_unofficial_repository_prompt">To confirm, type the plugin\'s repository address below</string>
+    <string name="plugins_unofficial_acknowledge">I have read and understand these risks</string>
+    <string name="plugins_unofficial_continue">Continue</string>
 
     <string name="plugins_permissions_section">Permissions</string>
     <string name="plugins_shizuku_section">Shizuku</string>

@@ -102,7 +102,9 @@ sealed interface PluginImportState {
         /** 展示用来源名称，例如「Guru Plugins」。 */
         val sourceLabel: String? = null,
         /** 来源是否在宿主官方白名单内；只有它为 true 时跳过手输仓库。 */
-        val officialSource: Boolean = false
+        val officialSource: Boolean = false,
+        /** 官方商店插件通过包校验后自动安装。 */
+        val installImmediately: Boolean = false
     ) : PluginImportState
 
     data class Failed(val errors: List<PluginError>) : PluginImportState
@@ -306,8 +308,7 @@ class PluginsViewModel @Inject constructor(
                     if (installSourceChanged(state.preview, state.origin)) {
                         // 来源变了就不沿用旧包拿到的高危授权，启用状态保持原样
                         shizukuPermissionRepository.revoke(result.pluginId)
-                        overlayPermissionRepository.revoke(result.pluginId)
-                        overlayManager.closePlugin(result.pluginId)
+                        overlayManager.revokePermissionAndClosePlugin(result.pluginId)
                     }
                     syncProviders(result.pluginId)
                     pluginHookDispatcher.dispatchPluginInstalled(
@@ -332,13 +333,16 @@ class PluginsViewModel @Inject constructor(
 
     /** 在线商店已完成下载与包校验后，把暂存包交给统一预览/安装弹层。 */
     fun showPreview(storePreview: PluginStorePreview) {
+        if (_importState.value !is PluginImportState.Idle && _importState.value !is PluginImportState.Failed) return
         showPreview(
             preview = storePreview.preview,
             origin = storePreview.origin,
             expectedRepository = storePreview.expectedRepository,
             sourceLabel = storePreview.sourceLabel,
-            officialSource = storePreview.officialSource
+            officialSource = storePreview.officialSource,
+            installImmediately = storePreview.installImmediately
         )
+        if (storePreview.installImmediately) confirmInstall()
     }
 
     fun showPreview(
@@ -346,7 +350,8 @@ class PluginsViewModel @Inject constructor(
         origin: PluginInstallOrigin,
         expectedRepository: String?,
         sourceLabel: String?,
-        officialSource: Boolean
+        officialSource: Boolean,
+        installImmediately: Boolean = false
     ) {
         if (_importState.value !is PluginImportState.Idle && _importState.value !is PluginImportState.Failed) return
         _importState.value = PluginImportState.Preview(
@@ -354,7 +359,8 @@ class PluginsViewModel @Inject constructor(
             origin = origin,
             expectedRepository = expectedRepository,
             sourceLabel = sourceLabel,
-            officialSource = officialSource
+            officialSource = officialSource,
+            installImmediately = installImmediately
         )
     }
 
@@ -474,12 +480,13 @@ class PluginsViewModel @Inject constructor(
             if (manager.plugins.value.none { it.id == id }) {
                 removeProviders(id)
                 shizukuPermissionRepository.revoke(id)
-                overlayPermissionRepository.revoke(id)
+                overlayManager.revokePermissionAndClosePlugin(id)
                 backupPermissionRepository.revoke(id)
+            } else {
+                overlayManager.closePlugin(id)
             }
             pluginTerminalRunner.closePlugin(id)
             tipManager.dismissPlugin(id)
-            overlayManager.closePlugin(id)
         }
     }
 
@@ -502,8 +509,7 @@ class PluginsViewModel @Inject constructor(
             if (granted) {
                 overlayPermissionRepository.grant(plugin.id)
             } else {
-                overlayPermissionRepository.revoke(plugin.id)
-                overlayManager.closePlugin(plugin.id)
+                overlayManager.revokePermissionAndClosePlugin(plugin.id)
             }
         }
     }

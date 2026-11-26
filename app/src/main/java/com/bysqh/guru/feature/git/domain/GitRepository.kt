@@ -61,8 +61,12 @@ class GitRepository @Inject constructor(
         vararg args: String
     ): String = gitRaw(args)
 
-    /** 当前 git 命令的执行目录：选中了子目录仓库用其路径，否则工作区根。 */
-    private fun repoCwd(): String = currentRepoPath ?: workspaceRepository.currentPath()
+    /** 当前 git 命令的执行目录：选中了当前工作区内的子目录仓库才使用其路径，否则回到工作区根。 */
+    private fun repoCwd(): String {
+        val workspace = workspaceRepository.currentPath().trimEnd('/')
+        val selected = currentRepoPath?.trimEnd('/')
+        return selected?.takeIf { it == workspace || it.startsWith("$workspace/") } ?: workspace
+    }
 
     /** 设置当前选中的 git 仓库路径（null 回到工作区根）。 */
     fun setRepoPath(path: String?) {
@@ -317,7 +321,7 @@ class GitRepository @Inject constructor(
         limit: Int = GRAPH_PAGE_SIZE
     ): GitGraph = withContext(Dispatchers.Default) {
         val skip = existingCommits.size
-        val logRaw = runCatching { git("log", "--pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%s%x1f%P%x1f%b", "--skip", skip.toString(), "-n", limit.toString()) }
+        val logRaw = runCatching { git("log", "--topo-order", "--pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%s%x1f%P%x1f%b", "--skip", skip.toString(), "-n", limit.toString()) }
             .getOrDefault("")
         if (logRaw.isBlank() || logRaw.startsWith("fatal:")) {
             return@withContext if (existingCommits.isEmpty()) GitGraph.EMPTY
@@ -706,8 +710,9 @@ class GitRepository @Inject constructor(
      * 空值跳过对应项不动现有配置。由 UI 在用户保存身份时显式调用。
      */
     suspend fun setUserIdentity(name: String, email: String) {
-        if (name.isNotBlank()) gitChecked("config", if (hasLocalConfig("user.name")) "--local" else "--global", "user.name", name)
-        if (email.isNotBlank()) gitChecked("config", if (hasLocalConfig("user.email")) "--local" else "--global", "user.email", email)
+        val scope = if (hasLocalConfig("user.name") || hasLocalConfig("user.email")) "--local" else "--global"
+        if (name.isNotBlank()) gitChecked("config", scope, "user.name", name)
+        if (email.isNotBlank()) gitChecked("config", scope, "user.email", email)
     }
 
     /** 当前工作区是否有项目级（`--local`）配置值。非 git 仓库或无值时返回 false。 */

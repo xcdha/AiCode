@@ -186,6 +186,7 @@ private fun DrawerProgressIndicator(
 @Composable
 fun ChatDrawerContent(
     sessions: List<ChatSession>,
+    sessionsLoading: Boolean = false,
     externalSessionGroups: List<ExternalSessionGroup> = emptyList(),
     currentExternalSessionId: String? = null,
     onSelectExternalSession: (ExternalSessionSummary) -> Unit = {},
@@ -336,6 +337,7 @@ fun ChatDrawerContent(
             when (selectedTab) {
                 0 -> SessionListTab(
                     sessions = sessions,
+                    sessionsLoading = sessionsLoading,
                     externalSessionGroups = externalSessionGroups,
                     currentExternalSessionId = currentExternalSessionId,
                     onSelectExternalSession = onSelectExternalSession,
@@ -690,6 +692,7 @@ fun ChatDrawerContent(
 @Composable
 private fun SessionListTab(
     sessions: List<ChatSession>,
+    sessionsLoading: Boolean,
     externalSessionGroups: List<ExternalSessionGroup>,
     currentExternalSessionId: String?,
     onSelectExternalSession: (ExternalSessionSummary) -> Unit,
@@ -711,6 +714,7 @@ private fun SessionListTab(
     if (searchQuery.isBlank()) {
         SessionListContent(
             sessions = sessions,
+            sessionsLoading = sessionsLoading,
             externalSessionGroups = externalSessionGroups,
             currentExternalSessionId = currentExternalSessionId,
             onSelectExternalSession = onSelectExternalSession,
@@ -737,6 +741,7 @@ private fun SessionListTab(
 @Composable
 private fun SessionListContent(
     sessions: List<ChatSession>,
+    sessionsLoading: Boolean,
     externalSessionGroups: List<ExternalSessionGroup>,
     currentExternalSessionId: String?,
     onSelectExternalSession: (ExternalSessionSummary) -> Unit,
@@ -752,6 +757,16 @@ private fun SessionListContent(
     onSelect: (ChatSession) -> Unit,
     onLongClick: (ChatSession) -> Unit
 ) {
+    if (sessionsLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
     if (sessions.isEmpty() && externalSessionGroups.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
