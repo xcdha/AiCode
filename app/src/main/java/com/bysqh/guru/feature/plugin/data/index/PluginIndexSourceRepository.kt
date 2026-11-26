@@ -33,9 +33,23 @@ data class PluginIndexSource(
 }
 
 object PluginIndexDefaults {
-    const val OFFICIAL_URL = "https://raw.githubusercontent.com/jieapi/Guru-Plugins-Store/main/index.json"
+    const val OFFICIAL_URL = "https://raw.githubusercontent.com/jieapi/AiCode-Plugins-Store/main/index.json"
     const val OFFICIAL_NAME = "Guru Plugins"
     const val OFFICIAL_ID = "guru.official"
+    const val LEGACY_OFFICIAL_ID = "aicode.official"
+}
+
+internal fun isOfficialPluginIndexSourceId(id: String): Boolean =
+    id == PluginIndexDefaults.OFFICIAL_ID || id == PluginIndexDefaults.LEGACY_OFFICIAL_ID
+
+internal fun samePluginIndexSourceId(first: String?, second: String?): Boolean =
+    first == second ||
+        first != null && second != null &&
+        isOfficialPluginIndexSourceId(first) && isOfficialPluginIndexSourceId(second)
+
+private fun List<StoredSource>.officialSource(): StoredSource? =
+    firstOrNull { it.id == PluginIndexDefaults.OFFICIAL_ID }
+        ?: firstOrNull { it.id == PluginIndexDefaults.LEGACY_OFFICIAL_ID }
 
     val official = PluginIndexSource(
         id = OFFICIAL_ID,
@@ -71,11 +85,11 @@ class PluginIndexSourceRepository @Inject constructor(
         buildList {
             add(
                 PluginIndexDefaults.official.copy(
-                    lastFetchedAt = stored.sources.firstOrNull { it.id == PluginIndexDefaults.OFFICIAL_ID }?.lastFetchedAt ?: 0
+                    lastFetchedAt = stored.sources.officialSource()?.lastFetchedAt ?: 0
                 )
             )
             stored.sources
-                .filter { it.id != PluginIndexDefaults.OFFICIAL_ID }
+                .filterNot { isOfficialPluginIndexSourceId(it.id) }
                 .map { it.toModel() }
                 .forEach(::add)
         }
@@ -101,29 +115,39 @@ class PluginIndexSourceRepository @Inject constructor(
             )
         }
         updateStored { stored ->
-            val officialEntries = stored.sources.filter { it.id == PluginIndexDefaults.OFFICIAL_ID }
-            stored.copy(sources = officialEntries + next.values.map { it.toStored() })
+            val officialEntry = stored.sources.officialSource()?.let {
+                StoredSource(
+                    id = PluginIndexDefaults.OFFICIAL_ID,
+                    name = PluginIndexDefaults.OFFICIAL_NAME,
+                    indexUrl = PluginIndexDefaults.OFFICIAL_URL,
+                    lastFetchedAt = it.lastFetchedAt
+                )
+            }
+            stored.copy(sources = listOfNotNull(officialEntry) + next.values.map { it.toStored() })
         }
     }
 
     /** 记录最近一次成功拉取时间，仅用于离线展示。 */
     suspend fun markFetched(id: String, fetchedAt: Long) {
         updateStored { stored ->
-            when {
-                stored.sources.any { it.id == id } -> stored.copy(
+            if (isOfficialPluginIndexSourceId(id)) {
+                val canonical = StoredSource(
+                    id = PluginIndexDefaults.OFFICIAL_ID,
+                    name = PluginIndexDefaults.OFFICIAL_NAME,
+                    indexUrl = PluginIndexDefaults.OFFICIAL_URL,
+                    lastFetchedAt = fetchedAt
+                )
+                stored.copy(
+                    sources = listOf(canonical) + stored.sources.filterNot {
+                        isOfficialPluginIndexSourceId(it.id)
+                    }
+                )
+            } else {
+                stored.copy(
                     sources = stored.sources.map {
                         if (it.id == id) it.copy(lastFetchedAt = fetchedAt) else it
                     }
                 )
-                id == PluginIndexDefaults.OFFICIAL_ID -> stored.copy(
-                    sources = stored.sources + StoredSource(
-                        id = PluginIndexDefaults.OFFICIAL_ID,
-                        name = PluginIndexDefaults.OFFICIAL_NAME,
-                        indexUrl = PluginIndexDefaults.OFFICIAL_URL,
-                        lastFetchedAt = fetchedAt
-                    )
-                )
-                else -> stored
             }
         }
     }
