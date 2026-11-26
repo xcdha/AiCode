@@ -36,6 +36,7 @@ import com.bysqh.guru.feature.settings.domain.model.AIProviderConfig
 import com.bysqh.guru.feature.settings.domain.model.ProviderType
 import com.bysqh.guru.feature.settings.domain.repository.AIProviderRepository
 import com.bysqh.guru.feature.workspace.domain.FileAccessProvider
+import com.bysqh.guru.feature.agent.domain.provider.ProviderRequestConcurrencyLimiter
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -68,6 +69,7 @@ class ViewImageTool @Inject constructor(
     private val openAIApi: OpenAIApi,
     private val anthropicApi: AnthropicApi,
     private val geminiApi: GeminiApi,
+    private val requestConcurrencyLimiter: ProviderRequestConcurrencyLimiter,
     @param:ApplicationContext private val appContext: Context
 ) : AbstractContextualTool() {
     override val name = "viewImage"
@@ -344,6 +346,8 @@ class ViewImageTool @Inject constructor(
         provider.useFullUrl = config.useFullUrl
         provider.useResponseApi = config.useResponseApi
         provider.providerId = config.id
+        provider.requestConcurrencyLimiter = requestConcurrencyLimiter
+        provider.maxConcurrentRequests = config.maxConcurrentRequests
         provider.logSessionId = sessionId
         provider.customHeaders = config.customHeaders
         val metadata = modelMetadataService.resolve(config.id, config.type, config.effectiveModel)

@@ -6,67 +6,6 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bysqh.guru.core.net.AppProxy
-import com.bysqh.guru.core.util.AILogger
-import com.bysqh.guru.core.util.ApkInstaller
-import com.bysqh.guru.core.util.FileLogger
-import com.bysqh.guru.core.util.LogLevel
-import com.bysqh.guru.feature.agent.data.local.dao.ChatSessionDao
-import com.bysqh.guru.feature.agent.data.local.dao.LlmCallRecordDao
-import com.bysqh.guru.feature.agent.data.local.dao.RecentCallRecord
-import com.bysqh.guru.feature.agent.data.local.entity.LlmCallRecordEntity
-import com.bysqh.guru.feature.agent.domain.container.ConnectionState
-import com.bysqh.guru.feature.agent.domain.container.ContainerImageCatalog
-import com.bysqh.guru.feature.agent.domain.container.ContainerImageEntry
-import com.bysqh.guru.feature.agent.domain.container.ContainerInstaller
-import com.bysqh.guru.feature.agent.domain.container.ContainerOsDetector
-import com.bysqh.guru.feature.agent.domain.container.ContainerProfile
-import com.bysqh.guru.feature.agent.domain.container.ExecutionBackend
-import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
-import com.bysqh.guru.feature.agent.domain.container.RemoteSshConnection
-import com.bysqh.guru.feature.agent.domain.container.RootfsSource
-import com.bysqh.guru.feature.agent.domain.container.displayLabel
-import com.bysqh.guru.feature.agent.domain.mcp.McpConfigRepository
-import com.bysqh.guru.feature.agent.domain.mcp.McpManager
-import com.bysqh.guru.feature.agent.domain.mcp.McpScope
-import com.bysqh.guru.feature.agent.domain.mcp.McpServerConfig
-import com.bysqh.guru.feature.agent.domain.mcp.McpServerEntry
-import com.bysqh.guru.feature.agent.domain.mcp.McpServerStatus
-import com.bysqh.guru.feature.agent.domain.mcp.McpToolDescriptor
-import com.bysqh.guru.feature.agent.domain.mcp.auth.McpOAuthCancelledException
-import com.bysqh.guru.feature.agent.domain.model.AgentMode
-import com.bysqh.guru.feature.agent.domain.permission.PermissionRule
-import com.bysqh.guru.feature.agent.domain.permission.PermissionRulesRepository
-import com.bysqh.guru.feature.agent.domain.skill.SkillConfigRepository
-import com.bysqh.guru.feature.agent.domain.skill.SkillForm
-import com.bysqh.guru.feature.agent.domain.skill.SkillImportError
-import com.bysqh.guru.feature.agent.domain.skill.SkillImportReport
-import com.bysqh.guru.feature.agent.domain.skill.SkillRepository
-import com.bysqh.guru.feature.agent.domain.skill.SkillSaveError
-import com.bysqh.guru.feature.agent.domain.skill.SkillScope
-import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionConfigRepository
-import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionForm
-import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionRepository
-import com.bysqh.guru.feature.agent.domain.subagent.AgentDefinitionScope
-import com.bysqh.guru.feature.agent.domain.subagent.AgentSaveError
-import com.bysqh.guru.feature.agent.domain.subagent.InjectPart
-import com.bysqh.guru.feature.agent.domain.subagent.SubagentModelTier
-import com.bysqh.guru.feature.agent.domain.subagent.SubagentTierSelection
-import com.bysqh.guru.feature.agent.domain.tool.ToolRegistry
-import com.bysqh.guru.feature.settings.data.remote.ModelApiService
-import com.bysqh.guru.feature.settings.data.remote.ContainerImageDownloader
-import com.bysqh.guru.feature.settings.data.remote.ContainerImageVersionProbe
-import com.bysqh.guru.feature.settings.data.remote.ModelMetadataService
-import com.bysqh.guru.feature.settings.data.remote.ModelTestResult
-import com.bysqh.guru.feature.settings.data.remote.ApkDownloadResult
-import com.bysqh.guru.feature.settings.data.remote.ApkDownloader
-import com.bysqh.guru.feature.settings.data.remote.ApkVerifier
-import com.bysqh.guru.feature.settings.data.remote.ApkVerifyResult
-import com.bysqh.guru.feature.settings.data.remote.UpdateAsset
-import com.bysqh.guru.feature.settings.data.remote.UpdateCheckResult
-import com.bysqh.guru.feature.settings.data.remote.UpdateCheckService
-import com.bysqh.guru.feature.settings.data.repository.UpdateCheckSettingsRepository
-import com.bysqh.guru.feature.settings.data.repository.UpdateChannel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.bysqh.guru.feature.settings.data.repository.AppThemeMode
 import com.bysqh.guru.feature.settings.data.repository.ContainerSettingsRepository
@@ -120,6 +59,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -258,6 +198,8 @@ data class TokenStatsUiState(
     val filterProviderId: String? = null,
     /** 筛选：指定模型名（null 为不限）。 */
     val filterModel: String? = null,
+    val filterCallKind: String? = null,
+    val filterCallStatus: String? = null,
     /** 可供筛选的供应商列表（id to 名称）。 */
     val availableProviders: List<Pair<String, String>> = emptyList(),
     /** 可供筛选的模型列表。 */
@@ -270,6 +212,14 @@ private data class ModelStatsPaging(
     val paged: List<com.bysqh.guru.feature.agent.data.local.dao.ModelCallStats>,
     val page: Int,
     val total: Int
+)
+
+private data class TokenStatsQuery(
+    val period: TokenStatsPeriod,
+    val providerId: String?,
+    val model: String?,
+    val callKind: String?,
+    val callStatus: String?
 )
 
 /** 技能列表页的 UI 状态：技能 + 来源作用域 + 启停状态。 */
@@ -355,6 +305,7 @@ class SettingsViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val repository: AIProviderRepository,
     private val modelApiService: ModelApiService,
+    private val requestConcurrencyLimiter: ProviderRequestConcurrencyLimiter,
     private val modelMetadataService: ModelMetadataService,
     private val logSettingsRepository: LogSettingsRepository,
     private val themeSettingsRepository: ThemeSettingsRepository,
@@ -392,6 +343,7 @@ class SettingsViewModel @Inject constructor(
     private val executionModeRepository: ExecutionModeRepository,
     private val executionModeHolder: ExecutionModeHolder,
     private val executionBackendRegistry: ExecutionBackendRegistry,
+    private val executionBackendSwitchCoordinator: ExecutionBackendSwitchCoordinator,
     private val remoteSshConnection: RemoteSshConnection,
     private val remoteRepository: RemoteRepository,
     private val chatSessionDao: ChatSessionDao,
@@ -854,6 +806,9 @@ class SettingsViewModel @Inject constructor(
     private val _filterModel = MutableStateFlow<String?>(null)
     val filterModel: StateFlow<String?> = _filterModel.asStateFlow()
 
+    private val _filterCallKind = MutableStateFlow<String?>(null)
+    private val _filterCallStatus = MutableStateFlow<String?>(null)
+
     /** 工作区已配置的远程连接通道，供容器镜像 SSH 模式下拉复用。 */
     val remoteConnections: StateFlow<List<RemoteConnection>> = remoteRepository.getConnections()
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyList())
@@ -1184,22 +1139,35 @@ class SettingsViewModel @Inject constructor(
                 refreshSkills()
             }
 
-            // 全局技能/子代理在远程模式下以远端为源，本地目录监听（skills.changes）不会触发；
-            // 执行模式切换或远程连接就绪后需重扫，否则列表停留在旧环境的内容。
             launch {
-                executionMode.collectLatest {
-                    refreshSkills()
-                    refreshSubAgents()
+                combine(
+                    executionBackendRegistry.activeBackend,
+                    connectionState
+                ) { backend, state ->
+                    Triple(
+                        backend,
+                        state.takeIf { backend.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID },
+                        backend.environmentCacheKey()
+                    )
                 }
-            }
-
-            launch {
-                connectionState.collectLatest { state ->
-                    if (state == ConnectionState.CONNECTED) {
-                        refreshSkills()
-                        refreshSubAgents()
+                    .distinctUntilChanged { old, new ->
+                        old.first === new.first &&
+                            old.first.id == new.first.id &&
+                            old.first.instanceId == new.first.instanceId &&
+                            old.second == new.second &&
+                            old.third == new.third
                     }
-                }
+                    .collectLatest { (backend, state, _) ->
+                        if (backend.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID &&
+                            state != ConnectionState.CONNECTED
+                        ) {
+                            _skills.value = emptyList()
+                            _subAgents.value = emptyList()
+                            return@collectLatest
+                        }
+                        refreshSkillsNow()
+                        refreshSubAgentsNow()
+                    }
             }
 
             launch {
@@ -1222,12 +1190,16 @@ class SettingsViewModel @Inject constructor(
 
             launch {
                 combine(
-                    _tokenStatsPeriod,
-                    _filterProviderId,
-                    _filterModel
-                ) { period, filterProviderId, filterModel ->
-                    Triple(period, filterProviderId, filterModel)
-                }.flatMapLatest { (period, filterProviderId, filterModel) ->
+                    combine(_tokenStatsPeriod, _filterProviderId, _filterModel) { period, providerId, model ->
+                        Triple(period, providerId, model)
+                    },
+                    combine(_filterCallKind, _filterCallStatus) { kind, status -> kind to status }
+                ) { filters, callFilters ->
+                    TokenStatsQuery(filters.first, filters.second, filters.third, callFilters.first, callFilters.second)
+                }.flatMapLatest { query ->
+                    val period = query.period
+                    val filterProviderId = query.providerId
+                    val filterModel = query.model
                     val start = period.startMillis(System.currentTimeMillis())
                     val tz = java.util.TimeZone.getDefault().getOffset(System.currentTimeMillis()).toLong()
                     combine(
@@ -1264,10 +1236,17 @@ class SettingsViewModel @Inject constructor(
                             llmCallRecordDao.getModelProviderCostStats(start, filterProviderId, filterModel)
                         ) { modelPaging, costStats -> modelPaging to costStats },
                         // 明细分页：页号或总数变化时重查当前页，其余聚合不重复计算
-                        combine(_tokenStatsPage, llmCallRecordDao.getCallsCount(start, filterProviderId, filterModel)) { page, total -> page to total }
+                        combine(
+                            _tokenStatsPage,
+                            llmCallRecordDao.getCallsCount(
+                                start, filterProviderId, filterModel, query.callKind, query.callStatus
+                            )
+                        ) { page, total -> page to total }
                             .flatMapLatest { (page, total) ->
-                                llmCallRecordDao.getRecentCalls(start, CALLS_PAGE_SIZE, page * CALLS_PAGE_SIZE, filterProviderId, filterModel)
-                                    .map { calls -> Triple(calls, total, page) }
+                                llmCallRecordDao.getRecentCalls(
+                                    start, CALLS_PAGE_SIZE, page * CALLS_PAGE_SIZE,
+                                    filterProviderId, filterModel, query.callKind, query.callStatus
+                                ).map { calls -> Triple(calls, total, page) }
                             },
                         // 可选筛选选项列表（全局不限过滤条件时的渠道与模型列表）
                         combine(
@@ -1311,6 +1290,8 @@ class SettingsViewModel @Inject constructor(
                             recentCallCosts = costs.first,
                             filterProviderId = filterProviderId,
                             filterModel = filterModel,
+                            filterCallKind = query.callKind,
+                            filterCallStatus = query.callStatus,
                             availableProviders = availableProviders,
                             availableModels = availableModels,
                             providerKeyCounts = keyCounts
@@ -1575,32 +1556,40 @@ class SettingsViewModel @Inject constructor(
 
     /** 重新扫描技能（进入设置页 / 启停切换后调用，反映磁盘上增删改）。 */
     fun refreshSkills() {
-        viewModelScope.launch {
-            _skills.value = try {
-                withContext(Dispatchers.IO) {
-                    skillRepository.refreshDirectoryCache()
-                    val disabled = skillRepository.disabledNames()
-                    skillRepository.listAllSkills().map { entry ->
-                        SkillUiEntry(
-                            name = entry.skill.name,
-                            description = entry.skill.description,
-                            scope = entry.scope,
-                            disabled = entry.skill.name.lowercase() in disabled,
-                            instructions = entry.skill.instructions,
-                            requiredTools = entry.skill.requiredTools
-                        )
-                    }
+        viewModelScope.launch { refreshSkillsNow() }
+    }
+
+    private suspend fun refreshSkillsNow() {
+        val backend = executionBackendRegistry.currentBackend()
+        val refreshed = try {
+            withContext(Dispatchers.IO) {
+                skillRepository.refreshDirectoryCache()
+                val disabled = skillRepository.disabledNames()
+                skillRepository.listAllSkills().map { entry ->
+                    SkillUiEntry(
+                        name = entry.skill.name,
+                        description = entry.skill.description,
+                        scope = entry.scope,
+                        disabled = entry.skill.name.lowercase() in disabled,
+                        instructions = entry.skill.instructions,
+                        requiredTools = entry.skill.requiredTools
+                    )
                 }
-            } catch (error: java.io.IOException) {
-                if (error is java.io.InterruptedIOException) throw error
-                if (isTransientRemoteConfigError(error)) {
-                    FileLogger.d("Settings", "技能清单等待 SSH 就绪")
-                } else {
-                    FileLogger.w("Settings", "技能清单读取失败", error)
-                }
-                emptyList()
             }
+        } catch (error: java.io.IOException) {
+            if (error is java.io.InterruptedIOException) throw error
+            if (isTransientRemoteConfigError(error)) {
+                FileLogger.d("Settings", "技能清单等待 SSH 就绪")
+            } else {
+                FileLogger.w("Settings", "技能清单读取失败", error)
+            }
+            emptyList()
         }
+        if (executionBackendRegistry.currentBackend() !== backend) return
+        if (backend.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID &&
+            connectionState.value != ConnectionState.CONNECTED
+        ) return
+        _skills.value = refreshed
     }
 
     /** 切换技能的启用/禁用状态（写入对应作用域的 skills.json）。 */
@@ -1741,39 +1730,47 @@ class SettingsViewModel @Inject constructor(
 
     /** 重新扫描子代理定义（进入设置页 / 删除后调用，反映盘上增删改）。 */
     fun refreshSubAgents() {
-        viewModelScope.launch {
-            _subAgents.value = try {
-                withContext(Dispatchers.IO) {
-                    agentDefinitionRepository.refreshDirectoryCache()
-                    val disabled = agentDefinitionRepository.disabledNames()
-                    agentDefinitionRepository.listAll().map { entry ->
-                        SubAgentUiEntry(
-                            name = entry.definition.name,
-                            description = entry.definition.description,
-                            scope = entry.scope,
-                            disabled = entry.definition.name.lowercase() in disabled,
-                            providerId = entry.definition.providerId,
-                            model = entry.definition.model,
-                            reasoningEffort = entry.definition.reasoningEffort,
-                            mode = entry.definition.mode,
-                            allowedTools = entry.definition.allowedTools,
-                            disallowedTools = entry.definition.disallowedTools,
-                            inject = entry.definition.inject,
-                            prompt = entry.definition.prompt,
-                            filePath = entry.definition.filePath
-                        )
-                    }
+        viewModelScope.launch { refreshSubAgentsNow() }
+    }
+
+    private suspend fun refreshSubAgentsNow() {
+        val backend = executionBackendRegistry.currentBackend()
+        val refreshed = try {
+            withContext(Dispatchers.IO) {
+                agentDefinitionRepository.refreshDirectoryCache()
+                val disabled = agentDefinitionRepository.disabledNames()
+                agentDefinitionRepository.listAll().map { entry ->
+                    SubAgentUiEntry(
+                        name = entry.definition.name,
+                        description = entry.definition.description,
+                        scope = entry.scope,
+                        disabled = entry.definition.name.lowercase() in disabled,
+                        providerId = entry.definition.providerId,
+                        model = entry.definition.model,
+                        reasoningEffort = entry.definition.reasoningEffort,
+                        mode = entry.definition.mode,
+                        allowedTools = entry.definition.allowedTools,
+                        disallowedTools = entry.definition.disallowedTools,
+                        inject = entry.definition.inject,
+                        prompt = entry.definition.prompt,
+                        filePath = entry.definition.filePath
+                    )
                 }
-            } catch (error: java.io.IOException) {
-                if (error is java.io.InterruptedIOException) throw error
-                if (isTransientRemoteConfigError(error)) {
-                    FileLogger.d("Settings", "子代理清单等待 SSH 就绪")
-                } else {
-                    FileLogger.w("Settings", "子代理清单读取失败", error)
-                }
-                emptyList()
             }
+        } catch (error: java.io.IOException) {
+            if (error is java.io.InterruptedIOException) throw error
+            if (isTransientRemoteConfigError(error)) {
+                FileLogger.d("Settings", "子代理清单等待 SSH 就绪")
+            } else {
+                FileLogger.w("Settings", "子代理清单读取失败", error)
+            }
+            emptyList()
         }
+        if (executionBackendRegistry.currentBackend() !== backend) return
+        if (backend.id == ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID &&
+            connectionState.value != ConnectionState.CONNECTED
+        ) return
+        _subAgents.value = refreshed
     }
 
     /** 切换子代理启用/禁用（写入对应作用域的 agents.json）；禁用后不再进主代理的可派发清单。 */
@@ -2743,6 +2740,9 @@ class SettingsViewModel @Inject constructor(
     /** 切换到指定执行后端（内置或插件后端），并持久化 activeBackendId。 */
     fun setActiveExecutionBackend(id: String) {
         viewModelScope.launch {
+            if (executionBackendRegistry.currentBackend().id != id) {
+                executionBackendSwitchCoordinator.cleanup(executionBackendRegistry.currentBackend())
+            }
             executionBackendRegistry.setActiveBackend(id)
             executionModeRepository.setActiveBackendId(executionBackendRegistry.currentBackend().id)
         }
@@ -2754,6 +2754,13 @@ class SettingsViewModel @Inject constructor(
             ?: ContainerProfile.BUILTIN_ALPINE.takeIf { it.id == id }
             ?: _customProfiles.value.firstOrNull()
             ?: return
+        val targetBackendId = when (profile.mode) {
+            ExecutionMode.LOCAL_PROOT -> ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID
+            ExecutionMode.REMOTE_SSH -> ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID
+        }
+        if (_activeProfileId.value != profile.id || executionBackendRegistry.currentBackend().id != targetBackendId) {
+            executionBackendSwitchCoordinator.cleanup(executionBackendRegistry.currentBackend())
+        }
         containerSettingsRepository.setActiveProfile(profile.id)
         when (profile.mode) {
             ExecutionMode.LOCAL_PROOT -> {
@@ -2845,6 +2852,9 @@ class SettingsViewModel @Inject constructor(
     fun editCustomContainerProfile(profile: ContainerProfile) {
         viewModelScope.launch {
             val old = _customProfiles.value.firstOrNull { it.id == profile.id }
+            if (_activeProfileId.value == profile.id && old != profile) {
+                executionBackendSwitchCoordinator.cleanup(executionBackendRegistry.currentBackend())
+            }
             val oldUri = (old?.rootfsSource as? RootfsSource.LocalFile)?.uri
             val newUri = (profile.rootfsSource as? RootfsSource.LocalFile)?.uri
             if (old != null && oldUri != newUri) {
@@ -2857,6 +2867,9 @@ class SettingsViewModel @Inject constructor(
     /** 删除容器 profile（内置 Alpine 也可删，删光后由空态恢复），连带清理本地 rootfs。 */
     fun deleteContainerProfile(profile: ContainerProfile) {
         viewModelScope.launch {
+            if (_activeProfileId.value == profile.id) {
+                executionBackendSwitchCoordinator.cleanup(executionBackendRegistry.currentBackend())
+            }
             containerSettingsRepository.deleteCustomProfile(profile.id)
             cleanRootfsWithProgress(profile)
             if (_activeProfileId.value == profile.id) {
@@ -3102,9 +3115,13 @@ class SettingsViewModel @Inject constructor(
 
     /** 清除所有筛选条件。 */
     fun clearTokenStatsFilters() {
-        if (_filterProviderId.value == null && _filterModel.value == null) return
+        if (_filterProviderId.value == null && _filterModel.value == null &&
+            _filterCallKind.value == null && _filterCallStatus.value == null
+        ) return
         _filterProviderId.value = null
         _filterModel.value = null
+        _filterCallKind.value = null
+        _filterCallStatus.value = null
         _tokenStatsPage.value = 0
         _providerStatsPage.value = 0
         _modelStatsPage.value = 0
@@ -3135,6 +3152,18 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
+    fun setFilterCallKind(kind: String?) {
+        if (_filterCallKind.value == kind) return
+        _filterCallKind.value = kind
+        _tokenStatsPage.value = 0
+    }
+
+    fun setFilterCallStatus(status: String?) {
+        if (_filterCallStatus.value == status) return
+        _filterCallStatus.value = status
+        _tokenStatsPage.value = 0
+    }
+
     /** 调用明细翻页；越界时钳制到合法范围。 */
     fun setTokenStatsPage(page: Int) {
         val total = _tokenStats.value.callsTotal
@@ -3162,6 +3191,8 @@ class SettingsViewModel @Inject constructor(
             llmCallRecordDao.deleteAll()
             _filterProviderId.value = null
             _filterModel.value = null
+            _filterCallKind.value = null
+            _filterCallStatus.value = null
             _tokenStatsPage.value = 0
             _providerStatsPage.value = 0
             _modelStatsPage.value = 0
@@ -3261,18 +3292,6 @@ class SettingsViewModel @Inject constructor(
     fun fetchModels(provider: AIProviderConfig) {
         viewModelScope.launch {
             _fetchState.value = FetchState.Loading
-            modelApiService.fetchModels(provider.effectiveBaseUrl(), provider.firstUsableApiKey, provider.type, provider.useFullUrl, provider.customHeaders)
-                .onSuccess { result ->
-                    _fetchState.value = FetchState.Success(result.models, result.debugInfo)
-                    resolveModelMetadata(provider.id, provider.type, result.models)
-                }
-                .onFailure { error ->
-                    val debug = (error as? com.bysqh.guru.feature.settings.data.remote.FetchModelsException)?.debugInfo
-                    _fetchState.value = FetchState.Error(
-                        error.message ?: context.getString(R.string.settings_models_fetch_failed),
-                        debug
-                    )
-                }
         }
     }
 
@@ -3322,7 +3341,9 @@ class SettingsViewModel @Inject constructor(
     fun testModel(provider: AIProviderConfig, model: String) {
         viewModelScope.launch {
             _testing.update { it + model }
-            val result = modelApiService.testModel(provider.effectiveBaseUrl(), provider.firstUsableApiKey, provider.type, provider.useFullUrl, provider.useResponseApi, model, provider.customHeaders)
+            val result = requestConcurrencyLimiter.withPermit(provider.id, provider.maxConcurrentRequests) {
+                modelApiService.testModel(provider.effectiveBaseUrl(), provider.firstUsableApiKey, provider.type, provider.useFullUrl, provider.useResponseApi, model, provider.customHeaders)
+            }
             _testResults.update { it + (model to result) }
             _testing.update { it - model }
         }
@@ -3334,7 +3355,9 @@ class SettingsViewModel @Inject constructor(
      * 测试中的行集合与结果由弹层自己按 provider+模型持有。
      */
     suspend fun runModelTest(provider: AIProviderConfig, model: String): ModelTestResult =
-        modelApiService.testModel(provider.effectiveBaseUrl(), provider.firstUsableApiKey, provider.type, provider.useFullUrl, provider.useResponseApi, model, provider.customHeaders)
+        requestConcurrencyLimiter.withPermit(provider.id, provider.maxConcurrentRequests) {
+            modelApiService.testModel(provider.effectiveBaseUrl(), provider.firstUsableApiKey, provider.type, provider.useFullUrl, provider.useResponseApi, model, provider.customHeaders)
+        }
 
     fun clearTestResults() {
         _testResults.value = emptyMap()

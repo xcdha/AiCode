@@ -89,6 +89,7 @@ import com.bysqh.guru.feature.terminal.domain.TabFinishedEvent
 import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
 import com.bysqh.guru.feature.terminal.domain.TerminalSessionManager
 import com.bysqh.guru.feature.terminal.domain.TerminalSessionProvider
+import com.bysqh.guru.feature.agent.presentation.RequestQueueState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -171,9 +172,9 @@ class AgentRunManager @Inject constructor(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private val sessionJobs = mutableMapOf<String, Job>()
+    private val sessionJobs = ConcurrentHashMap<String, Job>()
     private val externalSessionIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
-    private val commandJobs = mutableMapOf<String, Job>()
+    private val commandJobs = ConcurrentHashMap<String, Job>()
     private val chatRequestConsumerId = UUID.randomUUID().toString()
     private val goalEmptyTurnCounts = mutableMapOf<String, Int>()
 
@@ -235,6 +236,9 @@ class AgentRunManager @Inject constructor(
 
     private val _retryStates = MutableStateFlow<Map<String, RetryState?>>(emptyMap())
     val retryStates: StateFlow<Map<String, RetryState?>> = _retryStates.asStateFlow()
+
+    private val _requestQueueStates = MutableStateFlow<Map<String, RequestQueueState>>(emptyMap())
+    val requestQueueStates: StateFlow<Map<String, RequestQueueState>> = _requestQueueStates.asStateFlow()
 
     private val _keySwitchStates = MutableStateFlow<Map<String, KeySwitchState?>>(emptyMap())
     val keySwitchStates: StateFlow<Map<String, KeySwitchState?>> = _keySwitchStates.asStateFlow()
@@ -481,6 +485,14 @@ class AgentRunManager @Inject constructor(
         }
     }
 
+    private fun setRequestQueueState(sessionId: String, state: RequestQueueState?) {
+        _requestQueueStates.value = if (state == null) {
+            _requestQueueStates.value - sessionId
+        } else {
+            _requestQueueStates.value + (sessionId to state)
+        }
+    }
+
     private fun setKeySwitchState(sessionId: String, state: KeySwitchState?) {
         _keySwitchStates.value = if (state == null) {
             _keySwitchStates.value - sessionId
@@ -721,7 +733,10 @@ class AgentRunManager @Inject constructor(
     fun compactSession(sessionId: String) {
         if (isSessionRunning(sessionId) || sessionId in _runningCommandSessions.value) return
         markCommandStarted(sessionId)
-        val job = scope.launch {
+        val job = scope.launch(
+            context = BackendExecutionContext.bind(executionBackendRegistry.currentBackend()),
+            start = CoroutineStart.LAZY
+        ) {
             var cancelled = false
             try {
                 runCompaction(sessionId)
@@ -736,6 +751,7 @@ class AgentRunManager @Inject constructor(
             }
         }
         commandJobs[sessionId] = job
+        job.start()
     }
 
     private suspend fun runCompaction(sessionId: String) {
@@ -985,7 +1001,10 @@ class AgentRunManager @Inject constructor(
         projectRoot: String
     ): Job {
         markCommandStarted(sessionId)
-        val job = scope.launch {
+        val job = scope.launch(
+            context = BackendExecutionContext.bind(executionBackendRegistry.currentBackend()),
+            start = CoroutineStart.LAZY
+        ) {
             var cancelled = false
             var followUp: (() -> Unit)? = null
             var suspendAction: (suspend () -> Unit)? = null
@@ -1050,6 +1069,7 @@ class AgentRunManager @Inject constructor(
             }
         }
         commandJobs[sessionId] = job
+        job.start()
         return job
     }
 
@@ -1155,6 +1175,15 @@ class AgentRunManager @Inject constructor(
 
     fun clearContextUsage(sessionId: String) {
         _contextUsages.value = _contextUsages.value - sessionId
+    }
+
+    suspend fun stopAllAgentsAndJoin() {
+        val jobs = (sessionJobs.values + commandJobs.values).distinct()
+        stopAllAgents()
+        jobs.forEach { it.join() }
+        while (sessionJobs.isNotEmpty() || commandJobs.isNotEmpty()) {
+            (sessionJobs.values + commandJobs.values).distinct().forEach { it.join() }
+        }
     }
 
     fun stopAllAgents() {
@@ -1469,7 +1498,10 @@ class AgentRunManager @Inject constructor(
         if (targetSessionId != null) {
             streamingAssistantStore.startRun(targetSessionId, runToken)
         }
-        return scope.launch {
+        val job = scope.launch(
+            context = BackendExecutionContext.bind(executionBackendRegistry.currentBackend()),
+            start = CoroutineStart.LAZY
+        ) {
         val sessionId = targetSessionId ?: return@launch
         coroutineContext[Job]?.let { sessionJobs[sessionId] = it }
         val currentSession = sessionUseCase.getSessionById(sessionId)
@@ -1649,7 +1681,10 @@ class AgentRunManager @Inject constructor(
                 tools = tools
             ).collect { event ->
                 when (event) {
+                    is AgentEvent.RequestQueued -> setRequestQueueState(sessionId, RequestQueueState(event.requestsAhead))
+                    AgentEvent.RequestStarted -> setRequestQueueState(sessionId, null)
                     is AgentEvent.AssistantDelta -> {
+                        setRequestQueueState(sessionId, null)
                         startPendingTitle()
                         startAssistantMessage(event.messageId)
                         if (event.accumulated.hasVisibleContent()) {
@@ -1663,6 +1698,7 @@ class AgentRunManager @Inject constructor(
                         }
                     }
                     is AgentEvent.ReasoningDelta -> {
+                        setRequestQueueState(sessionId, null)
                         startPendingTitle()
                         startAssistantMessage(event.messageId)
                         setRetryState(sessionId, null)
@@ -1769,7 +1805,9 @@ class AgentRunManager @Inject constructor(
                             attachments = event.attachments,
                             inputTokens = event.inputTokens,
                             outputTokens = event.outputTokens,
-                            cachedInputTokens = event.cachedInputTokens
+                            cachedInputTokens = event.cachedInputTokens,
+                            ttfbMillis = event.ttfbMillis,
+                            generationWindowMillis = event.generationWindowMillis
                         )
                         streamingAssistantStore.markPersisted(sessionId, msgId, normalized, reasoning.orEmpty())
                         if (event.inputTokens > 0 || event.outputTokens > 0) {
@@ -1839,6 +1877,7 @@ class AgentRunManager @Inject constructor(
                         event.persisted?.complete(Unit)
                     }
                     is AgentEvent.Failed -> {
+                        setRequestQueueState(sessionId, null)
                         failed = true
                         setCompacting(sessionId, false)
                         setAgentState(sessionId, AgentUIState.Error(describeFailure(event)))
@@ -1856,6 +1895,7 @@ class AgentRunManager @Inject constructor(
                         }
                     }
                     AgentEvent.Completed -> {
+                        setRequestQueueState(sessionId, null)
                         setRetryState(sessionId, null)
                         setKeySwitchState(sessionId, null)
                         setCompacting(sessionId, false)
@@ -1941,6 +1981,7 @@ class AgentRunManager @Inject constructor(
             setPreparingTool(sessionId, null)
             setCompacting(sessionId, false)
             setRetryState(sessionId, null)
+            setRequestQueueState(sessionId, null)
             setKeySwitchState(sessionId, null)
 
             val finishState = _agentStates.value[sessionId]
@@ -1973,12 +2014,13 @@ class AgentRunManager @Inject constructor(
                 releaseKeepalive()
             }
         }
-    }.also { job ->
+    }
         if (targetSessionId != null) {
             sessionJobs[targetSessionId] = job
             job.invokeOnCompletion { streamingAssistantStore.finishRun(targetSessionId, runToken) }
         }
-    }
+        job.start()
+        return job
     }
 
     /**
@@ -2066,7 +2108,10 @@ class AgentRunManager @Inject constructor(
                         tools = tools
                     ).collect { event ->
                         when (event) {
+                            is AgentEvent.RequestQueued -> setRequestQueueState(externalSessionId, RequestQueueState(event.requestsAhead))
+                            AgentEvent.RequestStarted -> setRequestQueueState(externalSessionId, null)
                             is AgentEvent.AssistantDelta -> {
+                                setRequestQueueState(externalSessionId, null)
                                 startAssistantMessage(event.messageId)
                                 if (event.accumulated.hasVisibleContent()) {
                                     finishReasoning()
@@ -2078,6 +2123,7 @@ class AgentRunManager @Inject constructor(
                                 }
                             }
                             is AgentEvent.ReasoningDelta -> {
+                                setRequestQueueState(externalSessionId, null)
                                 startAssistantMessage(event.messageId)
                                 setRetryState(externalSessionId, null)
                                 setKeySwitchState(externalSessionId, null)
@@ -2214,11 +2260,13 @@ class AgentRunManager @Inject constructor(
                                 onCommittedEvent(event)
                             }
                             is AgentEvent.Failed -> {
+                                setRequestQueueState(externalSessionId, null)
                                 failed = true
                                 setCompacting(externalSessionId, false)
                                 setAgentState(externalSessionId, AgentUIState.Error(describeFailure(event)))
                             }
                             AgentEvent.Completed -> {
+                                setRequestQueueState(externalSessionId, null)
                                 setRetryState(externalSessionId, null)
                                 setKeySwitchState(externalSessionId, null)
                                 setCompacting(externalSessionId, false)
@@ -2270,6 +2318,7 @@ class AgentRunManager @Inject constructor(
                     setPreparingTool(externalSessionId, null)
                     setCompacting(externalSessionId, false)
                     setRetryState(externalSessionId, null)
+                    setRequestQueueState(externalSessionId, null)
                     setKeySwitchState(externalSessionId, null)
 
                     val finishState = _agentStates.value[externalSessionId]
@@ -2393,6 +2442,12 @@ class AgentRunManager @Inject constructor(
                 inputTokens = stats.inputTokens,
                 outputTokens = stats.outputTokens,
                 cachedInputTokens = stats.cachedInputTokens,
+                cacheCreationTokens = stats.cacheCreationTokens,
+                reasoningEffort = stats.reasoningEffort,
+                reasoningWire = stats.reasoningWire,
+                reasoningClampedFrom = stats.reasoningClampedFrom,
+                ttfbMillis = stats.ttfbMillis,
+                retryCount = stats.retryCount,
                 durationMillis = stats.durationMillis,
                 status = stats.status,
                 errorMessage = stats.errorMessage,

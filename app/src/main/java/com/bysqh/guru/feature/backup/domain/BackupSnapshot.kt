@@ -166,7 +166,9 @@ data class ProviderDto(
     /** 自定义面板 (DIY) 脚本参数（JSON 编码）；null 表示旧备份无此字段，导入时回退为空。 */
     val scriptParams: String? = null,
     /** 多 Key 自动切换状态码（逗号分隔）；null 表示旧备份无此字段，导入时回退空串（即默认码表）。 */
-    val keySwitchStatusCodes: String? = null
+    val keySwitchStatusCodes: String? = null,
+    /** 最大并发请求数；null 表示旧备份无此字段，导入时回退为 0（不限）。 */
+    val maxConcurrentRequests: Int? = null
 )
 
 @Serializable
@@ -238,7 +240,9 @@ data class AgentMessageDto(
     /** Anthropic thinking / redacted_thinking 内容块的原样快照（JSON 数组文本）。 */
     val thinkingBlocksJson: String? = null,
     val isContextExcluded: Boolean = false,
-    val compactedBySummaryId: String? = null
+    val compactedBySummaryId: String? = null,
+    val ttfbMillis: Int? = null,
+    val generationWindowMillis: Int? = null
 )
 
 @Serializable

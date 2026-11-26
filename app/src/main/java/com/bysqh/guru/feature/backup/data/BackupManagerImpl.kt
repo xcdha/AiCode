@@ -52,6 +52,7 @@ import com.bysqh.guru.feature.workspace.domain.FileReadTooLargeException
 import com.bysqh.guru.feature.workspace.domain.model.RemoteProtocol
 import com.bysqh.guru.feature.workspace.domain.model.Workspace
 import com.bysqh.guru.feature.workspace.domain.model.WorkspaceType
+import com.bysqh.guru.feature.settings.domain.model.DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -873,7 +874,8 @@ class BackupManagerImpl @Inject constructor(
         keyFailoverThreshold = keyFailoverThreshold,
         keyCooldownMinutes = keyCooldownMinutes,
         scriptParams = KeystoreCipher.decryptString(scriptParams),
-        keySwitchStatusCodes = keySwitchStatusCodes
+        keySwitchStatusCodes = keySwitchStatusCodes,
+        maxConcurrentRequests = maxConcurrentRequests
     )
 
     private fun ProviderDto.toEntity() = AIProviderEntity(
@@ -900,7 +902,9 @@ class BackupManagerImpl @Inject constructor(
         keyFailoverThreshold = keyFailoverThreshold ?: 2,
         keyCooldownMinutes = keyCooldownMinutes ?: 5,
         scriptParams = KeystoreCipher.encryptString(scriptParams ?: ""),
-        keySwitchStatusCodes = keySwitchStatusCodes ?: ""
+        keySwitchStatusCodes = keySwitchStatusCodes ?: "",
+        maxConcurrentRequests = (maxConcurrentRequests ?: DEFAULT_PROVIDER_MAX_CONCURRENT_REQUESTS)
+            .coerceAtLeast(0)
     )
 
     private fun RemoteConnectionEntity.toDto() = RemoteConnectionDto(
@@ -940,9 +944,27 @@ class BackupManagerImpl @Inject constructor(
     )
 
     private fun AgentMessageEntity.toDto() = AgentMessageDto(
-        id, sessionId, role, content, timestamp, toolCallsJson, toolCallId, toolName, toolArgs,
-        isError, reasoning, signature, attachmentsJson, isCompacted, isContextSummary, isCompactionMarker,
-        thinkingBlocksJson, isContextExcluded, compactedBySummaryId
+        id = id,
+        sessionId = sessionId,
+        role = role,
+        content = content,
+        timestamp = timestamp,
+        toolCallsJson = toolCallsJson,
+        toolCallId = toolCallId,
+        toolName = toolName,
+        toolArgs = toolArgs,
+        isError = isError,
+        reasoning = reasoning,
+        signature = signature,
+        attachmentsJson = attachmentsJson,
+        isCompacted = isCompacted,
+        isContextSummary = isContextSummary,
+        isCompactionMarker = isCompactionMarker,
+        thinkingBlocksJson = thinkingBlocksJson,
+        isContextExcluded = isContextExcluded,
+        compactedBySummaryId = compactedBySummaryId,
+        ttfbMillis = ttfbMillis,
+        generationWindowMillis = generationWindowMillis
     )
 
     private fun AgentMessageDto.toEntity(): AgentMessageEntity {
@@ -958,7 +980,9 @@ class BackupManagerImpl @Inject constructor(
             isError, reasoning, signature, attachmentsJson, isCompacted && !excluded, summary, isCompactionMarker,
             thinkingBlocksJson = thinkingBlocksJson,
             isContextExcluded = excluded,
-            compactedBySummaryId = if (excluded) null else compactedBySummaryId
+            compactedBySummaryId = if (excluded) null else compactedBySummaryId,
+            ttfbMillis = ttfbMillis,
+            generationWindowMillis = generationWindowMillis
         )
     }
 

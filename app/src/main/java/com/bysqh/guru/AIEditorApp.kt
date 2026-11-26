@@ -38,6 +38,7 @@ import com.bysqh.guru.feature.settings.data.repository.LogSettingsRepository
 import com.bysqh.guru.feature.settings.data.remote.ModelMetadataService
 import com.bysqh.guru.feature.terminal.domain.KeepaliveWorker
 import com.bysqh.guru.feature.terminal.domain.TerminalKeepaliveService
+import com.bysqh.guru.feature.agent.presentation.run.ExecutionBackendSwitchCoordinator
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -62,6 +63,7 @@ class AIEditorApp : Application(), Configuration.Provider {
 
     companion object {
         const val TAG = "AIEditorApp"
+        val processInstanceId: Long = System.nanoTime()
         const val LANG_PREFS = "language_prefs_sync"
         const val LANG_KEY = "language_tag"
         /** 崩溃堆栈经 Intent extra 传递，超出 Binder 上限会抛异常，需截断。 */
@@ -266,6 +268,9 @@ class AIEditorApp : Application(), Configuration.Provider {
     @Inject
     lateinit var pluginExecutionBackendRegistrar: PluginExecutionBackendRegistrar
 
+    @Inject
+    lateinit var executionBackendSwitchCoordinator: ExecutionBackendSwitchCoordinator
+
     /** 插件工作流注册器：负责将已激活插件声明的工作流同步到注册表。 */
     @Inject
     lateinit var pluginWorkflowRegistrar: PluginWorkflowRegistrar
@@ -419,11 +424,13 @@ class AIEditorApp : Application(), Configuration.Provider {
                 executionModeRepository.setActiveBackendId(executionBackendRegistry.currentBackend().id)
             }
             pluginManager.plugins.drop(1).collect {
-                val activeBefore = executionBackendRegistry.currentBackend().id
-                pluginExecutionBackendRegistrar.syncAll()
-                val activeAfter = executionBackendRegistry.currentBackend().id
-                if (activeBefore != activeAfter) {
-                    executionModeRepository.setActiveBackendId(activeAfter)
+                val activeBefore = executionBackendRegistry.currentBackend()
+                pluginExecutionBackendRegistrar.syncAll { backend ->
+                    executionBackendSwitchCoordinator.cleanup(backend)
+                }
+                val activeAfter = executionBackendRegistry.currentBackend()
+                if (activeBefore.id != activeAfter.id) {
+                    executionModeRepository.setActiveBackendId(activeAfter.id)
                 }
             }
         }
@@ -437,11 +444,16 @@ class AIEditorApp : Application(), Configuration.Provider {
             }
         }
         appScope.launch {
-            containerSettingsRepository.activeProfileIdFlow.collect { profileId ->
-                executionBackendRegistry.updateBuiltinInstance(
-                    ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID,
-                    profileId
-                )
+            containerSettingsRepository.activeProfileFlow.distinctUntilChanged().collect { profile ->
+                if (profile.mode == com.bysqh.guru.feature.settings.data.repository.ExecutionMode.LOCAL_PROOT) {
+                    executionBackendRegistry.updateBuiltinInstance(
+                        ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID,
+                        profile.id
+                    )
+                    executionBackendRegistry.refreshBuiltinInstance(
+                        ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID
+                    )
+                }
             }
         }
         // 仅内置远程 SSH 后端需要监督 SSH 连接并在连接后同步内置文档与 assets；
@@ -465,12 +477,18 @@ class AIEditorApp : Application(), Configuration.Provider {
                     return@collectLatest
                 }
                 val remoteIdentity = config?.let {
-                    listOf(profileId, it.host, it.port.toString(), it.username).joinToString("\u0000")
+                    listOf(profileId, it.host, it.port.toString(), it.username, it.remoteWorkspacePath).joinToString("\u0000")
                 } ?: "unconfigured:$profileId"
                 val targetInstanceId = "${ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID}:$remoteIdentity"
                 if (config != remoteSshConnection.config ||
                     executionBackendRegistry.currentBackend().instanceId != targetInstanceId
                 ) {
+                    if (remoteSshConnection.config != null) {
+                        executionBackendSwitchCoordinator.cleanup(executionBackendRegistry.currentBackend())
+                        executionBackendRegistry.refreshBuiltinInstance(
+                            ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID
+                        )
+                    }
                     cancelDocsSync()
                     remoteSshConnection.stopSupervisor()
                     withContext(Dispatchers.IO) { remoteSshConnection.disconnect() }
