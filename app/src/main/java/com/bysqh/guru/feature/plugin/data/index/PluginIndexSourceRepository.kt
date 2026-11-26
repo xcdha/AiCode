@@ -37,6 +37,13 @@ object PluginIndexDefaults {
     const val OFFICIAL_NAME = "Guru Plugins"
     const val OFFICIAL_ID = "guru.official"
     const val LEGACY_OFFICIAL_ID = "aicode.official"
+
+    val official = PluginIndexSource(
+        id = OFFICIAL_ID,
+        name = OFFICIAL_NAME,
+        indexUrl = OFFICIAL_URL,
+        official = true
+    )
 }
 
 internal fun isOfficialPluginIndexSourceId(id: String): Boolean =
@@ -50,14 +57,6 @@ internal fun samePluginIndexSourceId(first: String?, second: String?): Boolean =
 private fun List<StoredSource>.officialSource(): StoredSource? =
     firstOrNull { it.id == PluginIndexDefaults.OFFICIAL_ID }
         ?: firstOrNull { it.id == PluginIndexDefaults.LEGACY_OFFICIAL_ID }
-
-    val official = PluginIndexSource(
-        id = OFFICIAL_ID,
-        name = OFFICIAL_NAME,
-        indexUrl = OFFICIAL_URL,
-        official = true
-    )
-}
 
 @Serializable
 private data class StoredSource(
