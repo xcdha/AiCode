@@ -26,9 +26,12 @@ import com.bysqh.guru.feature.agent.domain.permission.PermissionChoice
 import com.bysqh.guru.feature.agent.domain.permission.PermissionScope
 import com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine
 import com.bysqh.guru.feature.agent.domain.prompt.SystemPromptProvider
+import com.bysqh.guru.feature.agent.domain.model.id
 import com.bysqh.guru.feature.agent.domain.provider.AIProvider
 import com.bysqh.guru.feature.agent.domain.provider.AIResponse
 import com.bysqh.guru.feature.agent.domain.provider.AIStreamChunk
+import com.bysqh.guru.feature.agent.domain.provider.ThinkingSignatureInvalidException
+import com.bysqh.guru.feature.agent.domain.provider.stripThinkingSnapshots
 import com.bysqh.guru.feature.agent.domain.tool.AgentTool
 import com.bysqh.guru.feature.agent.domain.tool.StreamingAgentTool
 import com.bysqh.guru.feature.agent.domain.tool.ToolCall
@@ -933,6 +936,27 @@ class StatefulAgentWorkflow @Inject constructor(
             throw error
         } catch (error: Exception) {
             callDurationMillis = (SystemClock.elapsedRealtime() - callStartElapsed).toInt()
+            // 签名校验失败：按官方恢复步骤清掉报错位置及其后的 thinking 快照、落库，再重发一次。
+            if (error is ThinkingSignatureInvalidException && stream.text.isEmpty() && stream.reasoning.isEmpty()) {
+                val (stripped, changedIds) = stripThinkingSnapshots(currentState.messages, error.fromMessageId)
+                if (changedIds.isNotEmpty()) {
+                    val persistence = when (val sessionRef = context.turn?.sessionRef) {
+                        is SessionRef.Room -> clearThinkingSnapshots(sessionRef.opaqueId, changedIds)
+                        // 外部会话不在 Room 中；清理后的消息继续用于本轮唯一一次恢复请求。
+                        is SessionRef.External -> Result.success(0)
+                        null -> context.sessionId?.let { sessionId -> clearThinkingSnapshots(sessionId, changedIds) }
+                    }
+                    if (persistence == null || persistence.isSuccess) {
+                        currentState = currentState.copy(messages = stripped)
+                        callError = error.message
+                        nextAction = AgentAction.InitRequest(stripped)
+                    } else {
+                        FileLogger.e(TAG, "清理 thinking 快照失败，停止自动重试", persistence.exceptionOrNull())
+                        callError = persistence.exceptionOrNull()?.message ?: error.message
+                        nextAction = AgentAction.LlmError(appContext.getString(R.string.agent_thinking_signature_recovery_failed))
+                    }
+                }
+            }
             if (!didAttemptOverflowRecovery && stream.text.isEmpty() && stream.reasoning.isEmpty() && isContextOverflow(error)) {
                 didAttemptOverflowRecovery = true
                 val recovery = contextCompactor.compactIfNeeded(
@@ -1360,6 +1384,14 @@ class StatefulAgentWorkflow @Inject constructor(
             reasoningDirty = false
             emit(AgentEvent.ReasoningDelta(materialize(reasoning), responseMessageId))
         }
+    }
+
+    private suspend fun clearThinkingSnapshots(sessionId: String, ids: List<String>): Result<Int> = try {
+        Result.success(messagePersistenceUseCase.clearThinkingSnapshots(sessionId, ids))
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        Result.failure(error)
     }
 
     private fun isContextOverflow(error: Throwable): Boolean {

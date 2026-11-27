@@ -138,6 +138,10 @@ interface AgentMessageDao {
     @Query("UPDATE agent_messages SET content = :content WHERE id = :id")
     suspend fun updateMessageContent(id: String, content: String)
 
+    /** 清理会话中指定消息的 thinking 快照，避免其它会话复用相同 id 时误清理。 */
+    @Query("UPDATE agent_messages SET signature = NULL, thinkingBlocksJson = NULL WHERE sessionId = :sessionId AND id IN (:ids)")
+    suspend fun clearThinkingSnapshots(sessionId: String, ids: List<String>): Int
+
     @Query("DELETE FROM agent_messages WHERE id = :id")
     suspend fun deleteMessageById(id: String)
 

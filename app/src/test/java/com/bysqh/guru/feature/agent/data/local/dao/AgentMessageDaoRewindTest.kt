@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.bysqh.guru.feature.agent.data.local.database.AgentDatabase
 import com.bysqh.guru.feature.agent.data.local.entity.AgentMessageEntity
+import com.bysqh.guru.feature.agent.domain.model.AgentMessage
 import com.bysqh.guru.feature.agent.domain.model.id
 import com.bysqh.guru.feature.agent.domain.session.MessagePersistenceUseCase
 import kotlinx.coroutines.test.runTest
@@ -61,6 +62,52 @@ class AgentMessageDaoRewindTest {
         isCompactionMarker = marker,
         compactedBySummaryId = summaryId
     )
+
+    @Test
+    fun clearThinkingSnapshotsIsSessionScopedAndInvalidatesHistoryCache() = runTest {
+        dao.insertAll(
+            listOf(
+                message("assistant-1", 100, role = "ASSISTANT").copy(
+                    signature = "sig-1",
+                    thinkingBlocksJson = "snapshot-1"
+                ),
+                message("assistant-2", 100, role = "ASSISTANT").copy(
+                    sessionId = "another-session",
+                    signature = "sig-2",
+                    thinkingBlocksJson = "snapshot-2"
+                )
+            )
+        )
+        val persistence = MessagePersistenceUseCase(dao, db)
+
+        val cached = persistence.buildHistory(SESSION, "pending")
+        assertEquals("sig-1", (cached.single() as AgentMessage.AssistantMessage).signature)
+
+        assertEquals(1, persistence.clearThinkingSnapshots(SESSION, listOf("assistant-1", "assistant-2")))
+
+        val updated = persistence.buildHistory(SESSION, "pending")
+        val assistant = updated.single() as AgentMessage.AssistantMessage
+        assertEquals("", assistant.signature)
+        assertEquals("", assistant.thinkingBlocksJson)
+        assertEquals("sig-2", dao.getMessageById("assistant-2")?.signature)
+    }
+
+    @Test
+    fun clearThinkingSnapshotsChunksLargeIdLists() = runTest {
+        val ids = (0 until 1001).map { "assistant-$it" }
+        dao.insertAll(ids.mapIndexed { index, id ->
+            message(id, index.toLong(), role = "ASSISTANT").copy(
+                signature = "sig-$index",
+                thinkingBlocksJson = "snapshot-$index"
+            )
+        })
+        val persistence = MessagePersistenceUseCase(dao, db)
+
+        assertEquals(ids.size, persistence.clearThinkingSnapshots(SESSION, ids))
+        assertTrue(dao.getMessagesBySessionOnce(SESSION).all {
+            it.signature == null && it.thinkingBlocksJson == null
+        })
+    }
 
     @Test
     fun rewindAfterCompactionKeepsSummaryAndCompactedHistory() = runTest {

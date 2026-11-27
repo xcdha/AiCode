@@ -99,7 +99,7 @@ Switch to the "Models" tab of the edit page.
 
 **Fetch models**: tap "Fetch Models" to sync the available list from the server. Results are grouped by brand, collapsible and searchable. Each model shows capability tags: `Image` for image support, `Tools` for tool calls, `↑` followed by context length, `↓` followed by max output.
 
-**Manual add**: relay model lists are sometimes incomplete — tap + and type the model name. In the edit dialog you can also customize:
+**Manual add**: relay model lists are sometimes incomplete — tap + and type the model name. The catalog may auto-fill capabilities, windows, and pricing; once you edit any field, changing the name will no longer overwrite your values. Use the reset button in the title bar to reload the model's default metadata. In the edit dialog you can also customize:
 
 - **Context window**: affects when automatic context compression kicks in.
 - **Output window**: the max length of a single reply.

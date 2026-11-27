@@ -1,14 +1,37 @@
 package com.bysqh.guru.feature.settings.data.remote
 
+import android.app.Application
+import com.bysqh.guru.feature.settings.data.local.CustomModelMetadataStore
 import com.bysqh.guru.feature.settings.domain.model.ProviderType
+import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], manifest = Config.NONE, application = Application::class)
 class ModelMetadataServiceTest {
 
     private val json = Json { ignoreUnknownKeys = true }
+
+    @Test
+    fun resolveAutoReadsBundledCatalogWithoutCustomOverrides() = runTest {
+        val custom = mockk<CustomModelMetadataStore>(relaxed = true)
+        val service = ModelMetadataService(RuntimeEnvironment.getApplication(), custom)
+
+        val metadata = service.resolveAuto(ProviderType.ANTHROPIC, "claude-opus-5-5")
+
+        assertEquals("claude-opus-5-5", metadata.id)
+        assertEquals(1_000_000, metadata.contextTokens)
+        assertEquals(true, metadata.supportsReasoning)
+        io.mockk.coVerify(exactly = 0) { custom.get(any(), any()) }
+    }
 
     private fun parse(raw: String): List<String> =
         ModelMetadataService.parseReasoningOptions(json.parseToJsonElement(raw))

@@ -150,11 +150,10 @@ android {
     // 这样单架构包天然只含一套镜像（AGP 资源并集合并：未被引用的目录不参与），
     // universal 含两套；镜像二进制在仓库里也只各一份，无重复。
     // 放弃 ignoreAssetsPattern=dir:x86：实测对 container/x86 整树无效（rc1 已证实）。
-    // proot 全套（proot 本体 + 两个 loader + libtalloc/libandroid-shmem）走 jniLibs 而非 assets：
-    // 安装器只把 APK 内 lib/<abi>/lib*.so 解压到 nativeLibraryDir，而那是 App 目录里唯一
-    // 允许 execve 的位置（SELinux 标签 apk_data_file）。rootfs 仍在 assets→filesDir——
-    // 客户机二进制不由内核 execve，而是 proot 的 loader 用 mmap(PROT_EXEC) 映射进内存，
-    // 不受 W^X 约束。故命名必须是 lib*.so（libproot-loader32.so 实为 32 位 ELF，同样有效）。
+    // PRoot 与 tawcroot 二进制走 jniLibs 而非 assets：安装器只把 APK 内 lib/<abi>/lib*.so
+    // 解压到 nativeLibraryDir，而那是 App 目录里唯一允许 execve 的位置（SELinux 标签 apk_data_file）。
+    // rootfs 仍在 assets→filesDir；PRoot loader 把客户机二进制用 mmap(PROT_EXEC) 映射进内存，
+    // 不受 W^X 约束。故文件必须命名为 lib*.so（libproot-loader32.so 实为 32 位 ELF）。
     sourceSets {
         getByName("universal") { assets.srcDir("src/_armAssets") }
         getByName("universal") { assets.srcDir("src/_x86Assets") }
@@ -222,16 +221,15 @@ android {
     packaging {
         jniLibs {
             // 必须 true：默认（false）下 .so 不解压、直接从 APK 映射，nativeLibraryDir 会是空目录，
-            // execve libproot.so 得到 ENOENT。代价是安装后多占一份解压副本（proot 全套约 300KB）。
+            // 运行时可执行文件会得到 ENOENT。容器原生库需要在安装后解压到 nativeLibraryDir。
             useLegacyPackaging = true
-            // proot 全套是外部预编译产物，不得被构建流程后处理：当前 NDK 的 strip 认不出它们而
-            // 自行跳过，显式声明避开 AGP/NDK 升版后 strip 真的生效而改动字节。
+            // 容器运行时是外部预编译产物，不得被构建流程后处理：当前 NDK 的 strip 会跳过它们，
+            // 显式声明可避开 AGP/NDK 升版后 strip 改动二进制字节。
             keepDebugSymbols += setOf(
                 "**/libproot.so",
                 "**/libproot-loader.so",
                 "**/libproot-loader32.so",
-                "**/libtalloc.so",
-                "**/libandroid-shmem.so"
+                "**/libtawcroot.so"
             )
         }
         resources {

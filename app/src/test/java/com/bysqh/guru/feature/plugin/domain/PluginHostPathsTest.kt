@@ -346,7 +346,7 @@ class PluginHostPathsTest {
         every { workspace.currentPath() } returns File(tmp.root, "workspace").apply { mkdirs() }.path
         every { installer.guruDir } returns File(tmp.root, "guru").apply { mkdirs() }
         every { installer.rootfsDirFor(any()) } returns File(tmp.root, "rootfs").apply { mkdirs() }
-        every { settings.activeProfileIdFlow } returns emptyFlow()
+        every { settings.activeProfileFlow } returns emptyFlow()
         val access = LocalFileAccess(WorkspacePathMapper(workspace, installer, settings, homeResolver))
         every { fileAccess.resolvePath(any(), any()) } answers {
             access.resolvePath(firstArg(), secondArg())
