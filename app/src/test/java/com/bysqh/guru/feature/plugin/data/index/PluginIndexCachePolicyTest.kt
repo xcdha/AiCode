@@ -1,10 +1,26 @@
 package com.bysqh.guru.feature.plugin.data.index
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PluginIndexCachePolicyTest {
+
+    @Test
+    fun officialSourceUsesPublishedIndexRepositoryAndRecognizesBothPersistedIds() {
+        assertEquals("guru.official", PluginIndexDefaults.OFFICIAL_ID)
+        assertTrue(isOfficialPluginIndexSourceId("guru.official"))
+        assertTrue(isOfficialPluginIndexSourceId("aicode.official"))
+        assertFalse(isOfficialPluginIndexSourceId("custom.source"))
+        assertTrue(samePluginIndexSourceId("aicode.official", "guru.official"))
+        assertFalse(samePluginIndexSourceId("aicode.official", "community.index"))
+        assertEquals("Guru Plugins", PluginIndexDefaults.OFFICIAL_NAME)
+        assertEquals(
+            "https://raw.githubusercontent.com/jieapi/AiCode-Plugins-Store/main/index.json",
+            PluginIndexDefaults.OFFICIAL_URL
+        )
+    }
 
     @Test
     fun cacheRemainsFreshForOneHour() {

@@ -600,6 +600,8 @@
     <string name="chat_no_remote_connection">未连接远程服务器</string>
     <string name="chat_placeholder">有什么可以帮你的？</string>
     <string name="chat_input_hint">描述你的需求，我来帮你编写、修改或解释代码</string>
+    <string name="chat_navigator_current_turn">当前</string>
+    <string name="chat_navigator_empty_preview">（仅附件消息）</string>
 
     <!-- Agent Status -->
     <string name="agent_stopped_by_user">已被用户停止</string>
@@ -2258,7 +2260,7 @@
     <string name="plugins_store_error_download">插件包下载失败，请检查网络连接后重试。</string>
     <string name="plugins_store_error_preview">插件包无法读取，安装已取消。</string>
     <string name="plugins_store_refresh_done">索引刷新完成</string>
-    <string name="plugins_store_refresh_done_failed">索引刷新完成，失败 %1$d 个</string>
+    <string name="plugins_store_refresh_done_failed">索引刷新完成，%1$d 个索引源失败</string>
     <string name="plugins_store_detail_version">版本</string>
     <string name="plugins_store_detail_tags">分类</string>
     <string name="plugins_store_detail_source">源码仓库</string>

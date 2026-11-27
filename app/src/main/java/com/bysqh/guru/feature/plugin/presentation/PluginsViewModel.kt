@@ -19,6 +19,7 @@ import com.bysqh.guru.feature.plugin.data.PluginOverlayPermissionRepository
 import com.bysqh.guru.feature.plugin.data.PluginShizukuPermissionRepository
 import com.bysqh.guru.feature.plugin.data.PluginStoreSettingsRepository
 import com.bysqh.guru.feature.plugin.data.index.PluginIndexSourceRepository
+import com.bysqh.guru.feature.plugin.data.index.samePluginIndexSourceId
 import com.bysqh.guru.feature.plugin.domain.PluginManifestParser
 import com.bysqh.guru.feature.plugin.domain.ManifestParseResult
 import com.bysqh.guru.feature.plugin.domain.InstalledPlugin
@@ -140,7 +141,7 @@ internal fun installSourceChanged(preview: PluginPreview, origin: PluginInstallO
     val installedFromIndex = preview.installedSourceId != null
     val installFromIndex = origin.kind == PluginInstallOrigin.KIND_INDEX
     return installedFromIndex != installFromIndex ||
-        preview.installedSourceId != origin.sourceId ||
+        !samePluginIndexSourceId(preview.installedSourceId, origin.sourceId) ||
         preview.installedRepository != origin.repository ||
         (preview.installedOfficial ?: false) != origin.official
 }
