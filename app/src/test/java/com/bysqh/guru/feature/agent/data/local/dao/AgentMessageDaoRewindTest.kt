@@ -83,7 +83,7 @@ class AgentMessageDaoRewindTest {
         val cached = persistence.buildHistory(SESSION, "pending")
         assertEquals("sig-1", (cached.single() as AgentMessage.AssistantMessage).signature)
 
-        assertEquals(1, persistence.clearThinkingSnapshots(SESSION, listOf("assistant-1", "assistant-2")))
+        assertEquals(1, persistence.clearThinkingSnapshots(SESSION, listOf("assistant-1")))
 
         val updated = persistence.buildHistory(SESSION, "pending")
         val assistant = updated.single() as AgentMessage.AssistantMessage
