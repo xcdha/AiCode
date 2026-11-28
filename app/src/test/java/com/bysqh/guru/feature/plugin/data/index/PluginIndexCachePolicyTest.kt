@@ -17,9 +17,15 @@ class PluginIndexCachePolicyTest {
         assertFalse(samePluginIndexSourceId("aicode.official", "community.index"))
         assertEquals("Guru Plugins", PluginIndexDefaults.OFFICIAL_NAME)
         assertEquals(
-            "https://raw.githubusercontent.com/jieapi/AiCode-Plugins-Store/main/index.json",
+            "https://raw.githubusercontent.com/xcdha/Guru-Plugins-Store/main/index.json",
             PluginIndexDefaults.OFFICIAL_URL
         )
+    }
+
+    @Test
+    fun changingOfficialUrlInvalidatesThePreviousFetchTimestamp() {
+        assertEquals(0L, officialIndexFetchedAt("https://old.example/index.json", 123L))
+        assertEquals(123L, officialIndexFetchedAt(PluginIndexDefaults.OFFICIAL_URL, 123L))
     }
 
     @Test
