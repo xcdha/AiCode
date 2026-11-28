@@ -33,7 +33,7 @@ data class PluginIndexSource(
 }
 
 object PluginIndexDefaults {
-    const val OFFICIAL_URL = "https://raw.githubusercontent.com/jieapi/AiCode-Plugins-Store/main/index.json"
+    const val OFFICIAL_URL = "https://raw.githubusercontent.com/xcdha/Guru-Plugins-Store/main/index.json"
     const val OFFICIAL_NAME = "Guru Plugins"
     const val OFFICIAL_ID = "guru.official"
     const val LEGACY_OFFICIAL_ID = "aicode.official"
@@ -48,6 +48,9 @@ object PluginIndexDefaults {
 
 internal fun isOfficialPluginIndexSourceId(id: String): Boolean =
     id == PluginIndexDefaults.OFFICIAL_ID || id == PluginIndexDefaults.LEGACY_OFFICIAL_ID
+
+internal fun officialIndexFetchedAt(storedIndexUrl: String?, storedFetchedAt: Long): Long =
+    storedFetchedAt.takeIf { storedIndexUrl == PluginIndexDefaults.OFFICIAL_URL } ?: 0L
 
 internal fun samePluginIndexSourceId(first: String?, second: String?): Boolean =
     first == second ||
@@ -82,9 +85,13 @@ class PluginIndexSourceRepository @Inject constructor(
             runCatching { PluginIndexJson.decodeFromString<StoredSources>(raw) }.getOrNull()
         } ?: StoredSources()
         buildList {
+            val storedOfficial = stored.sources.officialSource()
             add(
                 PluginIndexDefaults.official.copy(
-                    lastFetchedAt = stored.sources.officialSource()?.lastFetchedAt ?: 0
+                    lastFetchedAt = officialIndexFetchedAt(
+                        storedOfficial?.indexUrl,
+                        storedOfficial?.lastFetchedAt ?: 0L
+                    )
                 )
             )
             stored.sources
