@@ -35,6 +35,7 @@ class PluginIndexClientDownloadCancellationTest {
         val server = ServerSocket(0)
         val requestChecked = CountDownLatch(1)
         val disconnected = AtomicBoolean(false)
+        val disconnectedLatch = CountDownLatch(1)
         val serverFailure = AtomicBoolean(false)
         val serverThread = Thread {
             try {
@@ -61,6 +62,8 @@ class PluginIndexClientDownloadCancellationTest {
                     } catch (_: SocketTimeoutException) {
                     } catch (_: IOException) {
                         disconnected.set(true)
+                    } finally {
+                        disconnectedLatch.countDown()
                     }
                 }
             } catch (_: IOException) {
@@ -92,6 +95,7 @@ class PluginIndexClientDownloadCancellationTest {
             assertTrue("The streamed download should still be active", download.isActive)
             download.cancelAndJoin()
             assertTrue(requestChecked.await(5, TimeUnit.SECONDS))
+            assertTrue(disconnectedLatch.await(5, TimeUnit.SECONDS))
             assertTrue("Cancellation should close the download socket", disconnected.get())
             assertTrue("The local server should handle the request", !serverFailure.get())
         } finally {
