@@ -466,6 +466,7 @@
     <string name="common_edit">编辑</string>
     <string name="common_enabled">已启用</string>
     <string name="common_disabled">已禁用</string>
+    <string name="common_beta">Beta</string>
     <string name="credential_token">访问令牌（Token / PAT）</string>
     <string name="credential_auto_inject_title">自动注入凭证</string>
     <string name="credential_auto_inject_hint">把应用中保存的 git 凭据同步到远程服务器，仅对当前工作区根目录下的仓库生效，不影响服务器其它目录下的仓库</string>
@@ -607,7 +608,9 @@
     <string name="agent_stopped_by_user">已被用户停止</string>
     <string name="agent_tool_executing">%1$s 执行中…</string>
     <string name="agent_stop_refusal">模型基于内容安全策略拒绝了本次回答。</string>
-    <string name="agent_stop_context_exceeded">本次输入超出模型上下文窗口，请先压缩上下文或新建会话。</string>    <string name="agent_context_no_compaction">当前上下文无需压缩（消息过少）</string>
+    <string name="agent_stop_context_exceeded">本次输入超出模型上下文窗口，请先压缩上下文或新建会话。</string>
+    <string name="agent_thinking_signature_recovery_failed">历史思考签名无法安全清理，请重试一次；若仍失败，请新建会话。</string>
+    <string name="agent_context_no_compaction">当前上下文无需压缩（消息过少）</string>
     <string name="agent_compaction_failed">压缩失败：%1$s</string>
     <string name="agent_model_not_selected">未选择</string>
     <!-- About -->
@@ -1058,6 +1061,8 @@
     <string name="container_switch_confirm">切换到「%1$s」后，当前正在运行的 AI 会话将被停止、终端标签将被关闭。是否继续切换？</string>
     <string name="container_plugin_backends">插件执行后端</string>
     <string name="container_plugin_backend_local">本地环境</string>
+    <string name="container_experimental_tawcroot">使用 tawcroot 运行时（实验性）</string>
+    <string name="container_experimental_tawcroot_desc">基于 seccomp systrap 的高性能替代运行时，仅支持 Android 10+ 64 位；异常时请关闭以切回 PRoot（不会保留 proot 专属参数）</string>
     <string name="container_plugin_backend_remote">远程环境</string>
     <string name="container_plugin_backend_subtitle">%1$s · 插件 %2$s</string>
     <string name="container_reset_title">重置容器</string>
@@ -1074,6 +1079,7 @@
     <string name="container_default_badge">默认</string>
     <string name="container_default_desc">远程工作区模式下，本地 MCP 服务运行在此容器上</string>
     <string name="container_shell_desc">shell: %1$s</string>
+    <string name="container_runtime_tawcroot_suffix">tawcroot</string>
     <string name="container_edit_image">编辑镜像</string>
     <string name="container_local_image">本地镜像</string>
     <string name="container_shell_path">Shell</string>
@@ -2525,4 +2531,6 @@
     <string name="touch_lock_hold_hint">长按 %1$d 秒退出</string>
     <string name="touch_lock_holding_countdown">继续按住（%1$d 秒）</string>
     <string name="touch_lock_unlock_cd">长按 3 秒退出防误触模式</string>
+    <string name="plugin_text_action_desc">插件动作</string>
+    <string name="project_tools_all_settings">全部配置</string>
 </resources>

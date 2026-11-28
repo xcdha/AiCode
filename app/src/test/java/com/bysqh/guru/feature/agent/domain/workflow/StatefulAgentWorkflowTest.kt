@@ -7,6 +7,8 @@ import com.bysqh.guru.feature.agent.domain.prompt.SystemPromptProvider
 import com.bysqh.guru.feature.agent.domain.provider.AIProvider
 import com.bysqh.guru.feature.agent.domain.provider.AIResponse
 import com.bysqh.guru.feature.agent.domain.provider.AIStreamChunk
+import com.bysqh.guru.feature.agent.domain.provider.ThinkingSignatureInvalidException
+import com.bysqh.guru.feature.agent.domain.session.MessagePersistenceUseCase
 import com.bysqh.guru.feature.agent.domain.provider.ProviderInstanceFactory
 import com.bysqh.guru.feature.agent.domain.provider.RetryErrorInfo
 import com.bysqh.guru.feature.agent.domain.provider.RetryErrorKind
@@ -20,6 +22,7 @@ import com.bysqh.guru.feature.settings.domain.model.ModelMetadata
 import com.bysqh.guru.feature.settings.domain.model.ProviderType
 import com.bysqh.guru.feature.settings.domain.repository.AIProviderRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -51,6 +54,7 @@ class StatefulAgentWorkflowTest {
     private val outputStore = mockk<com.bysqh.guru.feature.agent.domain.tool.ToolOutputStore>(relaxed = true)
     private val policy = mockk<com.bysqh.guru.feature.agent.domain.permission.ToolPermissionPolicyEngine>(relaxed = true)
     private val sessions = mockk<com.bysqh.guru.feature.agent.domain.session.SessionUseCase>(relaxed = true)
+    private val messagePersistence = mockk<MessagePersistenceUseCase>(relaxed = true)
     private val planApprovalManager = mockk<com.bysqh.guru.feature.agent.domain.tool.mode.PlanApprovalManager>(relaxed = true)
     private val notificationCenter = mockk<com.bysqh.guru.feature.agent.domain.notification.AgentNotificationCenter>(relaxed = true)
     private val eventInjector = mockk<com.bysqh.guru.feature.agent.domain.notification.AgentEventInjector>(relaxed = true)
@@ -69,7 +73,7 @@ class StatefulAgentWorkflowTest {
         titleModelSettingsRepository = mockk(relaxed = true),
         defaultModelSettingsRepository = defaultSettings,
         sessionUseCase = sessions,
-        messagePersistenceUseCase = mockk(relaxed = true),
+        messagePersistenceUseCase = messagePersistence,
         checkpointManager = checkpoints,
         llmCallRecordDao = mockk(relaxed = true),
         agentNotificationCenter = notificationCenter,
@@ -257,6 +261,93 @@ class StatefulAgentWorkflowTest {
         assertEquals("final thinking", response.reasoning)
         assertEquals(1, events.filterIsInstance<AgentEvent.Retrying>().size)
         assertEquals(1, events.filterIsInstance<AgentEvent.KeySwitched>().size)
+    }
+
+    @Test
+    fun thinkingSignatureFailureClearsPersistedTailAndRetriesOnce() = runTest {
+        val firstUser = AgentMessage.UserMessage(id = "user-1", content = "first")
+        val firstAssistant = AgentMessage.AssistantMessage(
+            id = "assistant-1", content = "answer 1", reasoning = "thinking 1",
+            signature = "sig-1", thinkingBlocksJson = "snapshot-1"
+        )
+        val secondUser = AgentMessage.UserMessage(id = "user-2", content = "second")
+        val secondAssistant = AgentMessage.AssistantMessage(
+            id = "assistant-2", content = "answer 2", reasoning = "thinking 2",
+            signature = "sig-2", thinkingBlocksJson = "snapshot-2"
+        )
+        val requests = mutableListOf<List<AgentMessage>>()
+        var attempt = 0
+        every { provider.completeStream(any(), capture(requests), any(), any()) } answers {
+            attempt++
+            if (attempt == 1) {
+                flow { throw ThinkingSignatureInvalidException("user-2", "raw body", "signature invalid", IllegalStateException("HTTP 400")) }
+            } else {
+                flowOf(AIStreamChunk.Final(AIResponse("recovered")))
+            }
+        }
+        coEvery { messagePersistence.clearThinkingSnapshots("session", listOf("assistant-2")) } returns 1
+        val persistence = object : TurnPersistence by TurnPersistence.Noop {}
+        val turn = WorkflowTurnContext(
+            runId = "run",
+            sessionRef = SessionRef.Room("session"),
+            providerId = "provider",
+            model = "model",
+            workflowState = null,
+            permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.BUILD,
+            persistence = persistence
+        )
+
+        val events = collectEvents(
+            context.copy(
+                sessionId = "session",
+                history = listOf(firstUser, firstAssistant, secondUser, secondAssistant),
+                turn = turn
+            )
+        )
+
+        assertEquals(2, attempt)
+        coVerify(exactly = 1) { messagePersistence.clearThinkingSnapshots("session", listOf("assistant-2")) }
+        val retryHistory = requests[1]
+        assertEquals("sig-1", (retryHistory.first { it is AgentMessage.AssistantMessage } as AgentMessage.AssistantMessage).signature)
+        val retryAssistant = retryHistory.filterIsInstance<AgentMessage.AssistantMessage>()
+        assertEquals(listOf("assistant-1", "assistant-2"), retryAssistant.map { it.id })
+        assertEquals("", retryAssistant[1].signature)
+        assertEquals("", retryAssistant[1].thinkingBlocksJson)
+        assertEquals(1, events.filterIsInstance<AgentEvent.Completed>().size)
+        assertTrue(events.none { it is AgentEvent.Failed })
+    }
+
+    @Test
+    fun thinkingSignatureRecoveryStopsWhenSnapshotPersistenceFails() = runTest {
+        val requests = mutableListOf<List<AgentMessage>>()
+        every { provider.completeStream(any(), capture(requests), any(), any()) } returns flow {
+            throw ThinkingSignatureInvalidException("user", "raw body", "signature invalid")
+        }
+        coEvery { messagePersistence.clearThinkingSnapshots("session", any()) } throws IllegalStateException("database write failed")
+        val turn = WorkflowTurnContext(
+            runId = "run",
+            sessionRef = SessionRef.Room("session"),
+            providerId = "provider",
+            model = "model",
+            workflowState = null,
+            permissionMode = com.bysqh.guru.feature.agent.domain.model.AgentMode.BUILD,
+            persistence = TurnPersistence.Noop
+        )
+
+        val events = collectEvents(
+            context.copy(
+                sessionId = "session",
+                history = listOf(
+                    AgentMessage.UserMessage(id = "user", content = "prompt"),
+                    AgentMessage.AssistantMessage(id = "assistant", content = "old", signature = "sig", thinkingBlocksJson = "snapshot")
+                ),
+                turn = turn
+            )
+        )
+
+        assertEquals(1, requests.size)
+        assertEquals(1, events.filterIsInstance<AgentEvent.Failed>().size)
+        io.mockk.coVerify(exactly = 1) { messagePersistence.clearThinkingSnapshots("session", any()) }
     }
 
     @Test

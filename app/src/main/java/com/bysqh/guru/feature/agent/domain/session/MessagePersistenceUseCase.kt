@@ -148,6 +148,21 @@ class MessagePersistenceUseCase @Inject constructor(
         agentMessageDao.updateMessageContent(messageId, sanitizeContent(newContent))
     }
 
+    /** Clear persisted thinking snapshots and invalidate the cached history for this session. */
+    suspend fun clearThinkingSnapshots(sessionId: String, ids: List<String>): Int {
+        val uniqueIds = ids.distinct()
+        if (uniqueIds.isEmpty()) return 0
+        return try {
+            val updated = uniqueIds.chunked(MAX_SQLITE_BIND_PARAMETERS).sumOf { batch ->
+                agentMessageDao.clearThinkingSnapshots(sessionId, batch)
+            }
+            check(updated == uniqueIds.size) { "Unable to clear thinking snapshots for all messages in session $sessionId" }
+            updated
+        } finally {
+            invalidateHistory(sessionId)
+        }
+    }
+
     companion object {
         /**
          * 单条消息各文本字段的持久化上限（UTF-8 字节数）。远小于 SQLite CursorWindow 单窗口约 2MB
@@ -160,6 +175,7 @@ class MessagePersistenceUseCase @Inject constructor(
          */
         const val MAX_CONTENT_BYTES = 150_000
         const val MAX_SNAPSHOT_BYTES = 100_000
+        private const val MAX_SQLITE_BIND_PARAMETERS = 500
         const val MAX_ATTACHMENTS_BYTES = 20_000
         /** 工具入参上限：与正文同量级，长参数（如大段文件内容）能完整落库、由 UI 限高滚动查看。 */
         const val MAX_TOOL_ARGS_BYTES = 150_000

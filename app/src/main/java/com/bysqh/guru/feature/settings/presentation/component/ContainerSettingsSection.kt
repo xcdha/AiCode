@@ -90,6 +90,7 @@ import com.bysqh.guru.core.ui.SwipeToDeleteRow
 import com.bysqh.guru.core.theme.Spacing
 import com.bysqh.guru.core.theme.semanticColors
 import com.bysqh.guru.feature.agent.domain.container.ContainerProfile
+import com.bysqh.guru.feature.agent.domain.container.ContainerRuntime
 import com.bysqh.guru.feature.agent.domain.container.ExecutionBackend
 import com.bysqh.guru.feature.agent.domain.container.ExecutionBackendRegistry
 import com.bysqh.guru.feature.agent.domain.container.RootfsSource
@@ -622,7 +623,12 @@ private fun profileSubtitle(context: Context, profile: ContainerProfile, connect
         return connName ?: context.getString(R.string.container_channel_deleted)
     }
     val shellDesc = profile.shellPath?.ifBlank { null } ?: "/bin/sh"
-    return context.getString(R.string.container_shell_desc, shellDesc)
+    val base = context.getString(R.string.container_shell_desc, shellDesc)
+    return if (profile.runtime == ContainerRuntime.TAWCROOT) {
+        "$base · ${context.getString(R.string.container_runtime_tawcroot_suffix)}"
+    } else {
+        base
+    }
 }
 
 /**
@@ -659,6 +665,13 @@ private fun ProfileEditSheet(
     var name by remember { mutableStateOf(initial?.name ?: "") }
     // 是否设为默认容器（仅本地镜像生效；默认容器是远程模式下本地 MCP 等服务的运行容器）
     var setAsDefault by remember { mutableStateOf(initial?.id == defaultContainerId) }
+    var useTawcroot by remember {
+        mutableStateOf(initial?.runtime == ContainerRuntime.TAWCROOT)
+    }
+    val tawcrootSupported = remember {
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
+            android.os.Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+    }
     // 本地镜像字段
     var shellPath by remember { mutableStateOf(initial?.shellPath ?: "/bin/sh") }
     val bindingsList = remember {
@@ -841,6 +854,38 @@ private fun ProfileEditSheet(
                             }
                         }
 
+                        // 实验性运行时开关：仅 Android 10+ 64 位设备可开启；若已有配置开启过也展示以便关闭回退 PRoot
+                        if (tawcrootSupported || useTawcroot) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.container_experimental_tawcroot),
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.container_experimental_tawcroot_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
+                                AppSwitch(
+                                    checked = useTawcroot,
+                                    onCheckedChange = { useTawcroot = it }
+                                )
+                            }
+                        }
+
                         // 设为默认容器：远程工作区模式下本地 MCP 等服务的运行容器
                         Row(
                             modifier = Modifier
@@ -959,7 +1004,8 @@ private fun ProfileEditSheet(
                                 .toMap(),
                             pickedUri = finalUri,
                             selectedConnId = selectedConnId,
-                            remotePath = remotePath
+                            remotePath = remotePath,
+                            runtime = if (useTawcroot) ContainerRuntime.TAWCROOT else ContainerRuntime.PROOT
                         )
                         if (profile != null) {
                             onConfirm(profile, setAsDefault && profile.mode == ExecutionMode.LOCAL_PROOT)
@@ -1276,7 +1322,8 @@ private fun buildProfile(
     env: Map<String, String>,
     pickedUri: String?,
     selectedConnId: String,
-    remotePath: String
+    remotePath: String,
+    runtime: ContainerRuntime = ContainerRuntime.PROOT
 ): ContainerProfile? {
     return when (mode) {
         ExecutionMode.LOCAL_PROOT -> {
@@ -1293,7 +1340,8 @@ private fun buildProfile(
                     ContainerProfile.DEFAULT_PROOT_ARGS else args,
                 env = env,
                 isBuiltin = rootfsSource is RootfsSource.Asset,
-                mode = ExecutionMode.LOCAL_PROOT
+                mode = ExecutionMode.LOCAL_PROOT,
+                runtime = runtime
             )
         }
 

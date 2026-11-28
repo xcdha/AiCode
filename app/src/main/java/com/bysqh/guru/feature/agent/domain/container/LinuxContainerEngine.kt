@@ -20,7 +20,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -92,33 +91,24 @@ class LinuxContainerEngine @Inject constructor(
      */
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    /** 当前在途的初始化 job（受 [initMutex] 保护），完成后置 null。 */
+    /** 当前在途的初始化 job 及其所属 profile id（受 [initMutex] 保护）；仅同一 profile 才复用。 */
     private var initJob: Job? = null
+    private var initJobProfileId: String? = null
 
     /**
-     * 当前选中的 profile（缓存自 [containerSettingsRepository.activeProfileIdFlow]，避免同步读 DataStore）。
-     * 启动首帧为内置 Alpine（等同改动前）；profile 切换后由 flow collector 更新。fallback 到内置保证安全。
+     * 当前选中的 profile（缓存自 [containerSettingsRepository.activeProfileFlow]，避免同步读 DataStore）。
+     * 启动首帧为内置 Alpine（等同改动前）；切换 profile 或编辑当前 profile 后由 flow collector 更新。
+     * fallback 到内置保证安全。
      */
     @Volatile
     private var currentProfile: ContainerProfile = ContainerProfile.BUILTIN_ALPINE
 
     init {
         CoroutineScope(Dispatchers.IO).launch {
-            containerSettingsRepository.activeProfileIdFlow.collect { id ->
-                currentProfile = resolveProfile(id)
+            containerSettingsRepository.activeProfileFlow.collect { profile ->
+                currentProfile = profile
             }
         }
-    }
-
-    /**
-     * 按 id 解析 profile：从持久化列表找，找不到回退列表第一个，再兜底内置 Alpine（保证引擎始终可用）。
-     * 列表里持久化的 Alpine 覆盖项优先于 [ContainerProfile.BUILTIN_ALPINE] 常量（用户编辑过的配置生效）。
-     */
-    private suspend fun resolveProfile(id: String): ContainerProfile {
-        val profiles = containerSettingsRepository.customProfilesFlow.first()
-        return profiles.firstOrNull { it.id == id }
-            ?: profiles.firstOrNull()
-            ?: ContainerProfile.BUILTIN_ALPINE
     }
 
     /**
@@ -539,9 +529,10 @@ class LinuxContainerEngine @Inject constructor(
         // 启动或复用后台初始化 job；initMutex 只保护 job 的创建/复用，真正的耗时工作在 initScope 里跑。
         val job = initMutex.withLock {
             val existing = initJob
-            if (existing == null || !existing.isActive) {
+            if (existing == null || !existing.isActive || initJobProfileId != profile.id) {
                 FileLogger.i(TAG, "创建后台初始化任务：profile=${profile.id}")
                 initJob = initScope.launch { doInit(profile) }
+                initJobProfileId = profile.id
             } else {
                 FileLogger.i(TAG, "复用进行中的后台初始化任务：profile=${profile.id}")
             }
@@ -592,10 +583,12 @@ class LinuxContainerEngine @Inject constructor(
             val ptmx = java.io.File("/dev/ptmx")
             FileLogger.i(
                 TAG,
-                "容器诊断($reason)：profile=${profile.id} mode=${profile.mode} rootfs=${desc(rootfs)} " +
+                "容器诊断($reason)：profile=${profile.id} mode=${profile.mode} " +
+                    "runtime=${profile.runtime}(effective=${resolveEffectiveRuntime(profile)}) rootfs=${desc(rootfs)} " +
                     "标记=${if (marker.isFile) marker.readText().trim() else "无"} " +
                     "proot=${desc(containerInstaller.prootBin)} loader=${desc(containerInstaller.prootLoader)} " +
-                    "loader32=${desc(containerInstaller.prootLoader32)} provision.sh=${desc(provision)} " +
+                    "loader32=${desc(containerInstaller.prootLoader32)} tawcroot=${desc(containerInstaller.tawcrootBin)} " +
+                    "provision.sh=${desc(provision)} " +
                     "nativeLibDir=${containerInstaller.prootBin.parentFile?.absolutePath} 可用空间=${space}MB " +
                     "/dev/ptmx(可读=${ptmx.canRead()},可写=${ptmx.canWrite()})"
             )
@@ -683,7 +676,34 @@ class LinuxContainerEngine @Inject constructor(
     }
 
     /**
-     * 构造「在容器内直接 exec 某程序（保留分离流）」的 PRoot 调用。
+     * 解析实际生效的本地容器运行时：
+     * 仅当 profile 启用了实验性 [ContainerRuntime.TAWCROOT]、设备为 Android 10+ 64 位且 APK 内置了
+     * `libtawcroot.so` 时才使用 tawcroot；否则安全回退到主力 [ContainerRuntime.PROOT]。
+     */
+    internal fun resolveEffectiveRuntime(
+        profile: ContainerProfile,
+        apiLevel: Int = android.os.Build.VERSION.SDK_INT,
+        supports64BitAbi: Boolean = android.os.Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+    ): ContainerRuntime {
+        if (profile.runtime != ContainerRuntime.TAWCROOT) return ContainerRuntime.PROOT
+        if (apiLevel < android.os.Build.VERSION_CODES.Q) {
+            FileLogger.w(TAG, "tawcroot 需要 Android 10+，当前 API=$apiLevel，回退 PRoot")
+            return ContainerRuntime.PROOT
+        }
+        if (!supports64BitAbi) {
+            FileLogger.w(TAG, "tawcroot 仅支持 64 位 ABI，当前设备不支持，回退 PRoot")
+            return ContainerRuntime.PROOT
+        }
+        val bin = containerInstaller.tawcrootBin
+        if (!bin.exists()) {
+            FileLogger.w(TAG, "未找到 libtawcroot.so（${bin.absolutePath}），回退 PRoot")
+            return ContainerRuntime.PROOT
+        }
+        return ContainerRuntime.TAWCROOT
+    }
+
+    /**
+     * 构造「在容器内直接 exec 某程序（保留分离流）」的调用（PRoot 或实验性 tawcroot）。
      * 用 `sh -c 'exec "$0" "$@"' program arg1 arg2 …` 把参数原样交给 execvp，规避引号问题。
      */
     private fun buildStdioInvocation(
@@ -694,6 +714,21 @@ class LinuxContainerEngine @Inject constructor(
         profile: ContainerProfile,
         workingDir: String? = null
     ): ProotInvocation {
+        if (resolveEffectiveRuntime(profile) == ContainerRuntime.TAWCROOT) {
+            val argv = buildBaseTawcrootArgv(projectPath, profile)
+            val cwd = effectiveWorkingDir(projectPath, workingDir)
+            val execScript = if (cwd != null) {
+                "cd ${shellSingleQuote(cwd)} && exec \"\$0\" \"\$@\""
+            } else {
+                "exec \"\$0\" \"\$@\""
+            }
+            argv.add("/bin/sh")
+            argv.add("-c")
+            argv.add(execScript)
+            argv.add(program)
+            argv.addAll(programArgs)
+            return ProotInvocation(argv, buildSharedContainerEnv(profile) + profile.env + extraEnv)
+        }
         val argv = buildBaseProotArgv(projectPath, profile, workingDir)
         argv.add("/bin/sh")
         argv.add("-c")
@@ -704,16 +739,76 @@ class LinuxContainerEngine @Inject constructor(
     }
 
     /**
-     * 构造进入容器执行 [command] 的完整 PRoot 调用（argv + env）。
+     * 构造进入容器执行 [command] 的完整调用（argv + env）。
      * 暴露给终端会话：Termux TerminalSession 需要把可执行文件与参数分开传入。
      */
-    fun buildProotInvocation(command: String, projectPath: String?): ProotInvocation {
-        val argv = buildBaseProotArgv(projectPath, currentProfile)
+    fun buildProotInvocation(
+        command: String,
+        projectPath: String?,
+        ptySession: Boolean = false
+    ): ProotInvocation {
+        val profile = currentProfile
+        if (resolveEffectiveRuntime(profile) == ContainerRuntime.TAWCROOT) {
+            val argv = buildBaseTawcrootArgv(projectPath, profile, newSession = !ptySession)
+            val cwd = effectiveWorkingDir(projectPath, null)
+            val fullCmd = if (cwd != null) "cd ${shellSingleQuote(cwd)} && $command" else command
+            argv.add(defaultShell())
+            argv.add("-c")
+            argv.add(fullCmd)
+            return ProotInvocation(argv, buildSharedContainerEnv(profile) + profile.env)
+        }
+        val argv = buildBaseProotArgv(projectPath, profile)
         // 用 [defaultShell]：bash 装好后 AI 命令与终端会话都走 bash；装机期间/失败回退 /bin/sh。
         argv.add(defaultShell())
         argv.add("-c")
         argv.add(command)
-        return ProotInvocation(argv, buildContainerEnv(currentProfile) + currentProfile.env)
+        return ProotInvocation(argv, buildContainerEnv(profile) + profile.env)
+    }
+
+    private fun effectiveWorkingDir(projectPath: String?, workingDir: String?): String? = when {
+        projectPath != null -> workingDir ?: "/root/workspace"
+        workingDir != null -> workingDir
+        else -> null
+    }
+
+    private fun shellSingleQuote(value: String): String =
+        "'" + value.replace("'", "'\\''") + "'"
+
+    /**
+     * 构造实验性 tawcroot 调用的公共前缀 argv（含 `--` 分隔符，不含最终的客户机命令）。
+     * tawcroot CLI：`tawcroot [-s] -r ROOTFS [-b SRC:DST]... -- CMD [ARGS...]`
+     * 不支持 proot 专属参数（如 `--link2symlink`、`--kill-on-exit`、`-0`、`-w`），故不注入 [ContainerProfile.extraArgs]。
+     */
+    internal fun buildBaseTawcrootArgv(
+        projectPath: String?,
+        profile: ContainerProfile,
+        newSession: Boolean = true
+    ): MutableList<String> {
+        val rootfs = containerInstaller.rootfsDirFor(profile).absolutePath
+        val tawcrootBin = containerInstaller.tawcrootBin.absolutePath
+        val argv = mutableListOf(tawcrootBin)
+        // TerminalSession 的 forkpty 已创建独立 session；避免 tawcroot 再调用 setsid 破坏 PTY 的控制终端。
+        if (newSession) argv.add("-s")
+        argv.addAll(listOf(
+            "-r", rootfs,
+            "-b", "/dev:/dev",
+            "-b", "/proc:/proc",
+            "-b", "/sys:/sys",
+            "-b", "/system:/system"
+        ))
+        if (projectPath != null) {
+            argv.add("-b")
+            argv.add("$projectPath:/root/workspace")
+        }
+        val guruDir = containerInstaller.guruDir.apply { mkdirs() }
+        argv.add("-b")
+        argv.add("${guruDir.absolutePath}:/root/.guru")
+        for (b in profile.extraBindings) {
+            argv.add("-b")
+            argv.add(if (':' in b) b else "$b:$b")
+        }
+        argv.add("--")
+        return argv
     }
 
     /**
@@ -774,20 +869,23 @@ class LinuxContainerEngine @Inject constructor(
         return argv
     }
 
-    /** 容器内进程的标准环境变量（proot loader / 动态库 / PATH / HOME 等）。 */
+    /** 容器内进程的标准环境变量（proot loader / 动态库 / 共享容器环境）。 */
     private fun buildContainerEnv(profile: ContainerProfile): Map<String, String> {
-        // 每个容器用自己 rootfs 下的 /tmp：镜像自带该目录，但重置/删除别的容器不该影响本容器，
-        // 且 proot 要求 PROOT_TMP_DIR 已存在，故启动前确保建好（同 -b 源路径的处理）。
-        val tmpDir = containerInstaller.prootTmpDirFor(profile).apply { mkdirs() }
         return mapOf(
             // Android proot 必需的环境变量
-            "PROOT_TMP_DIR" to tmpDir.absolutePath, // Android 没有 /tmp
+            "PROOT_TMP_DIR" to containerInstaller.prootTmpDirFor(profile).apply { mkdirs() }.absolutePath, // Android 没有 /tmp
             // Termux proot 的 loader 分离，必须用 PROOT_LOADER/_32 指向，否则无法注入子进程而起不来。
             "PROOT_LOADER" to containerInstaller.prootLoader.absolutePath,
             "PROOT_LOADER_32" to containerInstaller.prootLoader32.absolutePath,
-            // Termux proot 动态链接 libtalloc.so / libandroid-shmem.so（与 proot 同居 nativeLibraryDir），
-            // 需让 linker64 能找到它们；libc.so/liblog.so 走系统默认路径(/system/lib64)。
-            "LD_LIBRARY_PATH" to "${containerInstaller.prootLibDir.absolutePath}:/system/lib64:/system/lib",
+            "LD_LIBRARY_PATH" to "/system/lib64:/system/lib"
+        ) + buildSharedContainerEnv(profile)
+    }
+
+    /** PRoot 与 tawcroot 共享的容器内环境变量（PATH / HOME / TMPDIR / GIT / TZ / 代理等）。 */
+    private fun buildSharedContainerEnv(profile: ContainerProfile): Map<String, String> {
+        // 确保容器内 /tmp 存在（TMPDIR=/tmp）
+        containerInstaller.prootTmpDirFor(profile).apply { mkdirs() }
+        return mapOf(
             // 说明（statx / seccomp）：旧 proot 5.1.0 的 seccomp 过滤表没有 statx，Node 用 statx 解析
             // 模块路径会拿到未翻译的 ~/workspace/xxx → ENOENT「Cannot find module」。Termux proot
             // (5.1.107.x) 的 seccomp 过滤表已包含 statx，默认 seccomp 模式即可正确翻译，故此处

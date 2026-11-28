@@ -9,20 +9,28 @@ import com.bysqh.guru.feature.agent.data.remote.anthropic.AnthropicStopDetails
 import com.bysqh.guru.feature.agent.data.remote.anthropic.AnthropicUsage
 import com.bysqh.guru.feature.agent.domain.model.AgentMessage
 import com.bysqh.guru.feature.agent.domain.tool.ToolCall
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.serialization.json.JsonObject
 import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class AnthropicAdapterTest {
 
     /** 捕获实际上送的请求体，并返回可配置的响应。 */
     private class FakeApi(var response: AnthropicMessageResponse) : AnthropicApi {
         var lastRequest: AnthropicMessageRequest? = null
+        val streamRequests = mutableListOf<AnthropicMessageRequest>()
+        val streamCalls = ArrayDeque<Call<ResponseBody>>()
 
         override suspend fun createMessage(
             url: String,
@@ -41,7 +49,11 @@ class AnthropicAdapterTest {
             version: String,
             extraHeaders: Map<String, String>,
             request: AnthropicMessageRequest
-        ): Call<ResponseBody> = throw UnsupportedOperationException("本测试只覆盖非流式路径")
+        ): Call<ResponseBody> {
+            lastRequest = request
+            streamRequests += request
+            return streamCalls.removeFirst()
+        }
     }
 
     private fun response(
@@ -61,6 +73,21 @@ class AnthropicAdapterTest {
         usage = usage
     )
 
+    private fun responseCall(body: String, code: Int? = null): Call<ResponseBody> {
+        val call = mockk<Call<ResponseBody>>()
+        val response: Response<ResponseBody> = if (code == null) {
+            Response.success(body.toResponseBody(null))
+        } else {
+            Response.error<ResponseBody>(code, body.toResponseBody(null))
+        }
+        every { call.enqueue(any()) } answers {
+            firstArg<Callback<ResponseBody>>().onResponse(call, response)
+        }
+        every { call.cancel() } returns Unit
+        every { call.isCanceled } returns false
+        return call
+    }
+
     private fun adapter(api: FakeApi, maxOutput: Int? = null): AnthropicAdapter =
         AnthropicAdapter(api).apply {
             apiKey = "k"
@@ -74,6 +101,56 @@ class AnthropicAdapterTest {
     }
 
     private fun toolCall(id: String) = ToolCall(id = id, name = "readFile", arguments = JsonObject(emptyMap()))
+
+    @Test
+    fun streamHttpErrorMapsMessageIndexToSourceMessage() = runTest {
+        val api = FakeApi(response())
+        api.streamCalls += responseCall(
+            """{"type":"error","error":{"type":"invalid_request_error","message":"messages.2.content.0: Invalid `signature` in `thinking` block"}}""",
+            code = 400
+        )
+        val history = listOf(
+            AgentMessage.UserMessage(id = "user-1", content = "first"),
+            AgentMessage.AssistantMessage(id = "assistant-1", content = "answer 1", reasoning = "thinking 1", signature = "sig-1"),
+            AgentMessage.UserMessage(id = "user-2", content = "second"),
+            AgentMessage.AssistantMessage(id = "assistant-2", content = "answer 2", reasoning = "thinking 2", signature = "sig-2")
+        )
+
+        val thrown = runCatching { adapter(api).completeStream("system", history).toList() }.exceptionOrNull()
+
+        assertTrue(thrown is ThinkingSignatureInvalidException)
+        assertEquals("user-2", (thrown as ThinkingSignatureInvalidException).fromMessageId)
+        assertEquals(1, api.streamRequests.size)
+    }
+
+    @Test
+    fun streamSignaturePositionForMergedToolResultsMapsToFirstResultRow() = runTest {
+        val api = FakeApi(response())
+        api.streamCalls += responseCall(
+            """{"error":{"message":"messages.2.content.0: Invalid `signature` in `thinking` block"}}""",
+            code = 400
+        )
+        val history = listOf(
+            AgentMessage.UserMessage(id = "user", content = "read files"),
+            AgentMessage.AssistantMessage(
+                id = "assistant",
+                content = "",
+                toolCalls = listOf(toolCall("call-1"), toolCall("call-2"))
+            ),
+            AgentMessage.ToolResultMessage(id = "call-1", messageId = "tool-row-1", toolName = "readFile", result = "one"),
+            AgentMessage.ToolResultMessage(id = "call-2", messageId = "tool-row-2", toolName = "readFile", result = "two")
+        )
+
+        val thrown = runCatching { adapter(api).completeStream("system", history).toList() }.exceptionOrNull()
+
+        assertTrue(thrown is ThinkingSignatureInvalidException)
+        assertEquals("tool-row-1", (thrown as ThinkingSignatureInvalidException).fromMessageId)
+        val requestMessages = api.streamRequests.single().messages
+        assertEquals(3, requestMessages.size)
+        @Suppress("UNCHECKED_CAST")
+        val mergedResults = requestMessages.last().content as List<AnthropicContentBlock>
+        assertEquals(listOf("tool_result", "tool_result"), mergedResults.map { it.type })
+    }
 
     @Test
     fun max_tokens_uses_model_metadata_output_limit() = runTest {
@@ -250,5 +327,38 @@ class AnthropicAdapterTest {
         @Suppress("UNCHECKED_CAST")
         val blocks = user.content as List<AnthropicContentBlock>
         assertEquals("ephemeral", blocks.last().cache_control?.get("type"))
+    }
+
+    @Test
+    fun tool_result_message_advances_cache_breakpoint() = runTest {
+        val api = FakeApi(response())
+        adapter(api).complete(
+            "sys",
+            listOf(
+                AgentMessage.UserMessage(content = "hi"),
+                AgentMessage.AssistantMessage(
+                    content = "读一个文件",
+                    toolCalls = listOf(toolCall("c1"))
+                ),
+                AgentMessage.ToolResultMessage(id = "c1", toolName = "readFile", result = "a")
+            )
+        )
+
+        // 工具循环里断点必须跟到最后一条 user 消息（这里是 tool_result），
+        // 否则它停在首条用户消息上，历史增量永远进不了缓存。
+        val messages = api.lastRequest!!.messages
+        val lastUser: AnthropicMessage = messages.last { it.role == "user" }
+        @Suppress("UNCHECKED_CAST")
+        val lastBlocks = lastUser.content as List<AnthropicContentBlock>
+        assertEquals(listOf("tool_result"), lastBlocks.map { it.type })
+        assertEquals("ephemeral", lastBlocks.last().cache_control?.get("type"))
+
+        val firstUser: AnthropicMessage = messages.first { it.role == "user" }
+        val firstHasBreakpoint = when (val firstContent = firstUser.content) {
+            is String -> false
+            is List<*> -> firstContent.filterIsInstance<AnthropicContentBlock>().any { it.cache_control != null }
+            else -> false
+        }
+        assertTrue("首条 user 消息不应再带断点", !firstHasBreakpoint)
     }
 }

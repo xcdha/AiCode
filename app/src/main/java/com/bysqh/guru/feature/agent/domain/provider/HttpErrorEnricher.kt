@@ -27,7 +27,7 @@ class EnrichedHttpException(
  */
 fun Throwable.enrichWithHttpErrorBody(): Throwable {
     if (this !is HttpException) return this
-    val raw = extractRawErrorBody()
+    val raw = (this as? UpstreamErrorBodyCarrier)?.upstreamErrorBody ?: extractRawErrorBody()
     val detail = extractHttpErrorDetail(raw)
     val composed = if (detail.isBlank()) {
         message() ?: "HTTP ${code()}"
@@ -37,17 +37,19 @@ fun Throwable.enrichWithHttpErrorBody(): Throwable {
     return EnrichedHttpException(composed, code(), raw, this)
 }
 
-/**
- * 读取并返回 [HttpException] 的 errorBody 原文（trim 后），非 [HttpException] 或为空返回 null。
- *
- * **注意：errorBody 只能读一次**——调用后该响应体即被消费，后续再读只会得到空串。
- * 因此仅在「即将丢弃该异常」的场景（如重试日志）使用，不要用在异常仍需向上抛出的路径上。
- */
+/** One-shot Retrofit error bodies are cached so classification and later error logging share the same response. */
+private val consumedErrorBodies = java.util.WeakHashMap<Throwable, String>()
+
+/** Read the raw [HttpException] error body once; non-HTTP errors and empty bodies return null. */
 internal fun Throwable.extractRawErrorBody(): String? {
     if (this !is HttpException) return null
-    return runCatching { response()?.errorBody()?.string()?.trim() }
+    synchronized(consumedErrorBodies) { consumedErrorBodies[this] }?.let { return it }
+    val raw = runCatching { response()?.errorBody()?.string()?.trim() }
         .getOrNull()
         ?.takeIf { it.isNotBlank() }
+        ?: return null
+    synchronized(consumedErrorBodies) { consumedErrorBodies[this] = raw }
+    return raw
 }
 
 /**

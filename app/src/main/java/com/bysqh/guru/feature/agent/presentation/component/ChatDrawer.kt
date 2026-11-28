@@ -585,7 +585,7 @@ fun ChatDrawerContent(
 
     menuExternalSession?.let { ext ->
         SessionActionSheet(
-            session = ExternalSessionUiMapper.toChatSession(ext),
+            session = ExternalSessionUiMapper.toChatSession(ext, stringResource(R.string.storage_untitled_session)),
             onTogglePin = {
                 menuExternalSession = null
                 onTogglePinExternalSession(ext)
@@ -841,7 +841,7 @@ private fun SessionListContent(
                             extState is AgentUIState.Loading ||
                             extState is AgentUIState.Streaming
                         ChatSessionRow(
-                            session = ExternalSessionUiMapper.toChatSession(extSession),
+                            session = ExternalSessionUiMapper.toChatSession(extSession, stringResource(R.string.storage_untitled_session)),
                             selected = !selectionMode && currentExternalSessionId == extSession.id,
                             isExecuting = isExecuting,
                             awaitingPermission = extSession.id in awaitingPermissionSessionIds,

@@ -1,0 +1,132 @@
+name: Upstream Sync Validation
+
+on:
+  push:
+    branches: ['sync/**']
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'docs-site/**'
+      - 'LICENSE'
+      - '.gitignore'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Build and test universal
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android SDK platform 37
+        run: |
+          set -e
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SM=""
+          for p in "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+                   "$SDK_ROOT/cmdline-tools/bin/sdkmanager" \
+                   "$SDK_ROOT/tools/bin/sdkmanager"; do
+            if [ -x "$p" ]; then SM="$p"; break; fi
+          done
+          if [ -z "$SM" ]; then
+            echo "::error::未找到 sdkmanager，SDK_ROOT=$SDK_ROOT"
+            ls -la "$SDK_ROOT" 2>/dev/null || true
+            exit 1
+          fi
+          yes | "$SM" --licenses > /dev/null 2>&1 || true
+          install_pkg() {
+            for i in 1 2 3; do
+              if "$SM" --install "$@"; then return 0; fi
+              sleep 10
+            done
+            return 1
+          }
+          install_pkg "platforms;android-37.0" "build-tools;36.0.0" \
+            || install_pkg "platforms;android-37" "build-tools;36.0.0"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Check migration versions
+        run: python3 scripts/check_migrations.py
+
+      - name: Check plugin host methods
+        run: node scripts/check-host-methods.mjs
+
+      - name: Check plugin page bridge
+        run: node scripts/check-page-bridge.mjs
+
+      - name: Check plugin manifests
+        run: node scripts/check-plugin-manifests.mjs
+
+      - name: Verify container ELF payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          check_elf() {
+            local file="$1" machine="$2"
+            test -s "$file"
+            readelf -h "$file" | grep "Machine:.*$machine" > /dev/null
+          }
+          for abi in arm64-v8a x86_64; do
+            if [ "$abi" = arm64-v8a ]; then machine='AArch64'; dir='_armJniLibs/arm64-v8a'; else machine='X86-64'; dir='_x86JniLibs/x86_64'; fi
+            check_elf "app/src/$dir/libtawcroot.so" "$machine"
+            readelf -h "app/src/$dir/libtawcroot.so" | grep 'Type:.*EXEC' > /dev/null
+            if readelf -l "app/src/$dir/libtawcroot.so" | grep 'INTERP' > /dev/null; then
+              echo "::error::tawcroot must be a direct static executable: $abi"
+              exit 1
+            fi
+            check_elf "app/src/$dir/libproot.so" "$machine"
+            check_elf "app/src/$dir/libproot-loader.so" "$machine"
+            test -s "app/src/$dir/libproot-loader32.so"
+            if [ "$abi" = arm64-v8a ]; then loader32='ARM'; else loader32='Intel 80386'; fi
+            readelf -h "app/src/$dir/libproot-loader32.so" | grep "Machine:.*$loader32" > /dev/null
+            readelf -h "app/src/$dir/libproot-loader32.so" | grep 'Class:.*ELF32' > /dev/null
+            if readelf -d "app/src/$dir/libtawcroot.so" | grep 'NEEDED' > /dev/null; then
+              echo "::error::tawcroot must remain statically linked: $abi"
+              exit 1
+            fi
+            if readelf -d "app/src/$dir/libproot.so" | grep -E 'libtalloc|libandroid-shmem' > /dev/null; then
+              echo "::error::PRoot still references a removed dependency: $abi"
+              exit 1
+            fi
+            test ! -e "app/src/$dir/libtalloc.so"
+            test ! -e "app/src/$dir/libandroid-shmem.so"
+          done
+          test ! -e terminal-emulator/src/main/jniLibs/armeabi-v7a/libtermux.so
+          test ! -e terminal-emulator/src/main/jniLibs/x86/libtermux.so
+          for abi in arm64-v8a x86_64; do
+            readelf -Ws "terminal-emulator/src/main/jniLibs/$abi/libtermux.so" | grep 'Java_com_termux_terminal_JNI_createSubprocess' > /dev/null
+          done
+
+      - name: Build universal debug
+        run: ./gradlew :app:assembleUniversalDebug --stacktrace
+
+      - name: Run universal unit tests
+        run: ./gradlew :app:testUniversalDebugUnitTest --stacktrace
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-test-reports-${{ github.sha }}
+          path: app/build/test-results/testUniversalDebugUnitTest/**/*.xml
+          if-no-files-found: ignore
+          retention-days: 7

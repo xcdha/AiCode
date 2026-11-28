@@ -2817,6 +2817,7 @@ class SettingsViewModel @Inject constructor(
             ?: ContainerProfile.BUILTIN_ALPINE.takeIf { it.id == id }
             ?: _customProfiles.value.firstOrNull()
             ?: return
+        if (profile.mode == ExecutionMode.REMOTE_SSH && profile.rootfsSource !is RootfsSource.RemoteSsh) return
         val targetBackendId = when (profile.mode) {
             ExecutionMode.LOCAL_PROOT -> ExecutionBackendRegistry.BUILTIN_LOCAL_PROOT_ID
             ExecutionMode.REMOTE_SSH -> ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID
@@ -2832,7 +2833,6 @@ class SettingsViewModel @Inject constructor(
             }
 
             ExecutionMode.REMOTE_SSH -> {
-                if (profile.rootfsSource !is RootfsSource.RemoteSsh) return
                 // 连接参数由 ActiveRemoteConnectionResolver 按激活 profile 实时解析，AIEditorApp 的常驻订阅据此重连。
                 executionModeRepository.setActiveBackendId(ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID)
                 executionBackendRegistry.setActiveBackend(ExecutionBackendRegistry.BUILTIN_REMOTE_SSH_ID)
@@ -3357,6 +3357,9 @@ class SettingsViewModel @Inject constructor(
             _fetchState.value = FetchState.Loading
         }
     }
+
+    suspend fun resolveAutoModelMetadata(type: ProviderType, modelId: String): ModelMetadata =
+        modelMetadataService.resolveAuto(type, modelId)
 
     fun resolveModelMetadata(providerId: String, type: ProviderType, modelIds: List<String>) {
         val normalizedIds = modelIds.map { it.trim() }.filter { it.isNotEmpty() }.distinct()

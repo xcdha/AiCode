@@ -455,7 +455,7 @@ class TerminalSessionManager @Inject constructor(
      */
     private fun buildSession(tabId: String, shellCommand: String): Pair<TerminalSession, AppTerminalSessionClient> {
         val workspace = workspaceRepository.currentPath()
-        val invocation = containerEngine.buildProotInvocation(shellCommand, workspace)
+        val invocation = containerEngine.buildProotInvocation(shellCommand, workspace, ptySession = true)
         FileLogger.i(
             TAG,
             "PTY 启动：workspace=$workspace 可执行=${invocation.executable}" +
