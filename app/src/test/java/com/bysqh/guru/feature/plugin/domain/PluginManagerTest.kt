@@ -880,7 +880,9 @@ class PluginManagerTest {
         transaction.writeText("{ invalid")
 
         val restarted = newManager().also { it.ensureLoaded() }
+        assertFalse(restarted.registryReadSucceeded.value)
         restarted.refresh()
+        assertFalse(restarted.registryReadSucceeded.value)
 
         assertTrue(backup.isDirectory)
         assertTrue(orphan.isDirectory)

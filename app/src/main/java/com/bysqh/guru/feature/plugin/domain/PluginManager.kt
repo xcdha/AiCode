@@ -175,8 +175,8 @@ class PluginManager internal constructor(
             cleanup { deleteTree(stagingDir) }
             dependencyStore.cleanupStaging()
             val registry = loadRecords()
-            _registryReadSucceeded.value = !registry.failed
             val recovered = !registry.failed && recoverInterruptedInstall(registry.records)
+            _registryReadSucceeded.value = !registry.failed && recovered
             publish(registry.records.map { loadInstalled(it) })
             migrateLegacyDependencies()
             // registry 或事务恢复失败时保留目录，避免把待恢复的备份当成孤儿。
@@ -191,8 +191,8 @@ class PluginManager internal constructor(
         mutex.withLock {
             ensureLoaded()
             val loaded = loadRecords()
-            _registryReadSucceeded.value = !loaded.failed
             val recovered = !loaded.failed && recoverInterruptedInstall(loaded.records)
+            _registryReadSucceeded.value = !loaded.failed && recovered
             publish(loaded.records.map { loadInstalled(it) })
             migrateLegacyDependencies()
             if (recovered) sweepOrphans(loaded.records.map { it.id }.toSet())
