@@ -623,7 +623,7 @@ class AnthropicAdapter @Inject constructor(
                         result[result.lastIndex] = previous.copy(content = previousBlocks + resultBlock)
                     } else {
                         result.add(AnthropicMessage(role = "user", content = listOf(resultBlock)))
-                        sourceIds.add(message.id)
+                        sourceIds.add(message.messageId)
                     }
                     lastUserIndex = result.lastIndex
                 }

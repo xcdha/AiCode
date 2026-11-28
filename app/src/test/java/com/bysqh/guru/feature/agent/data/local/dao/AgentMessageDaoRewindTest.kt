@@ -47,13 +47,14 @@ class AgentMessageDaoRewindTest {
         id: String,
         timestamp: Long,
         role: String = "USER",
+        sessionId: String = SESSION,
         compacted: Boolean = false,
         summaryId: String? = null,
         summary: Boolean = false,
         marker: Boolean = false
     ) = AgentMessageEntity(
         id = id,
-        sessionId = SESSION,
+        sessionId = sessionId,
         role = role,
         content = id,
         timestamp = timestamp,
@@ -71,8 +72,7 @@ class AgentMessageDaoRewindTest {
                     signature = "sig-1",
                     thinkingBlocksJson = "snapshot-1"
                 ),
-                message("assistant-2", 100, role = "ASSISTANT").copy(
-                    sessionId = "another-session",
+                message("assistant-2", 100, role = "ASSISTANT", sessionId = "another-session").copy(
                     signature = "sig-2",
                     thinkingBlocksJson = "snapshot-2"
                 )

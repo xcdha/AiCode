@@ -86,7 +86,7 @@ class ContainerRuntimeTest {
 
         assertTrue(command.contains("-s"))
         assertFalse(pty.contains("-s"))
-        assertTrue(command.contains("/root/.guru"))
+        assertTrue(command.any { it.endsWith(":/root/.guru") })
         assertFalse(command.contains("--link2symlink"))
     }
 
