@@ -97,6 +97,7 @@ class PluginManagerTest {
         assertEquals(null, agent.filePath)
 
         val plugin = manager.plugins.value.single()
+        assertTrue(manager.registryReadSucceeded.value)
         assertEquals(PluginStatus.OK, plugin.status)
         assertTrue(plugin.isActive)
         assertTrue("新装默认启用", plugin.record.enabled)
@@ -425,6 +426,7 @@ class PluginManagerTest {
         registryFile.writeText("{ not json")
         val restarted = newManager().also { it.ensureLoaded() }
         assertTrue(restarted.plugins.value.isEmpty())
+        assertFalse(restarted.registryReadSucceeded.value)
         assertTrue(requireNotNull(registryFile.parentFile).listFiles().orEmpty().any {
             it.name.startsWith("${registryFile.name}.corrupt-")
         })
@@ -433,6 +435,7 @@ class PluginManagerTest {
 
         // 下一次启动时 registry 文件已不存在，但损坏备份仍在，也不能 sweep
         val restartedAgain = newManager().also { it.ensureLoaded() }
+        assertFalse(restartedAgain.registryReadSucceeded.value)
         assertTrue(File(root, "installed/community.demo-kit").isDirectory)
     }
 
@@ -877,7 +880,9 @@ class PluginManagerTest {
         transaction.writeText("{ invalid")
 
         val restarted = newManager().also { it.ensureLoaded() }
+        assertFalse(restarted.registryReadSucceeded.value)
         restarted.refresh()
+        assertFalse(restarted.registryReadSucceeded.value)
 
         assertTrue(backup.isDirectory)
         assertTrue(orphan.isDirectory)
