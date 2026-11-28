@@ -22,6 +22,7 @@ import com.bysqh.guru.feature.settings.domain.model.ModelMetadata
 import com.bysqh.guru.feature.settings.domain.model.ProviderType
 import com.bysqh.guru.feature.settings.domain.repository.AIProviderRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic

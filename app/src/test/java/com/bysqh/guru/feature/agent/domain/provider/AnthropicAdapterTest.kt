@@ -9,7 +9,12 @@ import com.bysqh.guru.feature.agent.data.remote.anthropic.AnthropicStopDetails
 import com.bysqh.guru.feature.agent.data.remote.anthropic.AnthropicUsage
 import com.bysqh.guru.feature.agent.domain.model.AgentMessage
 import com.bysqh.guru.feature.agent.domain.tool.ToolCall
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import io.mockk.any
+import io.mockk.every
+import io.mockk.firstArg
+import io.mockk.mockk
 import kotlinx.serialization.json.JsonObject
 import okhttp3.ResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
