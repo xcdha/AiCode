@@ -142,6 +142,11 @@ class PluginManager internal constructor(
     /** 安装记录是否已从磁盘读完。读完之前 [plugins] 为空不代表没有插件，界面据此避免闪一下空状态。 */
     val isLoaded: StateFlow<Boolean> = _isLoaded.asStateFlow()
 
+    private val _registryReadSucceeded = MutableStateFlow(false)
+
+    /** 注册表损坏时不应把空插件快照当成“全部插件均已停用”。 */
+    val registryReadSucceeded: StateFlow<Boolean> = _registryReadSucceeded.asStateFlow()
+
     private val revisionCounter = AtomicLong(0)
 
     /** 插件集合每变化一次递增，供提示词缓存等据此失效。 */
@@ -170,6 +175,7 @@ class PluginManager internal constructor(
             cleanup { deleteTree(stagingDir) }
             dependencyStore.cleanupStaging()
             val registry = loadRecords()
+            _registryReadSucceeded.value = !registry.failed
             val recovered = !registry.failed && recoverInterruptedInstall(registry.records)
             publish(registry.records.map { loadInstalled(it) })
             migrateLegacyDependencies()
@@ -185,6 +191,7 @@ class PluginManager internal constructor(
         mutex.withLock {
             ensureLoaded()
             val loaded = loadRecords()
+            _registryReadSucceeded.value = !loaded.failed
             val recovered = !loaded.failed && recoverInterruptedInstall(loaded.records)
             publish(loaded.records.map { loadInstalled(it) })
             migrateLegacyDependencies()
